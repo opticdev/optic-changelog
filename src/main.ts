@@ -1,11 +1,11 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 // import {HttpClient} from '@actions/http-client'
-import {
-  Endpoints
-  // RequestHeaders
-  // IssuesListCommentsResponseData
-} from '@octokit/types'
+// import {
+//   Endpoints
+//   RequestHeaders
+//   IssuesListCommentsResponseData
+// } from '@octokit/types'
 
 // type ListCommitPullsResponseData = Endpoints['GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls']['response']['data']
 // type CreateIssueCommentResponseData = Endpoints['POST /repos/:owner/:repo/issues/:issue_number/comments']['response']['data']
@@ -35,8 +35,8 @@ async function run(): Promise<void> {
       return
     }
 
-    const {full_name: repoFullName} = repository
-    const [owner, repo] = repoFullName!.split('/')
+    const {full_name: repoFullName = ''} = repository
+    const [owner, repo] = repoFullName.split('/')
 
     const octokit = github.getOctokit(repoToken)
 
@@ -47,41 +47,13 @@ async function run(): Promise<void> {
       ref: commitSha
     })
 
-    core.info(readme.data.toString());
+    core.info(readme.data.toString())
   } catch (error) {
     core.setFailed(error.message)
   }
 }
 
-async function getChangelogData(): Promise<object> {
-  // TODO: fake data for now, get from Spectacle later
-  return Promise.resolve({
-    data: {
-      opticUrl: 'https://example.com',
-      endpoints: [
-        {
-          change: {
-            category: 'add'
-          },
-          path: '/foo',
-          method: 'get'
-        },
-        {
-          change: {
-            category: 'update'
-          },
-          path: '/bar',
-          method: 'post'
-        }
-      ]
-    }
-  })
+// Don't auto-execute in the test environment
+if (process.env['NODE_ENV'] !== 'test') {
+  run()
 }
-
-function buildCommentMessage(changelogData: object): string {
-  return 'Fake comment message'
-}
-
-;(async function () {
-  await run()
-})()
