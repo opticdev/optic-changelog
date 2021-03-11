@@ -172,7 +172,7 @@ function createPrMessage(changes: Changelog): string {
     }
   }
 
-  return `## Changelog
+  return `## Optic Changelog
   
 * Endpoints added: ${results.added}
 * Endpoints updated: ${results.updated}

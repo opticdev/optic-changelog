@@ -160,7 +160,7 @@ function createPrMessage(changes) {
                 break;
         }
     }
-    return `## Changelog
+    return `## Optic Changelog
   
 * Endpoints added: ${results.added}
 * Endpoints updated: ${results.updated}
