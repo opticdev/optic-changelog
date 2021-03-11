@@ -40,13 +40,15 @@ const core = __importStar(__webpack_require__(186));
 const github = __importStar(__webpack_require__(438));
 // import {HttpClient} from '@actions/http-client'
 // import {
-//   Endpoints
+//   Endpoints,
+//   OctokitResponse,
 //   RequestHeaders
-//   IssuesListCommentsResponseData
 // } from '@octokit/types'
+const util = __importStar(__webpack_require__(669));
 // type ListCommitPullsResponseData = Endpoints['GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls']['response']['data']
 // type CreateIssueCommentResponseData = Endpoints['POST /repos/:owner/:repo/issues/:issue_number/comments']['response']['data']
-// type GetRepoContent = Endpoints['GET /repos/{owner}/{repo}/contents/{path}']['response']['data']
+// type GetRepoContentResponseData = Endpoints['GET /repos/{owner}/{repo}/contents/{path}']['response']['data']['']
+// type RepoContent = Endpoints['GET /repos/{owner}/{repo}/contents/{path}']['response']['datas']['content']
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -70,7 +72,11 @@ function run() {
                 path: 'README.md',
                 ref: commitSha
             });
-            core.info(JSON.stringify(readme.data));
+            core.info(util.inspect(readme.data, false, 5));
+            // const buff = Buffer.from(readme.data.content<Endpoints['GET /repos/{owner}/{repo}/contents/{path}']['response']>, 'base64')
+            // const content = buff.toString('utf-8')
+            //
+            // core.info(content)
         }
         catch (error) {
             core.setFailed(error.message);
