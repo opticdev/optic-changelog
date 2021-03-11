@@ -59,13 +59,17 @@ async function run(): Promise<void> {
     const headBatchId = getLatestBatchId(headContent)
     const baseBatchId = getLatestBatchId(baseContent)
 
+    // TODO: if the IDs match, this should return
+
     const changes = getChangelogData({
       from: baseBatchId,
       to: headBatchId,
       spec: headContent
     })
 
-    core.info(JSON.stringify(changes))
+    const message = createPrMessage(changes)
+
+    core.info(message)
   } catch (error) {
     core.setFailed(error.message)
   }
@@ -109,23 +113,35 @@ function getLatestBatchId(specContent: any[]): string {
   return batchId
 }
 
-function getChangelogData(options: object): object {
-  core.info(JSON.stringify(options))
+type Changelog = {
+  data: {
+    opticUrl: string
+    endpoints: {
+      change: {
+        category: string
+      }
+      path: string
+      method: string
+    }[]
+  }
+}
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function getChangelogData(options: object): Changelog {
   return {
     data: {
       opticUrl: 'https://example.com',
       endpoints: [
         {
           change: {
-            category: 'add'
+            category: 'added'
           },
           path: '/foo',
           method: 'get'
         },
         {
           change: {
-            category: 'update'
+            category: 'updated'
           },
           path: '/bar',
           method: 'post'
@@ -133,6 +149,36 @@ function getChangelogData(options: object): object {
       ]
     }
   }
+}
+
+function createPrMessage(changes: Changelog): string {
+  const results = {
+    added: 0,
+    updated: 0,
+    removed: 0
+  }
+
+  for (const endpoint of changes.data.endpoints) {
+    switch (endpoint.change.category) {
+      case 'added':
+        results.added++
+        break
+      case 'updated':
+        results.updated++
+        break
+      case 'removed':
+        results.removed++
+        break
+    }
+  }
+
+  return `## Changelog
+  
+* Endpoints added: ${results.added}
+* Endpoints updated: ${results.updated}
+* Endpoints removed: ${results.removed}
+
+[View documentation](${changes.data.opticUrl})`
 }
 
 // Don't auto-execute in the test environment
