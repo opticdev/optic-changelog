@@ -70,7 +70,7 @@ function run() {
                 path: 'README.md',
                 ref: commitSha
             });
-            core.info(readme.data.toString());
+            core.info(JSON.stringify(readme.data));
         }
         catch (error) {
             core.setFailed(error.message);
