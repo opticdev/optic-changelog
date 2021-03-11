@@ -41,6 +41,7 @@ async function run(): Promise<void> {
       pull_number: pullRequest.number
     })
 
+    core.info('Bump')
     core.info(JSON.stringify(prInfo, null, 4))
 
     try {
