@@ -3,16 +3,12 @@ import * as github from '@actions/github'
 // import {HttpClient} from '@actions/http-client'
 // import {
 //   Endpoints,
-//   OctokitResponse,
-//   RequestHeaders
 // } from '@octokit/types'
-
-import * as util from 'util'
 
 // type ListCommitPullsResponseData = Endpoints['GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls']['response']['data']
 // type CreateIssueCommentResponseData = Endpoints['POST /repos/:owner/:repo/issues/:issue_number/comments']['response']['data']
 // type GetRepoContentResponseData = Endpoints['GET /repos/{owner}/{repo}/contents/{path}']['response']['data']['']
-// type RepoContent = Endpoints['GET /repos/{owner}/{repo}/contents/{path}']['response']['datas']['content']
+// type RepoContentResponse = Endpoints['GET /repos/{owner}/{repo}/contents/{path}']['response']
 
 async function run(): Promise<void> {
   try {
@@ -50,11 +46,15 @@ async function run(): Promise<void> {
       ref: commitSha
     })
 
-    core.info(util.inspect(readme.data, false, 5))
-    // const buff = Buffer.from(readme.data.content<Endpoints['GET /repos/{owner}/{repo}/contents/{path}']['response']>, 'base64')
-    // const content = buff.toString('utf-8')
-    //
-    // core.info(content)
+    if (!('content' in readme.data)) {
+      core.info('No file content')
+      return
+    }
+
+    const buff = Buffer.from(readme.data.content, 'base64')
+    const content = buff.toString('utf-8')
+
+    core.info(content)
   } catch (error) {
     core.setFailed(error.message)
   }
