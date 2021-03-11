@@ -46,28 +46,42 @@ function run() {
             if (!repoToken) {
                 throw new Error('Please provide a GitHub token. Set one with the repo-token input or GITHUB_TOKEN env variable.');
             }
-            const { payload: { repository }, sha: commitSha } = github.context;
-            core.info(`Commit sha: ${commitSha}`);
+            const { payload: { repository, pull_request: pullRequest }, sha: commitSha } = github.context;
             if (!repository) {
                 core.info('Unable to determine repository');
+                return;
+            }
+            if (!pullRequest) {
+                core.info('Not a pull request');
                 return;
             }
             const octokit = github.getOctokit(repoToken);
             const { full_name: repoFullName = '' } = repository;
             const [owner, repo] = repoFullName.split('/');
-            const content = yield getSpecificationContent(octokit, {
+            const prInfo = yield octokit.pulls.get({
                 owner,
                 repo,
-                ref: commitSha
+                pull_number: pullRequest.number
             });
-            core.info(JSON.stringify(content, null, 4));
+            core.info(JSON.stringify(prInfo, null, 4));
+            try {
+                const content = yield getSpecificationContent(octokit, {
+                    owner,
+                    repo,
+                    ref: commitSha
+                });
+                core.info(JSON.stringify(content, null, 4));
+            }
+            catch (error) {
+                core.setFailed("Couldn't find file");
+            }
         }
         catch (error) {
             core.setFailed(error.message);
         }
     });
 }
-function getSpecificationContent(octokit, { owner, repo, path = '.optic/api/specification.json1', ref }) {
+function getSpecificationContent(octokit, { owner, repo, path = '.optic/api/specification.json', ref }) {
     return __awaiter(this, void 0, void 0, function* () {
         const response = yield octokit.repos.getContent({
             owner,
