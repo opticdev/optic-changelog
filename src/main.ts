@@ -16,7 +16,7 @@ async function run(): Promise<void> {
 
     const {
       payload: {repository, pull_request: pullRequest},
-      sha: commitSha
+      sha: headSha
     } = github.context
 
     if (!repository) {
@@ -41,19 +41,28 @@ async function run(): Promise<void> {
       pull_number: pullRequest.number
     })
 
+    const baseSha = prInfo.data.base.sha
+
     core.info('Bump')
     core.info(JSON.stringify(prInfo, null, 4))
 
-    try {
-      const content = await getSpecificationContent(octokit, {
-        owner,
-        repo,
-        ref: commitSha
-      })
-      core.info(JSON.stringify(content, null, 4))
-    } catch (error) {
-      core.setFailed("Couldn't find file")
-    }
+    // TODO: Handle file not found
+    const headContent = await getSpecificationContent(octokit, {
+      owner,
+      repo,
+      ref: headSha
+    })
+
+    const baseContent = await getSpecificationContent(octokit, {
+      owner,
+      repo,
+      ref: baseSha
+    })
+
+    const headBatchId = getLatestBatchId(headContent)
+    const baseBatchId = getLatestBatchId(baseContent)
+    core.info(headBatchId)
+    core.info(baseBatchId)
   } catch (error) {
     core.setFailed(error.message)
   }
@@ -82,6 +91,20 @@ async function getSpecificationContent(
   const buff = Buffer.from(response.data.content, 'base64')
   const content = buff.toString('utf-8')
   return JSON.parse(content)
+}
+
+// TODO: using any for now
+function getLatestBatchId(specContent: any[]): string {
+  let batchId = ''
+
+  for (const row of specContent) {
+    if (!('BatchCommitEnd' in row)) {
+      continue
+    }
+    batchId = row.BatchCommitEnd
+  }
+
+  return batchId
 }
 
 // Don't auto-execute in the test environment
