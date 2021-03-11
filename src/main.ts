@@ -48,7 +48,7 @@ async function getSpecificationContent(
   {
     owner,
     repo,
-    path = '.optic/api/specification.json',
+    path = '.optic/api/specification.json1',
     ref
   }: {owner: string; repo: string; path?: string; ref: string}
 ): Promise<object[]> {
