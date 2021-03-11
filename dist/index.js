@@ -67,7 +67,7 @@ function run() {
         }
     });
 }
-function getSpecificationContent(octokit, { owner, repo, path = '.optic/api/specification.json', ref }) {
+function getSpecificationContent(octokit, { owner, repo, path = '.optic/api/specification.json1', ref }) {
     return __awaiter(this, void 0, void 0, function* () {
         const response = yield octokit.repos.getContent({
             owner,
