@@ -95,8 +95,8 @@ function getLatestBatchId(specContent: any[]): string {
   let batchId = 'none'
 
   for (const row of specContent) {
-    if ('BatchCommitEnd' in row) {
-      batchId = row.BatchCommitEnd.batchId
+    if ('BatchCommitEnded' in row) {
+      batchId = row.BatchCommitEnded.batchId
     }
   }
 
