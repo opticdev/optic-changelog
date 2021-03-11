@@ -46,7 +46,7 @@ function run() {
             if (!repoToken) {
                 throw new Error('Please provide a GitHub token. Set one with the repo-token input or GITHUB_TOKEN env variable.');
             }
-            const { payload: { repository, pull_request: pullRequest }, sha: commitSha } = github.context;
+            const { payload: { repository, pull_request: pullRequest }, sha: headSha } = github.context;
             if (!repository) {
                 core.info('Unable to determine repository');
                 return;
@@ -63,18 +63,22 @@ function run() {
                 repo,
                 pull_number: pullRequest.number
             });
-            core.info(JSON.stringify(prInfo, null, 4));
-            try {
-                const content = yield getSpecificationContent(octokit, {
-                    owner,
-                    repo,
-                    ref: commitSha
-                });
-                core.info(JSON.stringify(content, null, 4));
-            }
-            catch (error) {
-                core.setFailed("Couldn't find file");
-            }
+            const baseSha = prInfo.data.base.sha;
+            // TODO: Handle file not found
+            const headContent = yield getSpecificationContent(octokit, {
+                owner,
+                repo,
+                ref: headSha
+            });
+            const baseContent = yield getSpecificationContent(octokit, {
+                owner,
+                repo,
+                ref: baseSha
+            });
+            const headBatchId = getLatestBatchId(headContent);
+            const baseBatchId = getLatestBatchId(baseContent);
+            core.info(headBatchId);
+            core.info(baseBatchId);
         }
         catch (error) {
             core.setFailed(error.message);
@@ -96,6 +100,17 @@ function getSpecificationContent(octokit, { owner, repo, path = '.optic/api/spec
         const content = buff.toString('utf-8');
         return JSON.parse(content);
     });
+}
+// TODO: using any for now
+function getLatestBatchId(specContent) {
+    let batchId = '';
+    for (const row of specContent) {
+        if (!('BatchCommitEnd' in row)) {
+            continue;
+        }
+        batchId = row.BatchCommitEnd;
+    }
+    return batchId;
 }
 // Don't auto-execute in the test environment
 if (process.env['NODE_ENV'] !== 'test') {

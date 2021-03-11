@@ -43,9 +43,6 @@ async function run(): Promise<void> {
 
     const baseSha = prInfo.data.base.sha
 
-    core.info('Bump')
-    core.info(JSON.stringify(prInfo, null, 4))
-
     // TODO: Handle file not found
     const headContent = await getSpecificationContent(octokit, {
       owner,
