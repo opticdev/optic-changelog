@@ -92,13 +92,12 @@ async function getSpecificationContent(
 
 // TODO: using any for now
 function getLatestBatchId(specContent: any[]): string {
-  let batchId = ''
+  let batchId = 'none'
 
   for (const row of specContent) {
-    if (!('BatchCommitEnd' in row)) {
-      continue
+    if ('BatchCommitEnd' in row) {
+      batchId = row.BatchCommitEnd.batchId
     }
-    batchId = row.BatchCommitEnd
   }
 
   return batchId

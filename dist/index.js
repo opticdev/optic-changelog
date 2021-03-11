@@ -103,12 +103,11 @@ function getSpecificationContent(octokit, { owner, repo, path = '.optic/api/spec
 }
 // TODO: using any for now
 function getLatestBatchId(specContent) {
-    let batchId = '';
+    let batchId = 'none';
     for (const row of specContent) {
-        if (!('BatchCommitEnd' in row)) {
-            continue;
+        if ('BatchCommitEnd' in row) {
+            batchId = row.BatchCommitEnd.batchId;
         }
-        batchId = row.BatchCommitEnd;
     }
     return batchId;
 }
