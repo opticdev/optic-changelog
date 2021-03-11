@@ -77,8 +77,12 @@ function run() {
             });
             const headBatchId = getLatestBatchId(headContent);
             const baseBatchId = getLatestBatchId(baseContent);
-            core.info(headBatchId);
-            core.info(baseBatchId);
+            const changes = getChangelogData({
+                from: baseBatchId,
+                to: headBatchId,
+                spec: headContent
+            });
+            core.info(JSON.stringify(changes));
         }
         catch (error) {
             core.setFailed(error.message);
@@ -110,6 +114,30 @@ function getLatestBatchId(specContent) {
         }
     }
     return batchId;
+}
+function getChangelogData(options) {
+    core.info(JSON.stringify(options));
+    return {
+        data: {
+            opticUrl: 'https://example.com',
+            endpoints: [
+                {
+                    change: {
+                        category: 'add'
+                    },
+                    path: '/foo',
+                    method: 'get'
+                },
+                {
+                    change: {
+                        category: 'update'
+                    },
+                    path: '/bar',
+                    method: 'post'
+                }
+            ]
+        }
+    };
 }
 // Don't auto-execute in the test environment
 if (process.env['NODE_ENV'] !== 'test') {
