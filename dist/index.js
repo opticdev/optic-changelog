@@ -38,14 +38,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__webpack_require__(186));
 const github = __importStar(__webpack_require__(438));
-// import {HttpClient} from '@actions/http-client'
-// import {
-//   Endpoints,
-// } from '@octokit/types'
-// type ListCommitPullsResponseData = Endpoints['GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls']['response']['data']
-// type CreateIssueCommentResponseData = Endpoints['POST /repos/:owner/:repo/issues/:issue_number/comments']['response']['data']
-// type GetRepoContentResponseData = Endpoints['GET /repos/{owner}/{repo}/contents/{path}']['response']['data']['']
-// type RepoContentResponse = Endpoints['GET /repos/{owner}/{repo}/contents/{path}']['response']
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -60,26 +52,35 @@ function run() {
                 core.info('Unable to determine repository');
                 return;
             }
+            const octokit = github.getOctokit(repoToken);
             const { full_name: repoFullName = '' } = repository;
             const [owner, repo] = repoFullName.split('/');
-            const octokit = github.getOctokit(repoToken);
-            const readme = yield octokit.repos.getContent({
+            const content = yield getSpecificationContent(octokit, {
                 owner,
                 repo,
-                path: 'README.md',
                 ref: commitSha
             });
-            if (!('content' in readme.data)) {
-                core.info('No file content');
-                return;
-            }
-            const buff = Buffer.from(readme.data.content, 'base64');
-            const content = buff.toString('utf-8');
-            core.info(content);
+            core.info(JSON.stringify(content, null, 4));
         }
         catch (error) {
             core.setFailed(error.message);
         }
+    });
+}
+function getSpecificationContent(octokit, { owner, repo, path = '.optic/api/specification.json', ref }) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const response = yield octokit.repos.getContent({
+            owner,
+            repo,
+            path,
+            ref
+        });
+        if (!('content' in response.data)) {
+            return [];
+        }
+        const buff = Buffer.from(response.data.content, 'base64');
+        const content = buff.toString('utf-8');
+        return JSON.parse(content);
     });
 }
 // Don't auto-execute in the test environment
