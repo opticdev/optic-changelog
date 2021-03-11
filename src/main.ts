@@ -15,29 +15,44 @@ async function run(): Promise<void> {
     }
 
     const {
-      payload: {repository},
+      payload: {repository, pull_request: pullRequest},
       sha: commitSha
     } = github.context
-
-    core.info(`Commit sha: ${commitSha}`)
 
     if (!repository) {
       core.info('Unable to determine repository')
       return
     }
 
+    if (!pullRequest) {
+      core.info('Not a pull request')
+      return
+    }
+
     const octokit = github.getOctokit(repoToken)
 
     const {full_name: repoFullName = ''} = repository
+
     const [owner, repo] = repoFullName.split('/')
 
-    const content = await getSpecificationContent(octokit, {
+    const prInfo = await octokit.pulls.get({
       owner,
       repo,
-      ref: commitSha
+      pull_number: pullRequest.number
     })
 
-    core.info(JSON.stringify(content, null, 4))
+    core.info(JSON.stringify(prInfo, null, 4))
+
+    try {
+      const content = await getSpecificationContent(octokit, {
+        owner,
+        repo,
+        ref: commitSha
+      })
+      core.info(JSON.stringify(content, null, 4))
+    } catch (error) {
+      core.setFailed("Couldn't find file")
+    }
   } catch (error) {
     core.setFailed(error.message)
   }
@@ -48,7 +63,7 @@ async function getSpecificationContent(
   {
     owner,
     repo,
-    path = '.optic/api/specification.json1',
+    path = '.optic/api/specification.json',
     ref
   }: {owner: string; repo: string; path?: string; ref: string}
 ): Promise<object[]> {
