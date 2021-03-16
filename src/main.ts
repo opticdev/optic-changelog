@@ -69,26 +69,36 @@ async function run(): Promise<void> {
     })
 
     const message = createPrMessage(changes)
-
-    // TODO: add metadata
-    const body = setMetadata(message, {})
-
     core.info(message)
 
-    await octokit.issues.createComment({
-      owner,
-      repo,
-      issue_number: pullRequest.number,
-      body
-    })
-
-    const comments = await octokit.issues.listComments({
+    const issueComments = await octokit.issues.listComments({
       owner,
       repo,
       issue_number: pullRequest.number
     })
 
-    core.info(JSON.stringify(comments))
+    const botComments = issueComments.data.filter(
+      comment => comment.user?.login === 'github-actions[bot]'
+    )
+
+    if (botComments.length > 0) {
+      const comment = botComments[0]
+      // TODO: need to pull out metadata and combine with new (maybe)
+      const body = setMetadata(message, {})
+      await octokit.issues.updateComment({
+        owner,
+        repo,
+        comment_id: comment.id,
+        body
+      })
+    } else {
+      await octokit.issues.createComment({
+        owner,
+        repo,
+        issue_number: pullRequest.number,
+        body: setMetadata(message, {})
+      })
+    }
   } catch (error) {
     core.setFailed(error.message)
   }
@@ -191,11 +201,18 @@ function createPrMessage(changes: Changelog): string {
     }
   }
 
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/T/, ' ')
+    .replace(/\..+/, '')
+
   return `## Optic Changelog
   
 * Endpoints added: ${results.added}
 * Endpoints updated: ${results.updated}
 * Endpoints removed: ${results.removed}
+
+Last updated: ${timestamp}
 
 [View documentation](${changes.data.opticUrl})`
 }

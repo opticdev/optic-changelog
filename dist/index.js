@@ -85,21 +85,32 @@ function run() {
                 spec: headContent
             });
             const message = createPrMessage(changes);
-            // TODO: add metadata
-            const body = pr_1.setMetadata(message, {});
             core.info(message);
-            yield octokit.issues.createComment({
-                owner,
-                repo,
-                issue_number: pullRequest.number,
-                body
-            });
-            const comments = yield octokit.issues.listComments({
+            const issueComments = yield octokit.issues.listComments({
                 owner,
                 repo,
                 issue_number: pullRequest.number
             });
-            core.info(JSON.stringify(comments));
+            const botComments = issueComments.data.filter(comment => { var _a; return ((_a = comment.user) === null || _a === void 0 ? void 0 : _a.login) === 'github-actions[bot]'; });
+            if (botComments.length > 0) {
+                const comment = botComments[0];
+                // TODO: need to pull out metadata and combine with new (maybe)
+                const body = pr_1.setMetadata(message, {});
+                yield octokit.issues.updateComment({
+                    owner,
+                    repo,
+                    comment_id: comment.id,
+                    body
+                });
+            }
+            else {
+                yield octokit.issues.createComment({
+                    owner,
+                    repo,
+                    issue_number: pullRequest.number,
+                    body: pr_1.setMetadata(message, {})
+                });
+            }
         }
         catch (error) {
             core.setFailed(error.message);
@@ -175,11 +186,17 @@ function createPrMessage(changes) {
                 break;
         }
     }
+    const timestamp = new Date()
+        .toISOString()
+        .replace(/T/, ' ')
+        .replace(/\..+/, '');
     return `## Optic Changelog
   
 * Endpoints added: ${results.added}
 * Endpoints updated: ${results.updated}
 * Endpoints removed: ${results.removed}
+
+Last updated: ${timestamp}
 
 [View documentation](${changes.data.opticUrl})`;
 }
