@@ -2,9 +2,14 @@ name: 'Your name here'
 description: 'Provide a description here'
 author: 'Your name or organization here'
 inputs:
-  GITHUB_TOKEN: # change this
+  GITHUB_TOKEN:
     required: true
     description: 'GitHub token'
+  SUBSCRIBERS:
+    required: false
+    description: |
+      GitHub usernames to notify on API changes, comma seperated
+    default: ""
 runs:
   using: 'node12'
   main: 'dist/index.js'

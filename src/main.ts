@@ -9,6 +9,11 @@ async function run(): Promise<void> {
     const repoToken =
       core.getInput('GITHUB_TOKEN') || process.env['GITHUB_TOKEN']
 
+    const subscribers = core
+      .getInput('subscribers')
+      .split(',')
+      .map(subscriber => subscriber.trim())
+
     if (!repoToken) {
       throw new Error(
         'Please provide a GitHub token. Set one with the repo-token input or GITHUB_TOKEN env variable.'
@@ -20,11 +25,13 @@ async function run(): Promise<void> {
       sha: headSha
     } = github.context
 
+    // We exit quietly because we can't determine any info about the job
     if (!repository) {
       core.info('Unable to determine repository')
       return
     }
 
+    // We exit quietly when it's not a pull request
     if (!pullRequest) {
       core.info('Not a pull request')
       return
@@ -33,15 +40,17 @@ async function run(): Promise<void> {
     const octokit = github.getOctokit(repoToken)
 
     const {full_name: repoFullName = ''} = repository
-
     const [owner, repo] = repoFullName.split('/')
 
+    // We need this to get head and base SHAs
     const prInfo = await octokit.pulls.get({
       owner,
       repo,
       pull_number: pullRequest.number
     })
 
+    // Head SHA comes from job context
+    // Base SHA comes from the PR
     const baseSha = prInfo.data.base.sha
 
     // TODO: Handle file not found
@@ -51,6 +60,7 @@ async function run(): Promise<void> {
       ref: headSha
     })
 
+    // TODO: Handle file not found
     const baseContent = await getSpecificationContent(octokit, {
       owner,
       repo,
@@ -68,8 +78,7 @@ async function run(): Promise<void> {
       spec: headContent
     })
 
-    const message = createPrMessage(changes)
-    core.info(message)
+    const message = createPrMessage(changes, subscribers)
 
     const issueComments = await octokit.issues.listComments({
       owner,
@@ -180,7 +189,7 @@ function getChangelogData(options: object): Changelog {
   }
 }
 
-function createPrMessage(changes: Changelog): string {
+function createPrMessage(changes: Changelog, subscribers: string[]): string {
   const results = {
     added: 0,
     updated: 0,
@@ -206,6 +215,10 @@ function createPrMessage(changes: Changelog): string {
     .replace(/T/, ' ')
     .replace(/\..+/, '')
 
+  const subscriberText = subscribers
+    .map(subscriber => `@${subscriber}`)
+    .join(', ')
+
   return `## Optic Changelog
   
 * Endpoints added: ${results.added}
@@ -214,7 +227,11 @@ function createPrMessage(changes: Changelog): string {
 
 Last updated: ${timestamp}
 
-[View documentation](${changes.data.opticUrl})`
+[View documentation](${changes.data.opticUrl})
+
+---
+
+Pinging subscribers ${subscriberText}`
 }
 
 // Don't auto-execute in the test environment
