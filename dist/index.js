@@ -91,7 +91,9 @@ function run() {
                 repo,
                 issue_number: pullRequest.number
             });
-            const botComments = issueComments.data.filter(comment => { var _a; return ((_a = comment.user) === null || _a === void 0 ? void 0 : _a.login) === 'github-actions[bot]'; });
+            const botComments = issueComments.data
+                .filter(comment => { var _a; return ((_a = comment.user) === null || _a === void 0 ? void 0 : _a.login) === 'github-actions[bot]'; })
+                .filter(comment => pr_1.isOpticComment(comment.body));
             if (botComments.length > 0) {
                 const comment = botComments[0];
                 // TODO: need to pull out metadata and combine with new (maybe)

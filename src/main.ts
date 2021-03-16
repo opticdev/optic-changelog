@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {GitHub} from '@actions/github/lib/utils'
-import {setMetadata} from './pr'
+import {setMetadata, isOpticComment} from './pr'
 
 async function run(): Promise<void> {
   try {
@@ -77,9 +77,9 @@ async function run(): Promise<void> {
       issue_number: pullRequest.number
     })
 
-    const botComments = issueComments.data.filter(
-      comment => comment.user?.login === 'github-actions[bot]'
-    )
+    const botComments = issueComments.data
+      .filter(comment => comment.user?.login === 'github-actions[bot]')
+      .filter(comment => isOpticComment(comment.body!))
 
     if (botComments.length > 0) {
       const comment = botComments[0]
