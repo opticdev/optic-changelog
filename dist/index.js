@@ -44,14 +44,20 @@ function run() {
         try {
             // We allow for using `with` or `env`
             const repoToken = core.getInput('GITHUB_TOKEN') || process.env['GITHUB_TOKEN'];
+            const subscribers = core
+                .getInput('subscribers')
+                .split(',')
+                .map(subscriber => subscriber.trim());
             if (!repoToken) {
                 throw new Error('Please provide a GitHub token. Set one with the repo-token input or GITHUB_TOKEN env variable.');
             }
             const { payload: { repository, pull_request: pullRequest }, sha: headSha } = github.context;
+            // We exit quietly because we can't determine any info about the job
             if (!repository) {
                 core.info('Unable to determine repository');
                 return;
             }
+            // We exit quietly when it's not a pull request
             if (!pullRequest) {
                 core.info('Not a pull request');
                 return;
@@ -59,11 +65,14 @@ function run() {
             const octokit = github.getOctokit(repoToken);
             const { full_name: repoFullName = '' } = repository;
             const [owner, repo] = repoFullName.split('/');
+            // We need this to get head and base SHAs
             const prInfo = yield octokit.pulls.get({
                 owner,
                 repo,
                 pull_number: pullRequest.number
             });
+            // Head SHA comes from job context
+            // Base SHA comes from the PR
             const baseSha = prInfo.data.base.sha;
             // TODO: Handle file not found
             const headContent = yield getSpecificationContent(octokit, {
@@ -71,6 +80,7 @@ function run() {
                 repo,
                 ref: headSha
             });
+            // TODO: Handle file not found
             const baseContent = yield getSpecificationContent(octokit, {
                 owner,
                 repo,
@@ -84,8 +94,7 @@ function run() {
                 to: headBatchId,
                 spec: headContent
             });
-            const message = createPrMessage(changes);
-            core.info(message);
+            const message = createPrMessage(changes, subscribers);
             const issueComments = yield octokit.issues.listComments({
                 owner,
                 repo,
@@ -169,7 +178,7 @@ function getChangelogData(options) {
         }
     };
 }
-function createPrMessage(changes) {
+function createPrMessage(changes, subscribers) {
     const results = {
         added: 0,
         updated: 0,
@@ -192,6 +201,9 @@ function createPrMessage(changes) {
         .toISOString()
         .replace(/T/, ' ')
         .replace(/\..+/, '');
+    const subscriberText = subscribers
+        .map(subscriber => `@${subscriber}`)
+        .join(', ');
     return `## Optic Changelog
   
 * Endpoints added: ${results.added}
@@ -200,7 +212,11 @@ function createPrMessage(changes) {
 
 Last updated: ${timestamp}
 
-[View documentation](${changes.data.opticUrl})`;
+[View documentation](${changes.data.opticUrl})
+
+---
+
+Pinging subscribers ${subscriberText}`;
 }
 // Don't auto-execute in the test environment
 if (process.env['NODE_ENV'] !== 'test') {
