@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {GitHub} from '@actions/github/lib/utils'
+import {setMetadata} from './pr'
 
 async function run(): Promise<void> {
   try {
@@ -70,6 +71,13 @@ async function run(): Promise<void> {
     const message = createPrMessage(changes)
 
     core.info(message)
+
+    await octokit.issues.createComment({
+      owner,
+      repo,
+      issue_number: pullRequest.number,
+      body: setMetadata(message, {})
+    })
   } catch (error) {
     core.setFailed(error.message)
   }
