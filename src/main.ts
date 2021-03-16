@@ -95,7 +95,7 @@ async function run(): Promise<void> {
       to: headContent
     })
 
-    if (!changes.data.endpoints) {
+    if (changes.data.endpoints.length === 0) {
       core.info('No API changes in this PR.')
       return
     }
