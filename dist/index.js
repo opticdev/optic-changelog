@@ -38,6 +38,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__webpack_require__(186));
 const github = __importStar(__webpack_require__(438));
+const pr_1 = __webpack_require__(515);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -85,6 +86,12 @@ function run() {
             });
             const message = createPrMessage(changes);
             core.info(message);
+            yield octokit.issues.createComment({
+                owner,
+                repo,
+                issue_number: pullRequest.number,
+                body: pr_1.setMetadata(message, {})
+            });
         }
         catch (error) {
             core.setFailed(error.message);
@@ -172,6 +179,39 @@ function createPrMessage(changes) {
 if (process.env['NODE_ENV'] !== 'test') {
     run();
 }
+
+
+/***/ }),
+
+/***/ 515:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.setMetadata = exports.getMetadata = exports.isOpticComment = void 0;
+const REGEX = /\n\n<!-- optic = (.*) -->/;
+function isOpticComment(body) {
+    return body.match(REGEX) ? true : false;
+}
+exports.isOpticComment = isOpticComment;
+function getMetadata(body) {
+    const match = body.match(REGEX);
+    if (match) {
+        return JSON.parse(match[1]);
+    }
+    return {};
+}
+exports.getMetadata = getMetadata;
+function setMetadata(body, data) {
+    let currentData = {};
+    const bodyText = body.replace(REGEX, (_, json) => {
+        currentData = JSON.parse(json);
+        return '';
+    });
+    return `${bodyText}\n\n<!-- optic = ${JSON.stringify(Object.assign(Object.assign({}, currentData), data))} -->`;
+}
+exports.setMetadata = setMetadata;
 
 
 /***/ }),

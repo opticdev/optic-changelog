@@ -15,12 +15,15 @@ export function getMetadata(body: string): any {
 }
 
 export function setMetadata(body: string, data: any): string {
-  let currentData = {};
-  
+  let currentData = {}
+
   const bodyText = body.replace(REGEX, (_, json) => {
     currentData = JSON.parse(json)
     return ''
   })
 
-  return `${bodyText}\n\n<!-- optic = ${JSON.stringify({...currentData, ...data})} -->`
+  return `${bodyText}\n\n<!-- optic = ${JSON.stringify({
+    ...currentData,
+    ...data
+  })} -->`
 }
