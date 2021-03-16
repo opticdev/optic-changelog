@@ -5,6 +5,11 @@ inputs:
   GITHUB_TOKEN:
     required: true
     description: 'GitHub token'
+  OPTIC_SPEC_PATH:
+    required: false
+    description: |
+      File location relative to root for the Optic spec file.
+    default: .optic/api/specification.json
   SUBSCRIBERS:
     required: false
     description: |

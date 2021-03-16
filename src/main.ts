@@ -14,6 +14,8 @@ async function run(): Promise<void> {
       .split(',')
       .map(subscriber => subscriber.trim())
 
+    const opticSpecPath = core.getInput('OPTIC_SPEC_PATH')
+
     if (!repoToken) {
       throw new Error(
         'Please provide a GitHub token. Set one with the repo-token input or GITHUB_TOKEN env variable.'
@@ -57,14 +59,16 @@ async function run(): Promise<void> {
     const headContent = await getSpecificationContent(octokit, {
       owner,
       repo,
-      ref: headSha
+      ref: headSha,
+      path: opticSpecPath
     })
 
     // TODO: Handle file not found
     const baseContent = await getSpecificationContent(octokit, {
       owner,
       repo,
-      ref: baseSha
+      ref: baseSha,
+      path: opticSpecPath
     })
 
     const headBatchId = getLatestBatchId(headContent)
@@ -118,9 +122,9 @@ async function getSpecificationContent(
   {
     owner,
     repo,
-    path = '.optic/api/specification.json',
+    path,
     ref
-  }: {owner: string; repo: string; path?: string; ref: string}
+  }: {owner: string; repo: string; path: string; ref: string}
 ): Promise<object[]> {
   const response = await octokit.repos.getContent({
     owner,

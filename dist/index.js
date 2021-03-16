@@ -48,6 +48,7 @@ function run() {
                 .getInput('subscribers')
                 .split(',')
                 .map(subscriber => subscriber.trim());
+            const opticSpecPath = core.getInput('OPTIC_SPEC_PATH');
             if (!repoToken) {
                 throw new Error('Please provide a GitHub token. Set one with the repo-token input or GITHUB_TOKEN env variable.');
             }
@@ -78,13 +79,15 @@ function run() {
             const headContent = yield getSpecificationContent(octokit, {
                 owner,
                 repo,
-                ref: headSha
+                ref: headSha,
+                path: opticSpecPath
             });
             // TODO: Handle file not found
             const baseContent = yield getSpecificationContent(octokit, {
                 owner,
                 repo,
-                ref: baseSha
+                ref: baseSha,
+                path: opticSpecPath
             });
             const headBatchId = getLatestBatchId(headContent);
             const baseBatchId = getLatestBatchId(baseContent);
@@ -128,7 +131,7 @@ function run() {
         }
     });
 }
-function getSpecificationContent(octokit, { owner, repo, path = '.optic/api/specification.json', ref }) {
+function getSpecificationContent(octokit, { owner, repo, path, ref }) {
     return __awaiter(this, void 0, void 0, function* () {
         const response = yield octokit.repos.getContent({
             owner,
