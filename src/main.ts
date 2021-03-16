@@ -70,7 +70,7 @@ async function run(): Promise<void> {
     } catch (error) {
       // Failing silently here
       core.info(
-        `Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}`
+        `Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}.`
       )
       return
     }
@@ -80,12 +80,12 @@ async function run(): Promise<void> {
         owner,
         repo,
         ref: baseSha,
-        path: opticSpecPath
+        path: 'asdf.yml'
       })
     } catch (error) {
       // Failing silently here
       core.info(
-        `Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}`
+        `Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`
       )
       return
     }

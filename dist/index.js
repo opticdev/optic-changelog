@@ -88,7 +88,7 @@ function run() {
             }
             catch (error) {
                 // Failing silently here
-                core.info(`Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}`);
+                core.info(`Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}.`);
                 return;
             }
             // Could be moved or new Optic setup
@@ -97,12 +97,12 @@ function run() {
                     owner,
                     repo,
                     ref: baseSha,
-                    path: opticSpecPath
+                    path: 'asdf.yml'
                 });
             }
             catch (error) {
                 // Failing silently here
-                core.info(`Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}`);
+                core.info(`Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`);
                 return;
             }
             const changes = getChangelogData({

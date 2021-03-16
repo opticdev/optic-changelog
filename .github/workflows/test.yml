@@ -23,4 +23,3 @@ jobs:
         with:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
           SUBSCRIBERS: smizell
-          OPTIC_SPEC_PATH: foo.yml
