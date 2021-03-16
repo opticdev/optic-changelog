@@ -80,7 +80,7 @@ async function run(): Promise<void> {
         owner,
         repo,
         ref: baseSha,
-        path: 'asdf.yml'
+        path: opticSpecPath
       })
     } catch (error) {
       // Failing silently here
@@ -95,7 +95,10 @@ async function run(): Promise<void> {
       to: headContent
     })
 
-    // TODO: Handle no changes
+    if (!changes) {
+      core.info('No API changes in this PR.')
+      return
+    }
 
     const message = generateCommentBody(changes, subscribers)
 
@@ -164,20 +167,20 @@ function getChangelogData(options: object): Changelog {
     data: {
       opticUrl: 'https://example.com',
       endpoints: [
-        {
-          change: {
-            category: 'added'
-          },
-          path: '/foo',
-          method: 'get'
-        },
-        {
-          change: {
-            category: 'updated'
-          },
-          path: '/bar',
-          method: 'post'
-        }
+        // {
+        //   change: {
+        //     category: 'added'
+        //   },
+        //   path: '/foo',
+        //   method: 'get'
+        // },
+        // {
+        //   change: {
+        //     category: 'updated'
+        //   },
+        //   path: '/bar',
+        //   method: 'post'
+        // }
       ]
     }
   }

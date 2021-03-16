@@ -97,7 +97,7 @@ function run() {
                     owner,
                     repo,
                     ref: baseSha,
-                    path: 'asdf.yml'
+                    path: opticSpecPath
                 });
             }
             catch (error) {
@@ -109,7 +109,10 @@ function run() {
                 from: baseContent,
                 to: headContent
             });
-            // TODO: Handle no changes
+            if (!changes) {
+                core.info('No API changes in this PR.');
+                return;
+            }
             const message = pr_1.generateCommentBody(changes, subscribers);
             const issueComments = yield octokit.issues.listComments({
                 owner,
@@ -167,20 +170,20 @@ function getChangelogData(options) {
         data: {
             opticUrl: 'https://example.com',
             endpoints: [
-                {
-                    change: {
-                        category: 'added'
-                    },
-                    path: '/foo',
-                    method: 'get'
-                },
-                {
-                    change: {
-                        category: 'updated'
-                    },
-                    path: '/bar',
-                    method: 'post'
-                }
+            // {
+            //   change: {
+            //     category: 'added'
+            //   },
+            //   path: '/foo',
+            //   method: 'get'
+            // },
+            // {
+            //   change: {
+            //     category: 'updated'
+            //   },
+            //   path: '/bar',
+            //   method: 'post'
+            // }
             ]
         }
     };
