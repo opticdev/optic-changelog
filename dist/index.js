@@ -75,17 +75,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__webpack_require__(186));
 const github = __importStar(__webpack_require__(438));
-// import {setMetadata, isOpticComment, generateCommentBody} from './pr'
+const pr_1 = __webpack_require__(515);
 const changelog_1 = __webpack_require__(82);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             // We allow for using `with` or `env`
             const repoToken = core.getInput('GITHUB_TOKEN') || process.env['GITHUB_TOKEN'];
-            // const subscribers = core
-            //   .getInput('subscribers')
-            //   .split(',')
-            //   .map(subscriber => subscriber.trim())
+            const subscribers = core
+                .getInput('subscribers')
+                .split(',')
+                .map(subscriber => subscriber.trim());
             const opticSpecPath = core.getInput('OPTIC_SPEC_PATH');
             if (!repoToken) {
                 throw new Error('Please provide a GitHub token. Set one with the repo-token input or GITHUB_TOKEN env variable.');
@@ -152,40 +152,37 @@ function run() {
                 return;
             }
             try {
-                // const message = generateCommentBody(changes, subscribers)
-                // const issueComments = await octokit.issues.listComments({
-                //   owner,
-                //   repo,
-                //   issue_number: pullRequest.number
-                // })
-                //
-                // const existingBotComments = issueComments.data
-                //   .filter(comment => comment.user?.login === 'github-actions[bot]')
-                //   .filter(comment => isOpticComment(comment.body!))
-                //
-                // if (existingBotComments.length > 0) {
-                //   const comment = existingBotComments[0]
-                //   // TODO: need to pull out metadata and combine with new (maybe)
-                //   const body = setMetadata(message, {})
-                //   await octokit.issues.updateComment({
-                //     owner,
-                //     repo,
-                //     comment_id: comment.id,
-                //     body
-                //   })
-                // } else {
-                //   await octokit.issues.createComment({
-                //     owner,
-                //     repo,
-                //     issue_number: pullRequest.number,
-                //     body: setMetadata(message, {})
-                //   })
-                // }
-                throw new Error('test here');
+                const message = pr_1.generateCommentBody(changes, subscribers);
+                const issueComments = yield octokit.issues.listComments({
+                    owner,
+                    repo,
+                    issue_number: pullRequest.number
+                });
+                const existingBotComments = issueComments.data
+                    .filter(comment => { var _a; return ((_a = comment.user) === null || _a === void 0 ? void 0 : _a.login) === 'github-actions[bot]'; })
+                    .filter(comment => pr_1.isOpticComment(comment.body));
+                if (existingBotComments.length > 0) {
+                    const comment = existingBotComments[0];
+                    // TODO: need to pull out metadata and combine with new (maybe)
+                    const body = pr_1.setMetadata(message, {});
+                    yield octokit.issues.updateComment({
+                        owner,
+                        repo,
+                        comment_id: comment.id,
+                        body
+                    });
+                }
+                else {
+                    yield octokit.issues.createComment({
+                        owner,
+                        repo,
+                        issue_number: pullRequest.number,
+                        body: pr_1.setMetadata(message, {})
+                    });
+                }
             }
             catch (error) {
-                core.error(error);
-                core.setFailed('There was an error creating a PR comment.');
+                core.setFailed(`There was an error creating a PR comment. Error message: ${error.message}`);
             }
         }
         catch (error) {
@@ -213,6 +210,80 @@ function getSpecificationContent(octokit, { owner, repo, path, ref }) {
 if (process.env['NODE_ENV'] !== 'test') {
     run();
 }
+
+
+/***/ }),
+
+/***/ 515:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.generateCommentBody = exports.setMetadata = exports.getMetadata = exports.isOpticComment = void 0;
+const REGEX = /\n\n<!-- optic = (.*) -->/;
+function isOpticComment(body) {
+    return body.match(REGEX) ? true : false;
+}
+exports.isOpticComment = isOpticComment;
+function getMetadata(body) {
+    const match = body.match(REGEX);
+    if (match) {
+        return JSON.parse(match[1]);
+    }
+    return {};
+}
+exports.getMetadata = getMetadata;
+function setMetadata(body, data) {
+    let currentData = {};
+    const bodyText = body.replace(REGEX, (_, json) => {
+        currentData = JSON.parse(json);
+        return '';
+    });
+    return `${bodyText}\n\n<!-- optic = ${JSON.stringify(Object.assign(Object.assign({}, currentData), data))} -->`;
+}
+exports.setMetadata = setMetadata;
+function generateCommentBody(changes, subscribers) {
+    const results = {
+        added: 0,
+        updated: 0,
+        removed: 0
+    };
+    for (const endpoint of changes.data.endpoints) {
+        switch (endpoint.change.category) {
+            case 'added':
+                results.added++;
+                break;
+            case 'updated':
+                results.updated++;
+                break;
+            case 'removed':
+                results.removed++;
+                break;
+        }
+    }
+    const timestamp = new Date()
+        .toISOString()
+        .replace(/T/, ' ')
+        .replace(/\..+/, '');
+    const subscriberText = subscribers
+        .map(subscriber => `@${subscriber}`)
+        .join(', ');
+    return `## Optic Changelog
+  
+* Endpoints added: ${results.added}
+* Endpoints updated: ${results.updated}
+* Endpoints removed: ${results.removed}
+
+Last updated: ${timestamp}
+
+[View documentation](${changes.data.opticUrl})
+
+---
+
+Pinging subscribers ${subscriberText}`;
+}
+exports.generateCommentBody = generateCommentBody;
 
 
 /***/ }),

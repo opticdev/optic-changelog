@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {GitHub} from '@actions/github/lib/utils'
-// import {setMetadata, isOpticComment, generateCommentBody} from './pr'
+import {setMetadata, isOpticComment, generateCommentBody} from './pr'
 import {getChangelogData} from './changelog'
 
 async function run(): Promise<void> {
@@ -10,10 +10,10 @@ async function run(): Promise<void> {
     const repoToken =
       core.getInput('GITHUB_TOKEN') || process.env['GITHUB_TOKEN']
 
-    // const subscribers = core
-    //   .getInput('subscribers')
-    //   .split(',')
-    //   .map(subscriber => subscriber.trim())
+    const subscribers = core
+      .getInput('subscribers')
+      .split(',')
+      .map(subscriber => subscriber.trim())
 
     const opticSpecPath = core.getInput('OPTIC_SPEC_PATH')
 
@@ -101,39 +101,39 @@ async function run(): Promise<void> {
     }
 
     try {
-      // const message = generateCommentBody(changes, subscribers)
-      // const issueComments = await octokit.issues.listComments({
-      //   owner,
-      //   repo,
-      //   issue_number: pullRequest.number
-      // })
-      //
-      // const existingBotComments = issueComments.data
-      //   .filter(comment => comment.user?.login === 'github-actions[bot]')
-      //   .filter(comment => isOpticComment(comment.body!))
-      //
-      // if (existingBotComments.length > 0) {
-      //   const comment = existingBotComments[0]
-      //   // TODO: need to pull out metadata and combine with new (maybe)
-      //   const body = setMetadata(message, {})
-      //   await octokit.issues.updateComment({
-      //     owner,
-      //     repo,
-      //     comment_id: comment.id,
-      //     body
-      //   })
-      // } else {
-      //   await octokit.issues.createComment({
-      //     owner,
-      //     repo,
-      //     issue_number: pullRequest.number,
-      //     body: setMetadata(message, {})
-      //   })
-      // }
-      throw new Error('test here')
+      const message = generateCommentBody(changes, subscribers)
+      const issueComments = await octokit.issues.listComments({
+        owner,
+        repo,
+        issue_number: pullRequest.number
+      })
+
+      const existingBotComments = issueComments.data
+        .filter(comment => comment.user?.login === 'github-actions[bot]')
+        .filter(comment => isOpticComment(comment.body!))
+
+      if (existingBotComments.length > 0) {
+        const comment = existingBotComments[0]
+        // TODO: need to pull out metadata and combine with new (maybe)
+        const body = setMetadata(message, {})
+        await octokit.issues.updateComment({
+          owner,
+          repo,
+          comment_id: comment.id,
+          body
+        })
+      } else {
+        await octokit.issues.createComment({
+          owner,
+          repo,
+          issue_number: pullRequest.number,
+          body: setMetadata(message, {})
+        })
+      }
     } catch (error) {
-      core.error(error)
-      core.setFailed('There was an error creating a PR comment.')
+      core.setFailed(
+        `There was an error creating a PR comment. Error message: ${error.message}`
+      )
     }
   } catch (error) {
     core.setFailed(error.message)
