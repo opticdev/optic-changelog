@@ -1,7 +1,8 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {GitHub} from '@actions/github/lib/utils'
-import {setMetadata, isOpticComment} from './pr'
+import {setMetadata, isOpticComment, generateCommentBody} from './pr'
+import {Changelog} from './types'
 
 async function run(): Promise<void> {
   try {
@@ -71,18 +72,14 @@ async function run(): Promise<void> {
       path: opticSpecPath
     })
 
-    const headBatchId = getLatestBatchId(headContent)
-    const baseBatchId = getLatestBatchId(baseContent)
-
     // TODO: if the IDs match, this should return
 
     const changes = getChangelogData({
-      from: baseBatchId,
-      to: headBatchId,
-      spec: headContent
+      from: baseContent,
+      to: headContent
     })
 
-    const message = createPrMessage(changes, subscribers)
+    const message = generateCommentBody(changes, subscribers)
 
     const issueComments = await octokit.issues.listComments({
       owner,
@@ -142,32 +139,7 @@ async function getSpecificationContent(
   return JSON.parse(content)
 }
 
-// TODO: using any for now
-function getLatestBatchId(specContent: any[]): string {
-  let batchId = 'none'
-
-  for (const row of specContent) {
-    if ('BatchCommitEnded' in row) {
-      batchId = row.BatchCommitEnded.batchId
-    }
-  }
-
-  return batchId
-}
-
-type Changelog = {
-  data: {
-    opticUrl: string
-    endpoints: {
-      change: {
-        category: string
-      }
-      path: string
-      method: string
-    }[]
-  }
-}
-
+// TODO: this is fake data for now
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getChangelogData(options: object): Changelog {
   return {
@@ -191,51 +163,6 @@ function getChangelogData(options: object): Changelog {
       ]
     }
   }
-}
-
-function createPrMessage(changes: Changelog, subscribers: string[]): string {
-  const results = {
-    added: 0,
-    updated: 0,
-    removed: 0
-  }
-
-  for (const endpoint of changes.data.endpoints) {
-    switch (endpoint.change.category) {
-      case 'added':
-        results.added++
-        break
-      case 'updated':
-        results.updated++
-        break
-      case 'removed':
-        results.removed++
-        break
-    }
-  }
-
-  const timestamp = new Date()
-    .toISOString()
-    .replace(/T/, ' ')
-    .replace(/\..+/, '')
-
-  const subscriberText = subscribers
-    .map(subscriber => `@${subscriber}`)
-    .join(', ')
-
-  return `## Optic Changelog
-  
-* Endpoints added: ${results.added}
-* Endpoints updated: ${results.updated}
-* Endpoints removed: ${results.removed}
-
-Last updated: ${timestamp}
-
-[View documentation](${changes.data.opticUrl})
-
----
-
-Pinging subscribers ${subscriberText}`
 }
 
 // Don't auto-execute in the test environment

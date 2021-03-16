@@ -1,3 +1,5 @@
+import {Changelog} from './types'
+
 const REGEX = /\n\n<!-- optic = (.*) -->/
 
 export function isOpticComment(body: string): boolean {
@@ -26,4 +28,52 @@ export function setMetadata(body: string, data: any): string {
     ...currentData,
     ...data
   })} -->`
+}
+
+export function generateCommentBody(
+  changes: Changelog,
+  subscribers: string[]
+): string {
+  const results = {
+    added: 0,
+    updated: 0,
+    removed: 0
+  }
+
+  for (const endpoint of changes.data.endpoints) {
+    switch (endpoint.change.category) {
+      case 'added':
+        results.added++
+        break
+      case 'updated':
+        results.updated++
+        break
+      case 'removed':
+        results.removed++
+        break
+    }
+  }
+
+  const timestamp = new Date()
+    .toISOString()
+    .replace(/T/, ' ')
+    .replace(/\..+/, '')
+
+  const subscriberText = subscribers
+    .map(subscriber => `@${subscriber}`)
+    .join(', ')
+
+  return `## Optic Changelog
+  
+* Endpoints added: ${results.added}
+* Endpoints updated: ${results.updated}
+* Endpoints removed: ${results.removed}
+
+Last updated: ${timestamp}
+
+[View documentation](${changes.data.opticUrl})
+
+---
+
+Pinging subscribers ${subscriberText}`
 }

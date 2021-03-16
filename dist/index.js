@@ -89,15 +89,12 @@ function run() {
                 ref: baseSha,
                 path: opticSpecPath
             });
-            const headBatchId = getLatestBatchId(headContent);
-            const baseBatchId = getLatestBatchId(baseContent);
             // TODO: if the IDs match, this should return
             const changes = getChangelogData({
-                from: baseBatchId,
-                to: headBatchId,
-                spec: headContent
+                from: baseContent,
+                to: headContent
             });
-            const message = createPrMessage(changes, subscribers);
+            const message = pr_1.generateCommentBody(changes, subscribers);
             const issueComments = yield octokit.issues.listComments({
                 owner,
                 repo,
@@ -147,16 +144,7 @@ function getSpecificationContent(octokit, { owner, repo, path, ref }) {
         return JSON.parse(content);
     });
 }
-// TODO: using any for now
-function getLatestBatchId(specContent) {
-    let batchId = 'none';
-    for (const row of specContent) {
-        if ('BatchCommitEnded' in row) {
-            batchId = row.BatchCommitEnded.batchId;
-        }
-    }
-    return batchId;
-}
+// TODO: this is fake data for now
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getChangelogData(options) {
     return {
@@ -181,7 +169,44 @@ function getChangelogData(options) {
         }
     };
 }
-function createPrMessage(changes, subscribers) {
+// Don't auto-execute in the test environment
+if (process.env['NODE_ENV'] !== 'test') {
+    run();
+}
+
+
+/***/ }),
+
+/***/ 515:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.generateCommentBody = exports.setMetadata = exports.getMetadata = exports.isOpticComment = void 0;
+const REGEX = /\n\n<!-- optic = (.*) -->/;
+function isOpticComment(body) {
+    return body.match(REGEX) ? true : false;
+}
+exports.isOpticComment = isOpticComment;
+function getMetadata(body) {
+    const match = body.match(REGEX);
+    if (match) {
+        return JSON.parse(match[1]);
+    }
+    return {};
+}
+exports.getMetadata = getMetadata;
+function setMetadata(body, data) {
+    let currentData = {};
+    const bodyText = body.replace(REGEX, (_, json) => {
+        currentData = JSON.parse(json);
+        return '';
+    });
+    return `${bodyText}\n\n<!-- optic = ${JSON.stringify(Object.assign(Object.assign({}, currentData), data))} -->`;
+}
+exports.setMetadata = setMetadata;
+function generateCommentBody(changes, subscribers) {
     const results = {
         added: 0,
         updated: 0,
@@ -221,43 +246,7 @@ Last updated: ${timestamp}
 
 Pinging subscribers ${subscriberText}`;
 }
-// Don't auto-execute in the test environment
-if (process.env['NODE_ENV'] !== 'test') {
-    run();
-}
-
-
-/***/ }),
-
-/***/ 515:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.setMetadata = exports.getMetadata = exports.isOpticComment = void 0;
-const REGEX = /\n\n<!-- optic = (.*) -->/;
-function isOpticComment(body) {
-    return body.match(REGEX) ? true : false;
-}
-exports.isOpticComment = isOpticComment;
-function getMetadata(body) {
-    const match = body.match(REGEX);
-    if (match) {
-        return JSON.parse(match[1]);
-    }
-    return {};
-}
-exports.getMetadata = getMetadata;
-function setMetadata(body, data) {
-    let currentData = {};
-    const bodyText = body.replace(REGEX, (_, json) => {
-        currentData = JSON.parse(json);
-        return '';
-    });
-    return `${bodyText}\n\n<!-- optic = ${JSON.stringify(Object.assign(Object.assign({}, currentData), data))} -->`;
-}
-exports.setMetadata = setMetadata;
+exports.generateCommentBody = generateCommentBody;
 
 
 /***/ }),
