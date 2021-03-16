@@ -75,25 +75,41 @@ function run() {
             // Head SHA comes from job context
             // Base SHA comes from the PR
             const baseSha = prInfo.data.base.sha;
-            // TODO: Handle file not found
-            const headContent = yield getSpecificationContent(octokit, {
-                owner,
-                repo,
-                ref: headSha,
-                path: opticSpecPath
-            });
-            // TODO: Handle file not found
-            const baseContent = yield getSpecificationContent(octokit, {
-                owner,
-                repo,
-                ref: baseSha,
-                path: opticSpecPath
-            });
-            // TODO: if the IDs match, this should return
+            const baseBranch = prInfo.data.base.ref;
+            let headContent, baseContent;
+            // Could be moved or removed
+            try {
+                headContent = yield getSpecificationContent(octokit, {
+                    owner,
+                    repo,
+                    ref: headSha,
+                    path: opticSpecPath
+                });
+            }
+            catch (error) {
+                // Failing silently here
+                core.info(`Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}`);
+                return;
+            }
+            // Could be moved or new Optic setup
+            try {
+                baseContent = yield getSpecificationContent(octokit, {
+                    owner,
+                    repo,
+                    ref: baseSha,
+                    path: opticSpecPath
+                });
+            }
+            catch (error) {
+                // Failing silently here
+                core.info(`Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}`);
+                return;
+            }
             const changes = getChangelogData({
                 from: baseContent,
                 to: headContent
             });
+            // TODO: Handle no changes
             const message = pr_1.generateCommentBody(changes, subscribers);
             const issueComments = yield octokit.issues.listComments({
                 owner,
