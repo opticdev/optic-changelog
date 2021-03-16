@@ -82,7 +82,7 @@ async function run(): Promise<void> {
       body
     })
 
-    const comments = octokit.issues.listComments({
+    const comments = await octokit.issues.listComments({
       owner,
       repo,
       issue_number: pullRequest.number

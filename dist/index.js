@@ -94,7 +94,7 @@ function run() {
                 issue_number: pullRequest.number,
                 body
             });
-            const comments = octokit.issues.listComments({
+            const comments = yield octokit.issues.listComments({
                 owner,
                 repo,
                 issue_number: pullRequest.number
