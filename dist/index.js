@@ -85,13 +85,21 @@ function run() {
                 spec: headContent
             });
             const message = createPrMessage(changes);
+            // TODO: add metadata
+            const body = pr_1.setMetadata(message, {});
             core.info(message);
             yield octokit.issues.createComment({
                 owner,
                 repo,
                 issue_number: pullRequest.number,
-                body: pr_1.setMetadata(message, {})
+                body
             });
+            const comments = octokit.issues.listComments({
+                owner,
+                repo,
+                issue_number: pullRequest.number
+            });
+            core.info(JSON.stringify(comments));
         }
         catch (error) {
             core.setFailed(error.message);

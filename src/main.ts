@@ -70,14 +70,25 @@ async function run(): Promise<void> {
 
     const message = createPrMessage(changes)
 
+    // TODO: add metadata
+    const body = setMetadata(message, {})
+
     core.info(message)
 
     await octokit.issues.createComment({
       owner,
       repo,
       issue_number: pullRequest.number,
-      body: setMetadata(message, {})
+      body
     })
+
+    const comments = octokit.issues.listComments({
+      owner,
+      repo,
+      issue_number: pullRequest.number
+    })
+
+    core.info(JSON.stringify(comments))
   } catch (error) {
     core.setFailed(error.message)
   }
