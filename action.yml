@@ -1,6 +1,7 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'Optic Changelog'
+description: |
+  Generate a changelog for your Optic spec
+author: 'Optic'
 inputs:
   GITHUB_TOKEN:
     required: true
