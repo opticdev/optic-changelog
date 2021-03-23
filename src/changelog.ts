@@ -1,3 +1,4 @@
+// TODO: refactor to not rely on @actions/core
 import * as core from '@actions/core'
 import {Changelog} from './types'
 import {setMetadata, isOpticComment, generateCommentBody} from './pr'
@@ -18,6 +19,7 @@ export async function runOpticChangelog({
     headContent = await gitHubRepo.getFileContent(headSha, opticSpecPath)
   } catch (error) {
     // Failing silently here
+    // TODO: Throw instead of log and return
     core.info(
       `Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}.`
     )
@@ -29,6 +31,7 @@ export async function runOpticChangelog({
     baseContent = await gitHubRepo.getFileContent(baseSha, opticSpecPath)
   } catch (error) {
     // Failing silently here
+    // TODO: Throw instead of log and return
     core.info(
       `Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`
     )
@@ -42,6 +45,7 @@ export async function runOpticChangelog({
   })
 
   if (changes.data.endpoints.length === 0) {
+    // TODO: Throw instead of log and return
     core.info('No API changes in this PR.')
     return
   }
@@ -60,6 +64,7 @@ export async function runOpticChangelog({
       await gitHubRepo.createPrComment(prNumber, setMetadata(message, {}))
     }
   } catch (error) {
+    // TODO: Throw instead of log and return
     core.setFailed(
       `There was an error creating a PR comment. Error message: ${error.message}`
     )
