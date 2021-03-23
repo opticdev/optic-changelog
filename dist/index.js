@@ -37,6 +37,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getChangelogData = exports.runOpticChangelog = void 0;
+// TODO: refactor to not rely on @actions/core
 const core = __importStar(__webpack_require__(186));
 const pr_1 = __webpack_require__(515);
 function runOpticChangelog({ subscribers, opticSpecPath, gitHubRepo, headSha, baseSha, baseBranch, prNumber }) {
@@ -48,6 +49,7 @@ function runOpticChangelog({ subscribers, opticSpecPath, gitHubRepo, headSha, ba
         }
         catch (error) {
             // Failing silently here
+            // TODO: Throw instead of log and return
             core.info(`Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}.`);
             return;
         }
@@ -57,6 +59,7 @@ function runOpticChangelog({ subscribers, opticSpecPath, gitHubRepo, headSha, ba
         }
         catch (error) {
             // Failing silently here
+            // TODO: Throw instead of log and return
             core.info(`Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`);
             return;
         }
@@ -66,12 +69,14 @@ function runOpticChangelog({ subscribers, opticSpecPath, gitHubRepo, headSha, ba
             to: JSON.parse(headContent)
         });
         if (changes.data.endpoints.length === 0) {
+            // TODO: Throw instead of log and return
             core.info('No API changes in this PR.');
             return;
         }
         try {
-            const existingBotComments = (yield gitHubRepo.getPrBotComments(prNumber))
-                .filter(comment => pr_1.isOpticComment(comment.body));
+            // TODO: probably should be simplified a bit
+            const existingBotComments = (yield gitHubRepo.getPrBotComments(prNumber)).filter(comment => pr_1.isOpticComment(comment.body));
+            core.info(JSON.stringify(existingBotComments));
             if (existingBotComments.length > 0) {
                 const comment = existingBotComments[0];
                 // TODO: need to pull out metadata and combine with new (maybe)
@@ -84,6 +89,7 @@ function runOpticChangelog({ subscribers, opticSpecPath, gitHubRepo, headSha, ba
             }
         }
         catch (error) {
+            // TODO: Throw instead of log and return
             core.setFailed(`There was an error creating a PR comment. Error message: ${error.message}`);
         }
     });
@@ -250,8 +256,7 @@ class GitHubRepository {
                 repo: this.repo,
                 issue_number: prNumber
             });
-            const existingBotComments = issueComments.data
-                .filter(comment => { var _a; return ((_a = comment.user) === null || _a === void 0 ? void 0 : _a.login) === 'github-actions[bot]'; });
+            const existingBotComments = issueComments.data.filter(comment => { var _a; return ((_a = comment.user) === null || _a === void 0 ? void 0 : _a.login) === 'github-actions[bot]'; });
             return existingBotComments.map(comment => ({
                 id: comment.id,
                 body: comment.body

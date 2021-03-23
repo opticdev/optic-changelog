@@ -55,6 +55,7 @@ export async function runOpticChangelog({
     const existingBotComments = (
       await gitHubRepo.getPrBotComments(prNumber)
     ).filter(comment => isOpticComment(comment.body!))
+    core.info(JSON.stringify(existingBotComments))
     if (existingBotComments.length > 0) {
       const comment = existingBotComments[0]
       // TODO: need to pull out metadata and combine with new (maybe)
