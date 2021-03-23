@@ -76,7 +76,6 @@ function runOpticChangelog({ subscribers, opticSpecPath, gitHubRepo, headSha, ba
         try {
             // TODO: probably should be simplified a bit
             const existingBotComments = (yield gitHubRepo.getPrBotComments(prNumber)).filter(comment => pr_1.isOpticComment(comment.body));
-            core.info(JSON.stringify(existingBotComments));
             if (existingBotComments.length > 0) {
                 const comment = existingBotComments[0];
                 // TODO: need to pull out metadata and combine with new (maybe)
@@ -231,12 +230,13 @@ class GitHubRepository {
     }
     updatePrComment(prNumber, commentId, body) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.octokit.issues.updateComment({
+            const result = yield this.octokit.issues.updateComment({
                 owner: this.owner,
                 repo: this.repo,
                 comment_id: commentId,
                 body
             });
+            core.info(JSON.stringify(result.data));
         });
     }
     createPrComment(prNumber, body) {
