@@ -80,131 +80,183 @@ const changelog_1 = __webpack_require__(82);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            // We allow for using `with` or `env`
-            const repoToken = core.getInput('GITHUB_TOKEN') || process.env['GITHUB_TOKEN'];
-            const subscribers = core
-                .getInput('subscribers')
-                .split(',')
-                .map(subscriber => subscriber.trim());
-            const opticSpecPath = core.getInput('OPTIC_SPEC_PATH');
+            const { repoToken, subscribers, opticSpecPath } = getJobInputs();
             if (!repoToken) {
                 throw new Error('Please provide a GitHub token. Set one with the repo-token input or GITHUB_TOKEN env variable.');
             }
-            const { payload: { repository, pull_request: pullRequest }, sha: headSha } = github.context;
-            // We exit quietly because we can't determine any info about the job
-            if (!repository) {
-                core.info('Unable to determine repository');
-                return;
-            }
+            const octokit = github.getOctokit(repoToken);
+            const { prNumber, owner, repo, headSha } = getRepoInfo();
             // We exit quietly when it's not a pull request
-            if (!pullRequest) {
+            if (!prNumber) {
                 core.info('Not a pull request');
                 return;
             }
-            const octokit = github.getOctokit(repoToken);
-            const { full_name: repoFullName = '' } = repository;
-            const [owner, repo] = repoFullName.split('/');
-            // We need this to get head and base SHAs
-            const prInfo = yield octokit.pulls.get({
-                owner,
-                repo,
-                pull_number: pullRequest.number
+            const gitHubRepo = new GitHubRepository(octokit, owner, repo);
+            const { baseSha, baseBranch } = yield gitHubRepo.getPrInfo(prNumber);
+            yield runOpticChangelog({
+                subscribers,
+                opticSpecPath,
+                gitHubRepo,
+                headSha,
+                baseBranch,
+                baseSha,
+                prNumber
             });
-            // Head SHA comes from job context
-            // Base SHA comes from the PR
-            const baseSha = prInfo.data.base.sha;
-            const baseBranch = prInfo.data.base.ref;
-            let headContent, baseContent;
-            // Could be moved or removed
-            try {
-                headContent = yield getSpecificationContent(octokit, {
-                    owner,
-                    repo,
-                    ref: headSha,
-                    path: opticSpecPath
-                });
-            }
-            catch (error) {
-                // Failing silently here
-                core.info(`Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}.`);
-                return;
-            }
-            // Could be moved or new Optic setup
-            try {
-                baseContent = yield getSpecificationContent(octokit, {
-                    owner,
-                    repo,
-                    ref: baseSha,
-                    path: opticSpecPath
-                });
-            }
-            catch (error) {
-                // Failing silently here
-                core.info(`Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`);
-                return;
-            }
-            const changes = changelog_1.getChangelogData({
-                from: baseContent,
-                to: headContent
-            });
-            if (changes.data.endpoints.length === 0) {
-                core.info('No API changes in this PR.');
-                return;
-            }
-            try {
-                const message = pr_1.generateCommentBody(changes, subscribers);
-                const issueComments = yield octokit.issues.listComments({
-                    owner,
-                    repo,
-                    issue_number: pullRequest.number
-                });
-                const existingBotComments = issueComments.data
-                    .filter(comment => { var _a; return ((_a = comment.user) === null || _a === void 0 ? void 0 : _a.login) === 'github-actions[bot]'; })
-                    .filter(comment => pr_1.isOpticComment(comment.body));
-                if (existingBotComments.length > 0) {
-                    const comment = existingBotComments[0];
-                    // TODO: need to pull out metadata and combine with new (maybe)
-                    const body = pr_1.setMetadata(message, {});
-                    yield octokit.issues.updateComment({
-                        owner,
-                        repo,
-                        comment_id: comment.id,
-                        body
-                    });
-                }
-                else {
-                    yield octokit.issues.createComment({
-                        owner,
-                        repo,
-                        issue_number: pullRequest.number,
-                        body: pr_1.setMetadata(message, {})
-                    });
-                }
-            }
-            catch (error) {
-                core.setFailed(`There was an error creating a PR comment. Error message: ${error.message}`);
-            }
         }
         catch (error) {
             core.setFailed(error.message);
         }
     });
 }
-function getSpecificationContent(octokit, { owner, repo, path, ref }) {
+// interface IGitProvider {
+//   getFileContent(sha: string, path: string): Promise<string>
+//   getPrInfo(prNumber: number): Promise<PrInfo>
+//   updatePrComment(
+//     prNumber: number,
+//     commentId: number,
+//     body: string
+//   ): Promise<void>
+//   createPrComment(prNumber: number, body: string): Promise<void>
+//   getPrBotComments(prNumber: number): Promise<PrComment[]>
+// }
+function getJobInputs() {
+    const repoToken = core.getInput('GITHUB_TOKEN') || process.env['GITHUB_TOKEN'];
+    const subscribers = core
+        .getInput('subscribers')
+        .split(',')
+        .map(subscriber => subscriber.trim());
+    const opticSpecPath = core.getInput('OPTIC_SPEC_PATH');
+    return { repoToken, subscribers, opticSpecPath };
+}
+function getRepoInfo() {
+    const { payload: { repository, pull_request: pullRequest }, sha: headSha } = github.context;
+    const { full_name: repoFullName = '' } = repository;
+    const [owner, repo] = repoFullName.split('/');
+    return {
+        prNumber: pullRequest === null || pullRequest === void 0 ? void 0 : pullRequest.number,
+        owner,
+        repo,
+        headSha
+    };
+}
+function runOpticChangelog({ subscribers, opticSpecPath, gitHubRepo, headSha, baseSha, baseBranch, prNumber }) {
     return __awaiter(this, void 0, void 0, function* () {
-        const response = yield octokit.repos.getContent({
-            owner,
-            repo,
-            path,
-            ref
-        });
-        if (!('content' in response.data)) {
-            return [];
+        let headContent, baseContent;
+        // Could be moved or removed
+        try {
+            headContent = yield gitHubRepo.getFileContent(headSha, opticSpecPath);
         }
-        const buff = Buffer.from(response.data.content, 'base64');
-        const content = buff.toString('utf-8');
-        return JSON.parse(content);
+        catch (error) {
+            // Failing silently here
+            core.info(`Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}.`);
+            return;
+        }
+        // Could be moved or new Optic setup
+        try {
+            baseContent = yield gitHubRepo.getFileContent(baseSha, opticSpecPath);
+        }
+        catch (error) {
+            // Failing silently here
+            core.info(`Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`);
+            return;
+        }
+        // TODO: use new changelog library here
+        const changes = changelog_1.getChangelogData({
+            from: JSON.parse(baseContent),
+            to: JSON.parse(headContent)
+        });
+        if (changes.data.endpoints.length === 0) {
+            core.info('No API changes in this PR.');
+            return;
+        }
+        try {
+            const existingBotComments = yield gitHubRepo.getPrBotComments(prNumber);
+            if (existingBotComments.length > 0) {
+                const comment = existingBotComments[0];
+                // TODO: need to pull out metadata and combine with new (maybe)
+                const body = pr_1.setMetadata(comment.body, {});
+                yield gitHubRepo.updatePrComment(prNumber, comment.id, body);
+            }
+            else {
+                const message = pr_1.generateCommentBody(changes, subscribers);
+                yield gitHubRepo.createPrComment(prNumber, pr_1.setMetadata(message, {}));
+            }
+        }
+        catch (error) {
+            core.setFailed(`There was an error creating a PR comment. Error message: ${error.message}`);
+        }
     });
+}
+class GitHubRepository {
+    constructor(octokit, owner, repo) {
+        this.octokit = octokit;
+        this.owner = owner;
+        this.repo = repo;
+    }
+    getFileContent(sha, path) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.octokit.repos.getContent({
+                owner: this.owner,
+                repo: this.repo,
+                path,
+                ref: sha
+            });
+            if (!('content' in response.data)) {
+                return '';
+            }
+            const buff = Buffer.from(response.data.content, 'base64');
+            return buff.toString('utf-8');
+        });
+    }
+    getPrInfo(prNumber) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const prInfo = yield this.octokit.pulls.get({
+                owner: this.owner,
+                repo: this.repo,
+                pull_number: prNumber
+            });
+            return {
+                baseSha: prInfo.data.base.sha,
+                baseBranch: prInfo.data.base.ref
+            };
+        });
+    }
+    updatePrComment(prNumber, commentId, body) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.octokit.issues.updateComment({
+                owner: this.owner,
+                repo: this.repo,
+                comment_id: commentId,
+                body
+            });
+        });
+    }
+    createPrComment(prNumber, body) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.octokit.issues.createComment({
+                owner: this.owner,
+                repo: this.repo,
+                issue_number: prNumber,
+                body
+            });
+        });
+    }
+    getPrBotComments(prNumber) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const issueComments = yield this.octokit.issues.listComments({
+                owner: this.owner,
+                repo: this.repo,
+                issue_number: prNumber
+            });
+            const existingBotComments = issueComments.data
+                .filter(comment => { var _a; return ((_a = comment.user) === null || _a === void 0 ? void 0 : _a.login) === 'github-actions[bot]'; })
+                .filter(comment => pr_1.isOpticComment(comment.body));
+            return existingBotComments.map(comment => ({
+                id: comment.id,
+                body: comment.body
+            }));
+        });
+    }
 }
 // Don't auto-execute in the test environment
 if (process.env['NODE_ENV'] !== 'test') {
