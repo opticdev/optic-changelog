@@ -106,13 +106,12 @@ export class GitHubRepository {
     commentId: number,
     body: string
   ): Promise<void> {
-    const result = await this.octokit.issues.updateComment({
+    await this.octokit.issues.updateComment({
       owner: this.owner,
       repo: this.repo,
       comment_id: commentId,
       body
     })
-    core.info(JSON.stringify(result.data))
   }
 
   async createPrComment(prNumber: number, body: string): Promise<void> {

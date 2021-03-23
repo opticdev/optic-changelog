@@ -73,18 +73,18 @@ function runOpticChangelog({ subscribers, opticSpecPath, gitHubRepo, headSha, ba
             core.info('No API changes in this PR.');
             return;
         }
+        const message = pr_1.generateCommentBody(changes, subscribers);
+        const body = pr_1.setMetadata(message, {});
         try {
             // TODO: probably should be simplified a bit
             const existingBotComments = (yield gitHubRepo.getPrBotComments(prNumber)).filter(comment => pr_1.isOpticComment(comment.body));
             if (existingBotComments.length > 0) {
                 const comment = existingBotComments[0];
                 // TODO: need to pull out metadata and combine with new (maybe)
-                const body = pr_1.setMetadata(comment.body, {});
                 yield gitHubRepo.updatePrComment(prNumber, comment.id, body);
             }
             else {
-                const message = pr_1.generateCommentBody(changes, subscribers);
-                yield gitHubRepo.createPrComment(prNumber, pr_1.setMetadata(message, {}));
+                yield gitHubRepo.createPrComment(prNumber, body);
             }
         }
         catch (error) {
@@ -230,13 +230,12 @@ class GitHubRepository {
     }
     updatePrComment(prNumber, commentId, body) {
         return __awaiter(this, void 0, void 0, function* () {
-            const result = yield this.octokit.issues.updateComment({
+            yield this.octokit.issues.updateComment({
                 owner: this.owner,
                 repo: this.repo,
                 comment_id: commentId,
                 body
             });
-            core.info(JSON.stringify(result.data));
         });
     }
     createPrComment(prNumber, body) {

@@ -50,6 +50,9 @@ export async function runOpticChangelog({
     return
   }
 
+  const message = generateCommentBody(changes, subscribers)
+  const body = setMetadata(message, {})
+
   try {
     // TODO: probably should be simplified a bit
     const existingBotComments = (
@@ -58,11 +61,9 @@ export async function runOpticChangelog({
     if (existingBotComments.length > 0) {
       const comment = existingBotComments[0]
       // TODO: need to pull out metadata and combine with new (maybe)
-      const body = setMetadata(comment.body, {})
       await gitHubRepo.updatePrComment(prNumber, comment.id, body)
     } else {
-      const message = generateCommentBody(changes, subscribers)
-      await gitHubRepo.createPrComment(prNumber, setMetadata(message, {}))
+      await gitHubRepo.createPrComment(prNumber, body)
     }
   } catch (error) {
     // TODO: Throw instead of log and return
