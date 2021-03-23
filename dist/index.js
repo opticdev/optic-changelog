@@ -3,43 +3,6 @@ require('./sourcemap-register.js');module.exports =
 /******/ 	var __webpack_modules__ = ({
 
 /***/ 82:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getChangelogData = void 0;
-// TODO: this is fake data for now
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function getChangelogData(options) {
-    return {
-        data: {
-            opticUrl: 'https://example.com',
-            endpoints: [
-                {
-                    change: {
-                        category: 'added'
-                    },
-                    path: '/foo',
-                    method: 'get'
-                },
-                {
-                    change: {
-                        category: 'updated'
-                    },
-                    path: '/bar',
-                    method: 'post'
-                }
-            ]
-        }
-    };
-}
-exports.getChangelogData = getChangelogData;
-
-
-/***/ }),
-
-/***/ 109:
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
@@ -73,72 +36,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getChangelogData = exports.runOpticChangelog = void 0;
 const core = __importStar(__webpack_require__(186));
-const github = __importStar(__webpack_require__(438));
 const pr_1 = __webpack_require__(515);
-const changelog_1 = __webpack_require__(82);
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const { repoToken, subscribers, opticSpecPath } = getJobInputs();
-            if (!repoToken) {
-                throw new Error('Please provide a GitHub token. Set one with the repo-token input or GITHUB_TOKEN env variable.');
-            }
-            const octokit = github.getOctokit(repoToken);
-            const { prNumber, owner, repo, headSha } = getRepoInfo();
-            // We exit quietly when it's not a pull request
-            if (!prNumber) {
-                core.info('Not a pull request');
-                return;
-            }
-            const gitHubRepo = new GitHubRepository(octokit, owner, repo);
-            const { baseSha, baseBranch } = yield gitHubRepo.getPrInfo(prNumber);
-            yield runOpticChangelog({
-                subscribers,
-                opticSpecPath,
-                gitHubRepo,
-                headSha,
-                baseBranch,
-                baseSha,
-                prNumber
-            });
-        }
-        catch (error) {
-            core.setFailed(error.message);
-        }
-    });
-}
-// interface IGitProvider {
-//   getFileContent(sha: string, path: string): Promise<string>
-//   getPrInfo(prNumber: number): Promise<PrInfo>
-//   updatePrComment(
-//     prNumber: number,
-//     commentId: number,
-//     body: string
-//   ): Promise<void>
-//   createPrComment(prNumber: number, body: string): Promise<void>
-//   getPrBotComments(prNumber: number): Promise<PrComment[]>
-// }
-function getJobInputs() {
-    const repoToken = core.getInput('GITHUB_TOKEN') || process.env['GITHUB_TOKEN'];
-    const subscribers = core
-        .getInput('subscribers')
-        .split(',')
-        .map(subscriber => subscriber.trim());
-    const opticSpecPath = core.getInput('OPTIC_SPEC_PATH');
-    return { repoToken, subscribers, opticSpecPath };
-}
-function getRepoInfo() {
-    const { payload: { repository, pull_request: pullRequest }, sha: headSha } = github.context;
-    const { full_name: repoFullName = '' } = repository;
-    const [owner, repo] = repoFullName.split('/');
-    return {
-        prNumber: pullRequest === null || pullRequest === void 0 ? void 0 : pullRequest.number,
-        owner,
-        repo,
-        headSha
-    };
-}
 function runOpticChangelog({ subscribers, opticSpecPath, gitHubRepo, headSha, baseSha, baseBranch, prNumber }) {
     return __awaiter(this, void 0, void 0, function* () {
         let headContent, baseContent;
@@ -161,7 +61,7 @@ function runOpticChangelog({ subscribers, opticSpecPath, gitHubRepo, headSha, ba
             return;
         }
         // TODO: use new changelog library here
-        const changes = changelog_1.getChangelogData({
+        const changes = getChangelogData({
             from: JSON.parse(baseContent),
             to: JSON.parse(headContent)
         });
@@ -170,7 +70,8 @@ function runOpticChangelog({ subscribers, opticSpecPath, gitHubRepo, headSha, ba
             return;
         }
         try {
-            const existingBotComments = yield gitHubRepo.getPrBotComments(prNumber);
+            const existingBotComments = (yield gitHubRepo.getPrBotComments(prNumber))
+                .filter(comment => pr_1.isOpticComment(comment.body));
             if (existingBotComments.length > 0) {
                 const comment = existingBotComments[0];
                 // TODO: need to pull out metadata and combine with new (maybe)
@@ -187,6 +88,107 @@ function runOpticChangelog({ subscribers, opticSpecPath, gitHubRepo, headSha, ba
         }
     });
 }
+exports.runOpticChangelog = runOpticChangelog;
+// TODO: this is fake data for now
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function getChangelogData(options) {
+    return {
+        data: {
+            opticUrl: 'https://example.com',
+            endpoints: [
+                {
+                    change: {
+                        category: 'added'
+                    },
+                    path: '/foo',
+                    method: 'get'
+                },
+                {
+                    change: {
+                        category: 'updated'
+                    },
+                    path: '/bar',
+                    method: 'post'
+                }
+            ]
+        }
+    };
+}
+exports.getChangelogData = getChangelogData;
+
+
+/***/ }),
+
+/***/ 928:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.GitHubRepository = exports.getRepoInfo = exports.getJobInputs = void 0;
+const core = __importStar(__webpack_require__(186));
+const github = __importStar(__webpack_require__(438));
+// interface IGitProvider {
+//   getFileContent(sha: string, path: string): Promise<string>
+//   getPrInfo(prNumber: number): Promise<PrInfo>
+//   updatePrComment(
+//     prNumber: number,
+//     commentId: number,
+//     body: string
+//   ): Promise<void>
+//   createPrComment(prNumber: number, body: string): Promise<void>
+//   getPrBotComments(prNumber: number): Promise<PrComment[]>
+// }
+function getJobInputs() {
+    const repoToken = core.getInput('GITHUB_TOKEN') || process.env['GITHUB_TOKEN'];
+    const subscribers = core
+        .getInput('subscribers')
+        .split(',')
+        .map(subscriber => subscriber.trim());
+    const opticSpecPath = core.getInput('OPTIC_SPEC_PATH');
+    return { repoToken, subscribers, opticSpecPath };
+}
+exports.getJobInputs = getJobInputs;
+function getRepoInfo() {
+    const { payload: { repository, pull_request: pullRequest }, sha: headSha } = github.context;
+    const { full_name: repoFullName = '' } = repository;
+    const [owner, repo] = repoFullName.split('/');
+    return {
+        prNumber: pullRequest === null || pullRequest === void 0 ? void 0 : pullRequest.number,
+        owner,
+        repo,
+        headSha
+    };
+}
+exports.getRepoInfo = getRepoInfo;
 class GitHubRepository {
     constructor(octokit, owner, repo) {
         this.octokit = octokit;
@@ -249,14 +251,87 @@ class GitHubRepository {
                 issue_number: prNumber
             });
             const existingBotComments = issueComments.data
-                .filter(comment => { var _a; return ((_a = comment.user) === null || _a === void 0 ? void 0 : _a.login) === 'github-actions[bot]'; })
-                .filter(comment => pr_1.isOpticComment(comment.body));
+                .filter(comment => { var _a; return ((_a = comment.user) === null || _a === void 0 ? void 0 : _a.login) === 'github-actions[bot]'; });
             return existingBotComments.map(comment => ({
                 id: comment.id,
                 body: comment.body
             }));
         });
     }
+}
+exports.GitHubRepository = GitHubRepository;
+
+
+/***/ }),
+
+/***/ 109:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__webpack_require__(186));
+const github = __importStar(__webpack_require__(438));
+const changelog_1 = __webpack_require__(82);
+const github_1 = __webpack_require__(928);
+function run() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const { repoToken, subscribers, opticSpecPath } = github_1.getJobInputs();
+            if (!repoToken) {
+                throw new Error('Please provide a GitHub token. Set one with the repo-token input or GITHUB_TOKEN env variable.');
+            }
+            const octokit = github.getOctokit(repoToken);
+            const { prNumber, owner, repo, headSha } = github_1.getRepoInfo();
+            // We exit quietly when it's not a pull request
+            if (!prNumber) {
+                core.info('Not a pull request');
+                return;
+            }
+            const gitHubRepo = new github_1.GitHubRepository(octokit, owner, repo);
+            const { baseSha, baseBranch } = yield gitHubRepo.getPrInfo(prNumber);
+            yield changelog_1.runOpticChangelog({
+                subscribers,
+                opticSpecPath,
+                gitHubRepo,
+                headSha,
+                baseBranch,
+                baseSha,
+                prNumber
+            });
+        }
+        catch (error) {
+            core.setFailed(error.message);
+        }
+    });
 }
 // Don't auto-execute in the test environment
 if (process.env['NODE_ENV'] !== 'test') {
