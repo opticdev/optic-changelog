@@ -1,21 +1,11 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {GitHub} from '@actions/github/lib/utils'
-import {setMetadata, isOpticComment, generateCommentBody} from './pr'
-import {getChangelogData} from './changelog'
+import {runOpticChangelog} from './changelog'
+import {getJobInputs, getRepoInfo, GitHubRepository} from './github'
 
 async function run(): Promise<void> {
   try {
-    // We allow for using `with` or `env`
-    const repoToken =
-      core.getInput('GITHUB_TOKEN') || process.env['GITHUB_TOKEN']
-
-    const subscribers = core
-      .getInput('subscribers')
-      .split(',')
-      .map(subscriber => subscriber.trim())
-
-    const opticSpecPath = core.getInput('OPTIC_SPEC_PATH')
+    const {repoToken, subscribers, opticSpecPath} = getJobInputs()
 
     if (!repoToken) {
       throw new Error(
@@ -23,146 +13,31 @@ async function run(): Promise<void> {
       )
     }
 
-    const {
-      payload: {repository, pull_request: pullRequest},
-      sha: headSha
-    } = github.context
+    const octokit = github.getOctokit(repoToken)
 
-    // We exit quietly because we can't determine any info about the job
-    if (!repository) {
-      core.info('Unable to determine repository')
-      return
-    }
+    const {prNumber, owner, repo, headSha} = getRepoInfo()
 
     // We exit quietly when it's not a pull request
-    if (!pullRequest) {
+    if (!prNumber) {
       core.info('Not a pull request')
       return
     }
 
-    const octokit = github.getOctokit(repoToken)
+    const gitHubRepo = new GitHubRepository(octokit, owner, repo)
+    const {baseSha, baseBranch} = await gitHubRepo.getPrInfo(prNumber)
 
-    const {full_name: repoFullName = ''} = repository
-    const [owner, repo] = repoFullName.split('/')
-
-    // We need this to get head and base SHAs
-    const prInfo = await octokit.pulls.get({
-      owner,
-      repo,
-      pull_number: pullRequest.number
+    await runOpticChangelog({
+      subscribers,
+      opticSpecPath,
+      gitHubRepo,
+      headSha,
+      baseBranch,
+      baseSha,
+      prNumber
     })
-
-    // Head SHA comes from job context
-    // Base SHA comes from the PR
-    const baseSha = prInfo.data.base.sha
-    const baseBranch = prInfo.data.base.ref
-
-    let headContent, baseContent
-
-    // Could be moved or removed
-    try {
-      headContent = await getSpecificationContent(octokit, {
-        owner,
-        repo,
-        ref: headSha,
-        path: opticSpecPath
-      })
-    } catch (error) {
-      // Failing silently here
-      core.info(
-        `Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}.`
-      )
-      return
-    }
-    // Could be moved or new Optic setup
-    try {
-      baseContent = await getSpecificationContent(octokit, {
-        owner,
-        repo,
-        ref: baseSha,
-        path: opticSpecPath
-      })
-    } catch (error) {
-      // Failing silently here
-      core.info(
-        `Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`
-      )
-      return
-    }
-
-    const changes = getChangelogData({
-      from: baseContent,
-      to: headContent
-    })
-
-    if (changes.data.endpoints.length === 0) {
-      core.info('No API changes in this PR.')
-      return
-    }
-
-    try {
-      const message = generateCommentBody(changes, subscribers)
-      const issueComments = await octokit.issues.listComments({
-        owner,
-        repo,
-        issue_number: pullRequest.number
-      })
-
-      const existingBotComments = issueComments.data
-        .filter(comment => comment.user?.login === 'github-actions[bot]')
-        .filter(comment => isOpticComment(comment.body!))
-
-      if (existingBotComments.length > 0) {
-        const comment = existingBotComments[0]
-        // TODO: need to pull out metadata and combine with new (maybe)
-        const body = setMetadata(message, {})
-        await octokit.issues.updateComment({
-          owner,
-          repo,
-          comment_id: comment.id,
-          body
-        })
-      } else {
-        await octokit.issues.createComment({
-          owner,
-          repo,
-          issue_number: pullRequest.number,
-          body: setMetadata(message, {})
-        })
-      }
-    } catch (error) {
-      core.setFailed(
-        `There was an error creating a PR comment. Error message: ${error.message}`
-      )
-    }
   } catch (error) {
     core.setFailed(error.message)
   }
-}
-
-async function getSpecificationContent(
-  octokit: InstanceType<typeof GitHub>,
-  {
-    owner,
-    repo,
-    path,
-    ref
-  }: {owner: string; repo: string; path: string; ref: string}
-): Promise<object[]> {
-  const response = await octokit.repos.getContent({
-    owner,
-    repo,
-    path,
-    ref
-  })
-
-  if (!('content' in response.data)) {
-    return []
-  }
-
-  const buff = Buffer.from(response.data.content, 'base64')
-  const content = buff.toString('utf-8')
-  return JSON.parse(content)
 }
 
 // Don't auto-execute in the test environment

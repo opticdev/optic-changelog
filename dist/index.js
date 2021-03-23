@@ -3,12 +3,97 @@ require('./sourcemap-register.js');module.exports =
 /******/ 	var __webpack_modules__ = ({
 
 /***/ 82:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getChangelogData = void 0;
+exports.getChangelogData = exports.runOpticChangelog = void 0;
+// TODO: refactor to not rely on @actions/core
+const core = __importStar(__webpack_require__(186));
+const pr_1 = __webpack_require__(515);
+function runOpticChangelog({ subscribers, opticSpecPath, gitHubRepo, headSha, baseSha, baseBranch, prNumber }) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let headContent, baseContent;
+        // Could be moved or removed
+        try {
+            headContent = yield gitHubRepo.getFileContent(headSha, opticSpecPath);
+        }
+        catch (error) {
+            // Failing silently here
+            // TODO: Throw instead of log and return
+            core.info(`Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}.`);
+            return;
+        }
+        // Could be moved or new Optic setup
+        try {
+            baseContent = yield gitHubRepo.getFileContent(baseSha, opticSpecPath);
+        }
+        catch (error) {
+            // Failing silently here
+            // TODO: Throw instead of log and return
+            core.info(`Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`);
+            return;
+        }
+        // TODO: use new changelog library here
+        const changes = getChangelogData({
+            from: JSON.parse(baseContent),
+            to: JSON.parse(headContent)
+        });
+        if (changes.data.endpoints.length === 0) {
+            // TODO: Throw instead of log and return
+            core.info('No API changes in this PR.');
+            return;
+        }
+        const message = pr_1.generateCommentBody(changes, subscribers);
+        const body = pr_1.setMetadata(message, {});
+        try {
+            // TODO: probably should be simplified a bit
+            const existingBotComments = (yield gitHubRepo.getPrBotComments(prNumber)).filter(comment => pr_1.isOpticComment(comment.body));
+            if (existingBotComments.length > 0) {
+                const comment = existingBotComments[0];
+                // TODO: need to pull out metadata and combine with new (maybe)
+                yield gitHubRepo.updatePrComment(prNumber, comment.id, body);
+            }
+            else {
+                yield gitHubRepo.createPrComment(prNumber, body);
+            }
+        }
+        catch (error) {
+            // TODO: Throw instead of log and return
+            core.setFailed(`There was an error creating a PR comment. Error message: ${error.message}`);
+        }
+    });
+}
+exports.runOpticChangelog = runOpticChangelog;
 // TODO: this is fake data for now
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getChangelogData(options) {
@@ -35,6 +120,150 @@ function getChangelogData(options) {
     };
 }
 exports.getChangelogData = getChangelogData;
+
+
+/***/ }),
+
+/***/ 928:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.GitHubRepository = exports.getRepoInfo = exports.getJobInputs = void 0;
+const core = __importStar(__webpack_require__(186));
+const github = __importStar(__webpack_require__(438));
+// interface IGitProvider {
+//   getFileContent(sha: string, path: string): Promise<string>
+//   getPrInfo(prNumber: number): Promise<PrInfo>
+//   updatePrComment(
+//     prNumber: number,
+//     commentId: number,
+//     body: string
+//   ): Promise<void>
+//   createPrComment(prNumber: number, body: string): Promise<void>
+//   getPrBotComments(prNumber: number): Promise<PrComment[]>
+// }
+function getJobInputs() {
+    const repoToken = core.getInput('GITHUB_TOKEN') || process.env['GITHUB_TOKEN'];
+    const subscribers = core
+        .getInput('subscribers')
+        .split(',')
+        .map(subscriber => subscriber.trim());
+    const opticSpecPath = core.getInput('OPTIC_SPEC_PATH');
+    return { repoToken, subscribers, opticSpecPath };
+}
+exports.getJobInputs = getJobInputs;
+function getRepoInfo() {
+    const { payload: { repository, pull_request: pullRequest }, sha: headSha } = github.context;
+    const { full_name: repoFullName = '' } = repository;
+    const [owner, repo] = repoFullName.split('/');
+    return {
+        prNumber: pullRequest === null || pullRequest === void 0 ? void 0 : pullRequest.number,
+        owner,
+        repo,
+        headSha
+    };
+}
+exports.getRepoInfo = getRepoInfo;
+class GitHubRepository {
+    constructor(octokit, owner, repo) {
+        this.octokit = octokit;
+        this.owner = owner;
+        this.repo = repo;
+    }
+    getFileContent(sha, path) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const response = yield this.octokit.repos.getContent({
+                owner: this.owner,
+                repo: this.repo,
+                path,
+                ref: sha
+            });
+            if (!('content' in response.data)) {
+                return '';
+            }
+            const buff = Buffer.from(response.data.content, 'base64');
+            return buff.toString('utf-8');
+        });
+    }
+    getPrInfo(prNumber) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const prInfo = yield this.octokit.pulls.get({
+                owner: this.owner,
+                repo: this.repo,
+                pull_number: prNumber
+            });
+            return {
+                baseSha: prInfo.data.base.sha,
+                baseBranch: prInfo.data.base.ref
+            };
+        });
+    }
+    updatePrComment(prNumber, commentId, body) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.octokit.issues.updateComment({
+                owner: this.owner,
+                repo: this.repo,
+                comment_id: commentId,
+                body
+            });
+        });
+    }
+    createPrComment(prNumber, body) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.octokit.issues.createComment({
+                owner: this.owner,
+                repo: this.repo,
+                issue_number: prNumber,
+                body
+            });
+        });
+    }
+    getPrBotComments(prNumber) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const issueComments = yield this.octokit.issues.listComments({
+                owner: this.owner,
+                repo: this.repo,
+                issue_number: prNumber
+            });
+            const existingBotComments = issueComments.data.filter(comment => { var _a; return ((_a = comment.user) === null || _a === void 0 ? void 0 : _a.login) === 'github-actions[bot]'; });
+            return existingBotComments.map(comment => ({
+                id: comment.id,
+                body: comment.body
+            }));
+        });
+    }
+}
+exports.GitHubRepository = GitHubRepository;
 
 
 /***/ }),
@@ -75,135 +304,37 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__webpack_require__(186));
 const github = __importStar(__webpack_require__(438));
-const pr_1 = __webpack_require__(515);
 const changelog_1 = __webpack_require__(82);
+const github_1 = __webpack_require__(928);
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            // We allow for using `with` or `env`
-            const repoToken = core.getInput('GITHUB_TOKEN') || process.env['GITHUB_TOKEN'];
-            const subscribers = core
-                .getInput('subscribers')
-                .split(',')
-                .map(subscriber => subscriber.trim());
-            const opticSpecPath = core.getInput('OPTIC_SPEC_PATH');
+            const { repoToken, subscribers, opticSpecPath } = github_1.getJobInputs();
             if (!repoToken) {
                 throw new Error('Please provide a GitHub token. Set one with the repo-token input or GITHUB_TOKEN env variable.');
             }
-            const { payload: { repository, pull_request: pullRequest }, sha: headSha } = github.context;
-            // We exit quietly because we can't determine any info about the job
-            if (!repository) {
-                core.info('Unable to determine repository');
-                return;
-            }
+            const octokit = github.getOctokit(repoToken);
+            const { prNumber, owner, repo, headSha } = github_1.getRepoInfo();
             // We exit quietly when it's not a pull request
-            if (!pullRequest) {
+            if (!prNumber) {
                 core.info('Not a pull request');
                 return;
             }
-            const octokit = github.getOctokit(repoToken);
-            const { full_name: repoFullName = '' } = repository;
-            const [owner, repo] = repoFullName.split('/');
-            // We need this to get head and base SHAs
-            const prInfo = yield octokit.pulls.get({
-                owner,
-                repo,
-                pull_number: pullRequest.number
+            const gitHubRepo = new github_1.GitHubRepository(octokit, owner, repo);
+            const { baseSha, baseBranch } = yield gitHubRepo.getPrInfo(prNumber);
+            yield changelog_1.runOpticChangelog({
+                subscribers,
+                opticSpecPath,
+                gitHubRepo,
+                headSha,
+                baseBranch,
+                baseSha,
+                prNumber
             });
-            // Head SHA comes from job context
-            // Base SHA comes from the PR
-            const baseSha = prInfo.data.base.sha;
-            const baseBranch = prInfo.data.base.ref;
-            let headContent, baseContent;
-            // Could be moved or removed
-            try {
-                headContent = yield getSpecificationContent(octokit, {
-                    owner,
-                    repo,
-                    ref: headSha,
-                    path: opticSpecPath
-                });
-            }
-            catch (error) {
-                // Failing silently here
-                core.info(`Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}.`);
-                return;
-            }
-            // Could be moved or new Optic setup
-            try {
-                baseContent = yield getSpecificationContent(octokit, {
-                    owner,
-                    repo,
-                    ref: baseSha,
-                    path: opticSpecPath
-                });
-            }
-            catch (error) {
-                // Failing silently here
-                core.info(`Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`);
-                return;
-            }
-            const changes = changelog_1.getChangelogData({
-                from: baseContent,
-                to: headContent
-            });
-            if (changes.data.endpoints.length === 0) {
-                core.info('No API changes in this PR.');
-                return;
-            }
-            try {
-                const message = pr_1.generateCommentBody(changes, subscribers);
-                const issueComments = yield octokit.issues.listComments({
-                    owner,
-                    repo,
-                    issue_number: pullRequest.number
-                });
-                const existingBotComments = issueComments.data
-                    .filter(comment => { var _a; return ((_a = comment.user) === null || _a === void 0 ? void 0 : _a.login) === 'github-actions[bot]'; })
-                    .filter(comment => pr_1.isOpticComment(comment.body));
-                if (existingBotComments.length > 0) {
-                    const comment = existingBotComments[0];
-                    // TODO: need to pull out metadata and combine with new (maybe)
-                    const body = pr_1.setMetadata(message, {});
-                    yield octokit.issues.updateComment({
-                        owner,
-                        repo,
-                        comment_id: comment.id,
-                        body
-                    });
-                }
-                else {
-                    yield octokit.issues.createComment({
-                        owner,
-                        repo,
-                        issue_number: pullRequest.number,
-                        body: pr_1.setMetadata(message, {})
-                    });
-                }
-            }
-            catch (error) {
-                core.setFailed(`There was an error creating a PR comment. Error message: ${error.message}`);
-            }
         }
         catch (error) {
             core.setFailed(error.message);
         }
-    });
-}
-function getSpecificationContent(octokit, { owner, repo, path, ref }) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const response = yield octokit.repos.getContent({
-            owner,
-            repo,
-            path,
-            ref
-        });
-        if (!('content' in response.data)) {
-            return [];
-        }
-        const buff = Buffer.from(response.data.content, 'base64');
-        const content = buff.toString('utf-8');
-        return JSON.parse(content);
     });
 }
 // Don't auto-execute in the test environment
