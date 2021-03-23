@@ -51,6 +51,7 @@ export async function runOpticChangelog({
   }
 
   try {
+    // TODO: probably should be simplified a bit
     const existingBotComments = (
       await gitHubRepo.getPrBotComments(prNumber)
     ).filter(comment => isOpticComment(comment.body!))
