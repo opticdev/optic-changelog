@@ -1,41 +1,7 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {GitHub} from '@actions/github/lib/utils'
-
-export type JobInputs = {
-  repoToken?: string
-  subscribers: string[]
-  opticSpecPath: string
-}
-
-export type RepoInfo = {
-  owner: string
-  repo: string
-  prNumber?: number
-  headSha: string
-}
-
-export type PrComment = {
-  id: number
-  body: string
-}
-
-export type PrInfo = {
-  baseSha: string
-  baseBranch: string
-}
-
-// interface IGitProvider {
-//   getFileContent(sha: string, path: string): Promise<string>
-//   getPrInfo(prNumber: number): Promise<PrInfo>
-//   updatePrComment(
-//     prNumber: number,
-//     commentId: number,
-//     body: string
-//   ): Promise<void>
-//   createPrComment(prNumber: number, body: string): Promise<void>
-//   getPrBotComments(prNumber: number): Promise<PrComment[]>
-// }
+import {IGitProvider, JobInputs, RepoInfo, PrInfo, PrComment} from './types'
 
 export function getJobInputs(): JobInputs {
   const repoToken =
@@ -67,7 +33,7 @@ export function getRepoInfo(): RepoInfo {
   }
 }
 
-export class GitHubRepository {
+export class GitHubRepository implements IGitProvider {
   constructor(
     private octokit: InstanceType<typeof GitHub>,
     private owner: string,

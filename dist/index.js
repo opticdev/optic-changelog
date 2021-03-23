@@ -161,17 +161,6 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GitHubRepository = exports.getRepoInfo = exports.getJobInputs = void 0;
 const core = __importStar(__webpack_require__(186));
 const github = __importStar(__webpack_require__(438));
-// interface IGitProvider {
-//   getFileContent(sha: string, path: string): Promise<string>
-//   getPrInfo(prNumber: number): Promise<PrInfo>
-//   updatePrComment(
-//     prNumber: number,
-//     commentId: number,
-//     body: string
-//   ): Promise<void>
-//   createPrComment(prNumber: number, body: string): Promise<void>
-//   getPrBotComments(prNumber: number): Promise<PrComment[]>
-// }
 function getJobInputs() {
     const repoToken = core.getInput('GITHUB_TOKEN') || process.env['GITHUB_TOKEN'];
     const subscribers = core
