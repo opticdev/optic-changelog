@@ -25,13 +25,9 @@ const baseOpticChangelog = {
 }
 
 describe('Changelog', () => {
-  afterEach(() => {
-    jest.clearAllMocks()
-  })
-
   it('creates a comment', async () => {
     await runOpticChangelog(baseOpticChangelog)
-    commentWasCreated()
+    expectCommentWasCreated()
   })
 
   it('updates a comment', async () => {
@@ -48,7 +44,7 @@ describe('Changelog', () => {
       ...baseOpticChangelog,
       gitProvider
     })
-    commentWasUpdated()
+    expectCommentWasUpdated()
   })
   it("fails silently when there isn't a spec in the head branch", async () => {
     const gitProvider = {
@@ -62,7 +58,7 @@ describe('Changelog', () => {
       ...baseOpticChangelog,
       gitProvider
     })
-    failedSilently()
+    expectToFailSilently()
     expect(mockJobRunner.info).toMatchSnapshot()
   })
   it("fails silently when there isn't a spec in the base branch", async () => {
@@ -77,24 +73,24 @@ describe('Changelog', () => {
       ...baseOpticChangelog,
       gitProvider
     })
-    failedSilently()
+    expectToFailSilently()
     expect(mockJobRunner.info).toMatchSnapshot()
   })
 })
 
-function commentWasCreated() {
+function expectCommentWasCreated() {
   expect(baseGitProvider.createPrComment).toBeCalledTimes(1)
   expect(baseGitProvider.updatePrComment).toBeCalledTimes(0)
   expect(mockJobRunner.setFailed).toBeCalledTimes(0)
 }
 
-function commentWasUpdated() {
+function expectCommentWasUpdated() {
   expect(baseGitProvider.createPrComment).toBeCalledTimes(0)
   expect(baseGitProvider.updatePrComment).toBeCalledTimes(1)
   expect(mockJobRunner.setFailed).toBeCalledTimes(0)
 }
 
-function failedSilently() {
+function expectToFailSilently() {
   expect(baseGitProvider.createPrComment).toBeCalledTimes(0)
   expect(baseGitProvider.updatePrComment).toBeCalledTimes(0)
   expect(mockJobRunner.setFailed).toBeCalledTimes(0)
