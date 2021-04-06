@@ -68,7 +68,7 @@ export async function runOpticChangelog({
       await gitProvider.createPrComment(prNumber, body)
     }
   } catch (error) {
-    jobRunner.setFailed(
+    jobRunner.info(
       `There was an error creating a PR comment. Error message: ${error.message}`
     )
     return
