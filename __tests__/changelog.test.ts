@@ -13,22 +13,24 @@ const mockJobRunner = {
   setFailed: jest.fn()
 }
 
+const baseOpticChangelog = {
+  subscribers: [],
+  opticSpecPath: ".optic/api/specification.yml",
+  gitProvider: baseGitProvider,
+  headSha: "asdf",
+  baseSha: "jkl",
+  baseBranch: "main",
+  prNumber: 100,
+  jobRunner: mockJobRunner
+}
+
 describe("Changelog", () => {
   afterEach(() => {
     jest.clearAllMocks();
   })
 
   it("creates a comment", async () => {
-    await runOpticChangelog({
-      subscribers: [],
-      opticSpecPath: ".optic/api/specification.yml",
-      gitProvider: baseGitProvider,
-      headSha: "asdf",
-      baseSha: "jkl",
-      baseBranch: "main",
-      prNumber: 100,
-      jobRunner: mockJobRunner
-    })
+    await runOpticChangelog(baseOpticChangelog)
     commentWasCreated()
   })
 
@@ -43,16 +45,41 @@ describe("Changelog", () => {
       ]
     }
     await runOpticChangelog({
-      gitProvider,
-      subscribers: [],
-      opticSpecPath: ".optic/api/specification.yml",
-      headSha: "asdf",
-      baseSha: "jkl",
-      baseBranch: "main",
-      prNumber: 100,
-      jobRunner: mockJobRunner
+      ...baseOpticChangelog,
+      gitProvider
     })
     commentWasUpdated()
+  })
+  it("fails silently when there isn't a spec in the current branch", async () => {
+    const gitProvider = {
+      ...baseGitProvider,
+      getFileContent: jest.fn()
+        .mockImplementationOnce(async () => {
+          throw Error();
+        })
+    }
+    await runOpticChangelog({
+      ...baseOpticChangelog,
+      gitProvider
+    })
+    failedSilently()
+    expect(mockJobRunner.info).toMatchSnapshot()
+  })
+  it("fails silently when there isn't a spec in the head branch", async () => {
+    const gitProvider = {
+      ...baseGitProvider,
+      getFileContent: jest.fn()
+        .mockImplementationOnce(async () => "[]")
+        .mockImplementationOnce(async () => {
+          throw Error("Can't find base file");
+        })
+    }
+    await runOpticChangelog({
+      ...baseOpticChangelog,
+      gitProvider
+    })
+    failedSilently()
+    expect(mockJobRunner.info).toMatchSnapshot()
   })
 })
 
