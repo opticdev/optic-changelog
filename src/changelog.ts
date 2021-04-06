@@ -49,7 +49,7 @@ export async function runOpticChangelog({
   const message = generateCommentBody(changes, subscribers)
   const body = setMetadata(message, {})
 
-  jobRunner.debug(`Created body for comment`)
+  jobRunner.debug('Created body for comment')
   jobRunner.debug(body)
 
   try {

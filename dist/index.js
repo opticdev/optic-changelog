@@ -22,7 +22,7 @@ const pr_1 = __webpack_require__(515);
 function runOpticChangelog({ subscribers, opticSpecPath, gitProvider, headSha, baseSha, baseBranch, prNumber, jobRunner }) {
     return __awaiter(this, void 0, void 0, function* () {
         let headContent, baseContent;
-        // Could be moved or removed
+        // This may fail if the file was moved or it's a new Optic setup
         try {
             headContent = yield gitProvider.getFileContent(headSha, opticSpecPath);
         }
@@ -51,15 +51,19 @@ function runOpticChangelog({ subscribers, opticSpecPath, gitProvider, headSha, b
         }
         const message = pr_1.generateCommentBody(changes, subscribers);
         const body = pr_1.setMetadata(message, {});
+        jobRunner.debug("Created body for comment");
+        jobRunner.debug(body);
         try {
             // TODO: probably should be simplified a bit
             const existingBotComments = (yield gitProvider.getPrBotComments(prNumber)).filter(comment => pr_1.isOpticComment(comment.body));
             if (existingBotComments.length) {
                 const comment = existingBotComments[0];
+                jobRunner.debug(`Updating comment ${comment.id}`);
                 // TODO: need to pull out metadata and combine with new (maybe)
                 yield gitProvider.updatePrComment(comment.id, body);
             }
             else {
+                jobRunner.debug(`Creating comment for PR ${prNumber}`);
                 yield gitProvider.createPrComment(prNumber, body);
             }
         }
