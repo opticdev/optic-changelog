@@ -51,7 +51,7 @@ function runOpticChangelog({ subscribers, opticSpecPath, gitProvider, headSha, b
         }
         const message = pr_1.generateCommentBody(changes, subscribers);
         const body = pr_1.setMetadata(message, {});
-        jobRunner.debug("Created body for comment");
+        jobRunner.debug('Created body for comment');
         jobRunner.debug(body);
         try {
             // TODO: probably should be simplified a bit
@@ -68,7 +68,7 @@ function runOpticChangelog({ subscribers, opticSpecPath, gitProvider, headSha, b
             }
         }
         catch (error) {
-            jobRunner.setFailed(`There was an error creating a PR comment. Error message: ${error.message}`);
+            jobRunner.info(`There was an error creating a PR comment. Error message: ${error.message}`);
             return;
         }
     });

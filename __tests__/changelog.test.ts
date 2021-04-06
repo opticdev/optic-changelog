@@ -1,7 +1,7 @@
-import {runOpticChangelog} from "../src/changelog"
+import {runOpticChangelog} from '../src/changelog'
 
 const baseGitProvider = {
-  getFileContent: async () => "[]",
+  getFileContent: async () => '[]',
   getPrBotComments: async () => [],
   updatePrComment: jest.fn(),
   createPrComment: jest.fn()
@@ -15,26 +15,26 @@ const mockJobRunner = {
 
 const baseOpticChangelog = {
   subscribers: [],
-  opticSpecPath: ".optic/api/specification.yml",
+  opticSpecPath: '.optic/api/specification.yml',
   gitProvider: baseGitProvider,
-  headSha: "asdf",
-  baseSha: "jkl",
-  baseBranch: "main",
+  headSha: 'head-sha',
+  baseSha: 'base-sha',
+  baseBranch: 'main',
   prNumber: 100,
   jobRunner: mockJobRunner
 }
 
-describe("Changelog", () => {
+describe('Changelog', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    jest.clearAllMocks()
   })
 
-  it("creates a comment", async () => {
+  it('creates a comment', async () => {
     await runOpticChangelog(baseOpticChangelog)
     commentWasCreated()
   })
 
-  it("updates a comment", async () => {
+  it('updates a comment', async () => {
     const gitProvider = {
       ...baseGitProvider,
       getPrBotComments: async () => [
@@ -50,13 +50,13 @@ describe("Changelog", () => {
     })
     commentWasUpdated()
   })
-  it("fails silently when there isn't a spec in the current branch", async () => {
+  it("fails silently when there isn't a spec in the head branch", async () => {
     const gitProvider = {
       ...baseGitProvider,
-      getFileContent: jest.fn()
-        .mockImplementationOnce(async () => {
-          throw Error();
-        })
+      getFileContent: jest.fn().mockImplementation(sha => {
+        if (sha === baseOpticChangelog.headSha) throw Error()
+        return '[]'
+      })
     }
     await runOpticChangelog({
       ...baseOpticChangelog,
@@ -65,14 +65,13 @@ describe("Changelog", () => {
     failedSilently()
     expect(mockJobRunner.info).toMatchSnapshot()
   })
-  it("fails silently when there isn't a spec in the head branch", async () => {
+  it("fails silently when there isn't a spec in the base branch", async () => {
     const gitProvider = {
       ...baseGitProvider,
-      getFileContent: jest.fn()
-        .mockImplementationOnce(async () => "[]")
-        .mockImplementationOnce(async () => {
-          throw Error("Can't find base file");
-        })
+      getFileContent: jest.fn().mockImplementation(sha => {
+        if (sha === baseOpticChangelog.baseSha) throw Error()
+        return '[]'
+      })
     }
     await runOpticChangelog({
       ...baseOpticChangelog,

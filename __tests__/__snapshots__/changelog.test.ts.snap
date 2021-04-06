@@ -1,10 +1,10 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Changelog fails silently when there isn't a spec in the current branch 1`] = `
+exports[`Changelog fails silently when there isn't a spec in the base branch 1`] = `
 [MockFunction] {
   "calls": Array [
     Array [
-      "Could not find the Optic spec in the current branch. Looking in .optic/api/specification.yml.",
+      "Could not find the Optic spec in the base branch main. Looking in .optic/api/specification.yml.",
     ],
   ],
   "results": Array [
@@ -20,7 +20,7 @@ exports[`Changelog fails silently when there isn't a spec in the head branch 1`]
 [MockFunction] {
   "calls": Array [
     Array [
-      "Could not find the Optic spec in the base branch main. Looking in .optic/api/specification.yml.",
+      "Could not find the Optic spec in the current branch. Looking in .optic/api/specification.yml.",
     ],
   ],
   "results": Array [
