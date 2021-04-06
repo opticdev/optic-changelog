@@ -37,7 +37,8 @@ async function run(): Promise<void> {
       jobRunner: core
     })
   } catch (error) {
-    core.setFailed(error.message)
+    core.info(`Failed with unexpected error ${error.message}`)
+    return
   }
 }
 

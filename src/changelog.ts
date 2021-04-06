@@ -69,7 +69,7 @@ export async function runOpticChangelog({
     }
   } catch (error) {
     jobRunner.info(
-      `There was an error creating a PR comment. Error message: ${error.message}`
+      `There was an error creating or updating a PR comment. Error message: ${error.message}`
     )
     return
   }
