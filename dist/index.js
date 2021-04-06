@@ -369,7 +369,8 @@ function generateCommentBody(changes, subscribers) {
 
 Last updated: ${timestamp}
 
-[View documentation](${changes.data.opticUrl})`;
+[View documentation](${changes.data.opticUrl})
+`;
     if (subscribers.length) {
         const subscriberText = subscribers
             .map(subscriber => `@${subscriber}`)
