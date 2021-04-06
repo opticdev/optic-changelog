@@ -43,6 +43,7 @@ export declare interface IGitProvider {
 }
 
 export declare interface IJobRunner {
+  debug(message: string): void
   info(message: string): void
   setFailed(message: string | Error): void
 }

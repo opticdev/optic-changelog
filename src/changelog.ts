@@ -11,9 +11,9 @@ export async function runOpticChangelog({
   prNumber,
   jobRunner
 }): Promise<void> {
-  let headContent, baseContent
+  let headContent: string, baseContent: string
 
-  // Could be moved or removed
+  // This may fail if the file was moved or it's a new Optic setup
   try {
     headContent = await gitProvider.getFileContent(headSha, opticSpecPath)
   } catch (error) {
@@ -49,6 +49,9 @@ export async function runOpticChangelog({
   const message = generateCommentBody(changes, subscribers)
   const body = setMetadata(message, {})
 
+  jobRunner.debug(`Created body for comment`)
+  jobRunner.debug(body)
+
   try {
     // TODO: probably should be simplified a bit
     const existingBotComments = (
@@ -57,9 +60,11 @@ export async function runOpticChangelog({
 
     if (existingBotComments.length) {
       const comment = existingBotComments[0]
+      jobRunner.debug(`Updating comment ${comment.id}`)
       // TODO: need to pull out metadata and combine with new (maybe)
       await gitProvider.updatePrComment(comment.id, body)
     } else {
+      jobRunner.debug(`Creating comment for PR ${prNumber}`)
       await gitProvider.createPrComment(prNumber, body)
     }
   } catch (error) {
