@@ -1,38 +1,35 @@
-// TODO: refactor to not rely on @actions/core
-import * as core from '@actions/core'
 import {Changelog} from './types'
 import {setMetadata, isOpticComment, generateCommentBody} from './pr'
 
 export async function runOpticChangelog({
   subscribers,
   opticSpecPath,
-  gitHubRepo,
+  gitProvider,
   headSha,
   baseSha,
   baseBranch,
-  prNumber
+  prNumber,
+  jobRunner
 }): Promise<void> {
   let headContent, baseContent
 
   // Could be moved or removed
   try {
-    headContent = await gitHubRepo.getFileContent(headSha, opticSpecPath)
+    headContent = await gitProvider.getFileContent(headSha, opticSpecPath)
   } catch (error) {
     // Failing silently here
-    // TODO: Throw instead of log and return
-    core.info(
+    jobRunner.info(
       `Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}.`
     )
     return
   }
 
-  // Could be moved or new Optic setup
+  // This may fail if the file was moved or it's a new Optic setup
   try {
-    baseContent = await gitHubRepo.getFileContent(baseSha, opticSpecPath)
+    baseContent = await gitProvider.getFileContent(baseSha, opticSpecPath)
   } catch (error) {
     // Failing silently here
-    // TODO: Throw instead of log and return
-    core.info(
+    jobRunner.info(
       `Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`
     )
     return
@@ -45,8 +42,7 @@ export async function runOpticChangelog({
   })
 
   if (changes.data.endpoints.length === 0) {
-    // TODO: Throw instead of log and return
-    core.info('No API changes in this PR.')
+    jobRunner.info('No API changes in this PR.')
     return
   }
 
@@ -56,20 +52,21 @@ export async function runOpticChangelog({
   try {
     // TODO: probably should be simplified a bit
     const existingBotComments = (
-      await gitHubRepo.getPrBotComments(prNumber)
+      await gitProvider.getPrBotComments(prNumber)
     ).filter(comment => isOpticComment(comment.body!))
-    if (existingBotComments.length > 0) {
+
+    if (existingBotComments.length) {
       const comment = existingBotComments[0]
       // TODO: need to pull out metadata and combine with new (maybe)
-      await gitHubRepo.updatePrComment(prNumber, comment.id, body)
+      await gitProvider.updatePrComment(comment.id, body)
     } else {
-      await gitHubRepo.createPrComment(prNumber, body)
+      await gitProvider.createPrComment(prNumber, body)
     }
   } catch (error) {
-    // TODO: Throw instead of log and return
-    core.setFailed(
+    jobRunner.setFailed(
       `There was an error creating a PR comment. Error message: ${error.message}`
     )
+    return
   }
 }
 

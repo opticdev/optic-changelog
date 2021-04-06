@@ -36,8 +36,8 @@ export function getRepoInfo(): RepoInfo {
 export class GitHubRepository implements IGitProvider {
   constructor(
     private octokit: InstanceType<typeof GitHub>,
-    private owner: string,
-    private repo: string
+    public owner: string,
+    public repo: string
   ) {}
 
   async getFileContent(sha: string, path: string): Promise<string> {
@@ -47,9 +47,8 @@ export class GitHubRepository implements IGitProvider {
       path,
       ref: sha
     })
-    if (!('content' in response.data)) {
-      return ''
-    }
+
+    if (!('content' in response.data)) return ''
 
     const buff = Buffer.from(response.data.content, 'base64')
     return buff.toString('utf-8')
@@ -67,11 +66,7 @@ export class GitHubRepository implements IGitProvider {
     }
   }
 
-  async updatePrComment(
-    prNumber: number,
-    commentId: number,
-    body: string
-  ): Promise<void> {
+  async updatePrComment(commentId: number, body: string): Promise<void> {
     await this.octokit.issues.updateComment({
       owner: this.owner,
       repo: this.repo,
@@ -95,9 +90,11 @@ export class GitHubRepository implements IGitProvider {
       repo: this.repo,
       issue_number: prNumber
     })
+
     const existingBotComments = issueComments.data.filter(
       comment => comment.user?.login === 'github-actions[bot]'
     )
+
     return existingBotComments.map(comment => ({
       id: comment.id,
       body: comment.body!

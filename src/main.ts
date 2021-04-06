@@ -29,11 +29,12 @@ async function run(): Promise<void> {
     await runOpticChangelog({
       subscribers,
       opticSpecPath,
-      gitHubRepo,
+      gitProvider: gitHubRepo,
       headSha,
       baseBranch,
       baseSha,
-      prNumber
+      prNumber,
+      jobRunner: core
     })
   } catch (error) {
     core.setFailed(error.message)

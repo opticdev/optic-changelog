@@ -59,20 +59,24 @@ export function generateCommentBody(
     .replace(/T/, ' ')
     .replace(/\..+/, '')
 
-  const subscriberText = subscribers
-    .map(subscriber => `@${subscriber}`)
-    .join(', ')
-
-  return `## Optic Changelog
+  const baseBody = `## Optic Changelog
   
 * Endpoints added: ${results.added}
 * Endpoints updated: ${results.updated}
 
 Last updated: ${timestamp}
 
-[View documentation](${changes.data.opticUrl})
+[View documentation](${changes.data.opticUrl})`
 
+  if (subscribers.length) {
+    const subscriberText = subscribers
+      .map(subscriber => `@${subscriber}`)
+      .join(', ')
+    return `${baseBody}
 ---
 
 Pinging subscribers ${subscriberText}`
+  }
+
+  return baseBody
 }

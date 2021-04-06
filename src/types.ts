@@ -37,11 +37,12 @@ export type PrInfo = {
 export declare interface IGitProvider {
   getFileContent(sha: string, path: string): Promise<string>
   getPrInfo(prNumber: number): Promise<PrInfo>
-  updatePrComment(
-    prNumber: number,
-    commentId: number,
-    body: string
-  ): Promise<void>
+  updatePrComment(commentId: number, body: string): Promise<void>
   createPrComment(prNumber: number, body: string): Promise<void>
   getPrBotComments(prNumber: number): Promise<PrComment[]>
+}
+
+export declare interface IJobRunner {
+  info(message: string): void
+  setFailed(message: string | Error): void
 }

@@ -7,25 +7,6 @@ require('./sourcemap-register.js');module.exports =
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -37,30 +18,26 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getChangelogData = exports.runOpticChangelog = void 0;
-// TODO: refactor to not rely on @actions/core
-const core = __importStar(__webpack_require__(186));
 const pr_1 = __webpack_require__(515);
-function runOpticChangelog({ subscribers, opticSpecPath, gitHubRepo, headSha, baseSha, baseBranch, prNumber }) {
+function runOpticChangelog({ subscribers, opticSpecPath, gitProvider, headSha, baseSha, baseBranch, prNumber, jobRunner }) {
     return __awaiter(this, void 0, void 0, function* () {
         let headContent, baseContent;
         // Could be moved or removed
         try {
-            headContent = yield gitHubRepo.getFileContent(headSha, opticSpecPath);
+            headContent = yield gitProvider.getFileContent(headSha, opticSpecPath);
         }
         catch (error) {
             // Failing silently here
-            // TODO: Throw instead of log and return
-            core.info(`Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}.`);
+            jobRunner.info(`Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}.`);
             return;
         }
-        // Could be moved or new Optic setup
+        // This may fail if the file was moved or it's a new Optic setup
         try {
-            baseContent = yield gitHubRepo.getFileContent(baseSha, opticSpecPath);
+            baseContent = yield gitProvider.getFileContent(baseSha, opticSpecPath);
         }
         catch (error) {
             // Failing silently here
-            // TODO: Throw instead of log and return
-            core.info(`Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`);
+            jobRunner.info(`Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`);
             return;
         }
         // TODO: use new changelog library here
@@ -69,27 +46,26 @@ function runOpticChangelog({ subscribers, opticSpecPath, gitHubRepo, headSha, ba
             to: JSON.parse(headContent)
         });
         if (changes.data.endpoints.length === 0) {
-            // TODO: Throw instead of log and return
-            core.info('No API changes in this PR.');
+            jobRunner.info('No API changes in this PR.');
             return;
         }
         const message = pr_1.generateCommentBody(changes, subscribers);
         const body = pr_1.setMetadata(message, {});
         try {
             // TODO: probably should be simplified a bit
-            const existingBotComments = (yield gitHubRepo.getPrBotComments(prNumber)).filter(comment => pr_1.isOpticComment(comment.body));
-            if (existingBotComments.length > 0) {
+            const existingBotComments = (yield gitProvider.getPrBotComments(prNumber)).filter(comment => pr_1.isOpticComment(comment.body));
+            if (existingBotComments.length) {
                 const comment = existingBotComments[0];
                 // TODO: need to pull out metadata and combine with new (maybe)
-                yield gitHubRepo.updatePrComment(prNumber, comment.id, body);
+                yield gitProvider.updatePrComment(comment.id, body);
             }
             else {
-                yield gitHubRepo.createPrComment(prNumber, body);
+                yield gitProvider.createPrComment(prNumber, body);
             }
         }
         catch (error) {
-            // TODO: Throw instead of log and return
-            core.setFailed(`There was an error creating a PR comment. Error message: ${error.message}`);
+            jobRunner.setFailed(`There was an error creating a PR comment. Error message: ${error.message}`);
+            return;
         }
     });
 }
@@ -197,9 +173,8 @@ class GitHubRepository {
                 path,
                 ref: sha
             });
-            if (!('content' in response.data)) {
+            if (!('content' in response.data))
                 return '';
-            }
             const buff = Buffer.from(response.data.content, 'base64');
             return buff.toString('utf-8');
         });
@@ -217,7 +192,7 @@ class GitHubRepository {
             };
         });
     }
-    updatePrComment(prNumber, commentId, body) {
+    updatePrComment(commentId, body) {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.octokit.issues.updateComment({
                 owner: this.owner,
@@ -314,11 +289,12 @@ function run() {
             yield changelog_1.runOpticChangelog({
                 subscribers,
                 opticSpecPath,
-                gitHubRepo,
+                gitProvider: gitHubRepo,
                 headSha,
                 baseBranch,
                 baseSha,
-                prNumber
+                prNumber,
+                jobRunner: core
             });
         }
         catch (error) {
@@ -386,21 +362,24 @@ function generateCommentBody(changes, subscribers) {
         .toISOString()
         .replace(/T/, ' ')
         .replace(/\..+/, '');
-    const subscriberText = subscribers
-        .map(subscriber => `@${subscriber}`)
-        .join(', ');
-    return `## Optic Changelog
+    const baseBody = `## Optic Changelog
   
 * Endpoints added: ${results.added}
 * Endpoints updated: ${results.updated}
 
 Last updated: ${timestamp}
 
-[View documentation](${changes.data.opticUrl})
-
+[View documentation](${changes.data.opticUrl})`;
+    if (subscribers.length) {
+        const subscriberText = subscribers
+            .map(subscriber => `@${subscriber}`)
+            .join(', ');
+        return `${baseBody}
 ---
 
 Pinging subscribers ${subscriberText}`;
+    }
+    return baseBody;
 }
 exports.generateCommentBody = generateCommentBody;
 
