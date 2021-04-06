@@ -67,7 +67,6 @@ export function generateCommentBody(
   
 * Endpoints added: ${results.added}
 * Endpoints updated: ${results.updated}
-* Endpoints removed: ${results.removed}
 
 Last updated: ${timestamp}
 

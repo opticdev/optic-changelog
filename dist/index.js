@@ -393,7 +393,6 @@ function generateCommentBody(changes, subscribers) {
   
 * Endpoints added: ${results.added}
 * Endpoints updated: ${results.updated}
-* Endpoints removed: ${results.removed}
 
 Last updated: ${timestamp}
 
