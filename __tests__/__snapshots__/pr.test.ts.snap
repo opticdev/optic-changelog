@@ -1,0 +1,81 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Comment for spec add endpoint to existing spec renders the changelog comment 1`] = `
+"## Optic Changelog
+  
+* Endpoints added: 1
+* Endpoints updated: 0
+
+Last updated: 2021-04-07 19:42:18
+"
+`;
+
+exports[`Comment for spec add new endpoint renders the changelog comment 1`] = `
+"## Optic Changelog
+  
+* Endpoints added: 1
+* Endpoints updated: 0
+
+Last updated: 2021-04-07 19:42:18
+"
+`;
+
+exports[`Comment for spec add optional response field renders the changelog comment 1`] = `
+"## Optic Changelog
+  
+* Endpoints added: 0
+* Endpoints updated: 1
+
+Last updated: 2021-04-07 19:42:18
+"
+`;
+
+exports[`Comment for spec add required response field renders the changelog comment 1`] = `
+"## Optic Changelog
+  
+* Endpoints added: 0
+* Endpoints updated: 1
+
+Last updated: 2021-04-07 19:42:18
+"
+`;
+
+exports[`Comment for spec add response status code renders the changelog comment 1`] = `
+"## Optic Changelog
+  
+* Endpoints added: 0
+* Endpoints updated: 1
+
+Last updated: 2021-04-07 19:42:18
+"
+`;
+
+exports[`Comment for spec complex changes renders the changelog comment 1`] = `
+"## Optic Changelog
+  
+* Endpoints added: 2
+* Endpoints updated: 0
+
+Last updated: 2021-04-07 19:42:18
+"
+`;
+
+exports[`Comment for spec no changes renders the changelog comment 1`] = `
+"## Optic Changelog
+  
+* Endpoints added: 1
+* Endpoints updated: 0
+
+Last updated: 2021-04-07 19:42:18
+"
+`;
+
+exports[`Comment for spec update optional response field renders the changelog comment 1`] = `
+"## Optic Changelog
+  
+* Endpoints added: 0
+* Endpoints updated: 1
+
+Last updated: 2021-04-07 19:42:18
+"
+`;
