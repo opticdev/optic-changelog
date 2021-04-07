@@ -46,6 +46,7 @@ describe('Changelog', () => {
     })
     expectCommentWasUpdated()
   })
+
   it("fails silently when there isn't a spec in the head branch", async () => {
     const gitProvider = {
       ...baseGitProvider,
@@ -61,6 +62,7 @@ describe('Changelog', () => {
     expectToFailSilently()
     expect(mockJobRunner.info).toMatchSnapshot()
   })
+  
   it("fails silently when there isn't a spec in the base branch", async () => {
     const gitProvider = {
       ...baseGitProvider,
