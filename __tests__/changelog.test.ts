@@ -62,7 +62,7 @@ describe('Changelog', () => {
     expectToFailSilently()
     expect(mockJobRunner.info).toMatchSnapshot()
   })
-  
+
   it("fails silently when there isn't a spec in the base branch", async () => {
     const gitProvider = {
       ...baseGitProvider,
