@@ -80,7 +80,6 @@ export async function runOpticChangelog({
 export function getChangelogData(options: object): Changelog {
   return {
     data: {
-      opticUrl: 'https://example.com',
       endpoints: [
         {
           change: {

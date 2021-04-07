@@ -65,8 +65,6 @@ export function generateCommentBody(
 * Endpoints updated: ${results.updated}
 
 Last updated: ${timestamp}
-
-[View documentation](${changes.data.opticUrl})
 `
 
   if (subscribers.length) {
