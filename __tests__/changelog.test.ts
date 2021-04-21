@@ -3,15 +3,19 @@ import * as path from 'path'
 import {generateEndpointChanges} from '@useoptic/changelog'
 import {runOpticChangelog} from '../src/changelog'
 
-const BASE_SHA = 'base-sha';
-const HEAD_SHA = 'head-sha';
+const BASE_SHA = 'base-sha'
+const HEAD_SHA = 'head-sha'
 
 const baseGitProvider = {
   getFileContent: async (sha: string) => {
     if (sha === BASE_SHA) {
-      return fs.readFileSync(path.join(__dirname, 'specs/add-method/initial.json')).toString();
+      return fs
+        .readFileSync(path.join(__dirname, 'specs/add-method/initial.json'))
+        .toString()
     }
-    return fs.readFileSync(path.join(__dirname, 'specs/add-method/current.json')).toString();
+    return fs
+      .readFileSync(path.join(__dirname, 'specs/add-method/current.json'))
+      .toString()
   },
   getPrBotComments: async () => [],
   updatePrComment: jest.fn(),

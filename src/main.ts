@@ -36,7 +36,7 @@ async function run(): Promise<void> {
       baseSha,
       prNumber,
       jobRunner: core,
-      generateEndpointChanges,
+      generateEndpointChanges
     })
   } catch (error) {
     core.info(`Failed with unexpected error ${error.message}`)
