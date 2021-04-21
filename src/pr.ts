@@ -40,7 +40,7 @@ export function generateCommentBody(
     removed: 0
   }
 
-  for (const endpoint of changes.data.endpoints) {
+  for (const endpoint of changes.data.endpointChanges.endpoints) {
     switch (endpoint.change.category) {
       case 'added':
         results.added++

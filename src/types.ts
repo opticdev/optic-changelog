@@ -1,12 +1,14 @@
 export type Changelog = {
   data: {
-    endpoints: {
-      change: {
-        category: string
-      }
-      path: string
-      method: string
-    }[]
+    endpointChanges: {
+      endpoints: {
+        change: {
+          category: string
+        }
+        path: string
+        method: string
+      }[]
+    }
   }
 }
 

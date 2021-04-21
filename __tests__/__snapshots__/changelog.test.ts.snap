@@ -1,5 +1,44 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`Changelog creates a comment 1`] = `
+Array [
+  Array [
+    Object {
+      "data": Object {
+        "endpointChanges": Object {
+          "endpoints": Array [
+            Object {
+              "change": Object {
+                "category": "added",
+              },
+              "method": "POST",
+              "path": "/user",
+            },
+          ],
+        },
+      },
+    },
+  ],
+  Array [
+    "Created body for comment",
+  ],
+  Array [
+    "## Optic Changelog
+  
+* Endpoints added: 1
+* Endpoints updated: 0
+
+Last updated: 2021-04-21 15:06:33
+
+
+<!-- optic = {} -->",
+  ],
+  Array [
+    "Creating comment for PR 100",
+  ],
+]
+`;
+
 exports[`Changelog fails silently when there isn't a spec in the base branch 1`] = `
 [MockFunction] {
   "calls": Array [
@@ -30,4 +69,43 @@ exports[`Changelog fails silently when there isn't a spec in the head branch 1`]
     },
   ],
 }
+`;
+
+exports[`Changelog updates a comment 1`] = `
+Array [
+  Array [
+    Object {
+      "data": Object {
+        "endpointChanges": Object {
+          "endpoints": Array [
+            Object {
+              "change": Object {
+                "category": "added",
+              },
+              "method": "POST",
+              "path": "/user",
+            },
+          ],
+        },
+      },
+    },
+  ],
+  Array [
+    "Created body for comment",
+  ],
+  Array [
+    "## Optic Changelog
+  
+* Endpoints added: 1
+* Endpoints updated: 0
+
+Last updated: 2021-04-21 15:06:33
+
+
+<!-- optic = {} -->",
+  ],
+  Array [
+    "Updating comment 1",
+  ],
+]
 `;

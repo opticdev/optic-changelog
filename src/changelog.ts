@@ -1,5 +1,6 @@
 import {Changelog} from './types'
 import {setMetadata, isOpticComment, generateCommentBody} from './pr'
+import { countReset } from 'console'
 
 export async function runOpticChangelog({
   subscribers,
@@ -9,7 +10,8 @@ export async function runOpticChangelog({
   baseSha,
   baseBranch,
   prNumber,
-  jobRunner
+  jobRunner,
+  generateEndpointChanges,
 }): Promise<void> {
   let headContent: string, baseContent: string
 
@@ -36,12 +38,10 @@ export async function runOpticChangelog({
   }
 
   // TODO: use new changelog library here
-  const changes = getChangelogData({
-    from: JSON.parse(baseContent),
-    to: JSON.parse(headContent)
-  })
+  const changes: Changelog = await generateEndpointChanges(JSON.parse(baseContent), JSON.parse(headContent))
+  jobRunner.debug(changes)
 
-  if (changes.data.endpoints.length === 0) {
+  if (changes.data.endpointChanges.endpoints.length === 0) {
     jobRunner.info('No API changes in this PR.')
     return
   }
@@ -77,25 +77,25 @@ export async function runOpticChangelog({
 
 // TODO: this is fake data for now
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function getChangelogData(options: object): Changelog {
-  return {
-    data: {
-      endpoints: [
-        {
-          change: {
-            category: 'added'
-          },
-          path: '/foo',
-          method: 'get'
-        },
-        {
-          change: {
-            category: 'updated'
-          },
-          path: '/bar',
-          method: 'post'
-        }
-      ]
-    }
-  }
-}
+// export function getChangelogData(options: object): Changelog {
+//   return {
+//     data: {
+//       endpoints: [
+//         {
+//           change: {
+//             category: 'added'
+//           },
+//           path: '/foo',
+//           method: 'get'
+//         },
+//         {
+//           change: {
+//             category: 'updated'
+//           },
+//           path: '/bar',
+//           method: 'post'
+//         }
+//       ]
+//     }
+//   }
+// }

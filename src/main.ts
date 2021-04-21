@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
+import {generateEndpointChanges} from '@useoptic/changelog'
 import {runOpticChangelog} from './changelog'
 import {getJobInputs, getRepoInfo, GitHubRepository} from './github'
 
@@ -34,7 +35,8 @@ async function run(): Promise<void> {
       baseBranch,
       baseSha,
       prNumber,
-      jobRunner: core
+      jobRunner: core,
+      generateEndpointChanges,
     })
   } catch (error) {
     core.info(`Failed with unexpected error ${error.message}`)
