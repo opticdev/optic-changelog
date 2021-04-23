@@ -28,12 +28,14 @@
     "@actions/core": "^1.2.6",
     "@actions/github": "^4.0.0",
     "@actions/http-client": "^1.0.9",
-    "@useoptic/changelog": "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b137/changelog-10.0.1-alpha.b137.tgz"
+    "@useoptic/changelog": "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b137/changelog-10.0.1-alpha.b137.tgz",
+    "node-fetch": "^2.6.1"
   },
   "devDependencies": {
     "@octokit/types": "^6.12.2",
     "@types/jest": "^26.0.15",
     "@types/node": "^14.14.9",
+    "@types/node-fetch": "^2.5.10",
     "@typescript-eslint/parser": "^4.19.0",
     "@vercel/ncc": "^0.25.1",
     "eslint": "^7.17.0",
