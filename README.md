@@ -30,5 +30,6 @@ jobs:
 You can input the following values to the GitHub Action.
 
 * `GITHUB_TOKEN` (required) - for creating PR comments
+* `OPTIC_API_KEY` (required) - API key from app.useoptic.com allows the gitbot to generate links to specs, making the changes much more visible
 * `SUBSCRIBERS` (optional) - comma-separated value of GitHub usernames to include in the PR comment, which will notify the users of an API change
 * `OPTIC_SPEC_PATH` (optional) - file path to the Optic spec file in the case where you move it from the normal location
