@@ -6,13 +6,17 @@ import {getJobInputs, getRepoInfo, GitHubRepository} from './github'
 
 async function run(): Promise<void> {
   try {
-    const {repoToken, subscribers, opticSpecPath} = getJobInputs()
+    const {repoToken, subscribers, opticSpecPath, opticApiKey} = getJobInputs()
 
     if (!repoToken) {
       throw new Error(
         'Please provide a GitHub token. Set one with the repo-token input or GITHUB_TOKEN env variable.'
       )
     }
+
+    if(!opticApiKey){
+      core.warning("No OPTIC_API_KEY provided, spec links won't get generated.")
+    } 
 
     const octokit = github.getOctokit(repoToken)
 
@@ -28,6 +32,7 @@ async function run(): Promise<void> {
     const {baseSha, baseBranch} = await gitHubRepo.getPrInfo(prNumber)
 
     await runOpticChangelog({
+      apiKey: opticApiKey,
       subscribers,
       opticSpecPath,
       gitProvider: gitHubRepo,
