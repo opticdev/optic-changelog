@@ -30,10 +30,16 @@ export function setMetadata(body: string, data: any): string {
   })} -->`
 }
 
-export function generateCommentBody(
+const cloudSpecViewerBase = `https://specs.useoptic.com/public-specs`
+export function generateCommentBody({
+  changes,
+  subscribers,
+  specId
+}: {
   changes: Changelog,
-  subscribers: string[]
-): string {
+  subscribers: string[],
+  specId?: string
+}): string {
   const results = {
     added: 0,
     updated: 0,
@@ -65,6 +71,8 @@ export function generateCommentBody(
 * Endpoints updated: ${results.updated}
 
 Last updated: ${timestamp}
+
+${specId && `View spec: [Here](${cloudSpecViewerBase}/${specId})`}
 `
 
   if (subscribers.length) {

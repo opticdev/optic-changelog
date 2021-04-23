@@ -16,6 +16,7 @@ export type JobInputs = {
   repoToken?: string
   subscribers: string[]
   opticSpecPath: string
+  opticApiKey?: string
 }
 
 export type RepoInfo = {
@@ -40,6 +41,7 @@ export declare interface IGitProvider {
   getPrInfo(prNumber: number): Promise<PrInfo>
   updatePrComment(commentId: number, body: string): Promise<void>
   createPrComment(prNumber: number, body: string): Promise<void>
+  getRepoInfo(): RepoInfo;
   getPrBotComments(prNumber: number): Promise<PrComment[]>
 }
 

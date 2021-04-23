@@ -13,8 +13,9 @@ export function getJobInputs(): JobInputs {
     .map(subscriber => subscriber.trim())
 
   const opticSpecPath = core.getInput('OPTIC_SPEC_PATH')
+  const opticApiKey = core.getInput('OPTIC_API_KEY')
 
-  return {repoToken, subscribers, opticSpecPath}
+  return {repoToken, subscribers, opticSpecPath, opticApiKey}
 }
 
 export function getRepoInfo(): RepoInfo {
@@ -52,6 +53,10 @@ export class GitHubRepository implements IGitProvider {
 
     const buff = Buffer.from(response.data.content, 'base64')
     return buff.toString('utf-8')
+  }
+  
+  getRepoInfo(): RepoInfo {
+    return getRepoInfo()
   }
 
   async getPrInfo(prNumber: number): Promise<PrInfo> {

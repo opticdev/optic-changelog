@@ -11,6 +11,11 @@ inputs:
     description: |
       File location relative to root for the Optic spec file.
     default: .optic/api/specification.json
+  OPTIC_API_KEY:
+    required: false
+    description: |
+      API key generated on https://app.useoptic.com.
+    default: ""
   SUBSCRIBERS:
     required: false
     description: |
