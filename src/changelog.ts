@@ -1,4 +1,5 @@
 import {Changelog, IJobRunner} from './types'
+import fetch from "node-fetch";
 import {setMetadata, isOpticComment, generateCommentBody} from './pr'
 
 // TODO(jshearer): Possibly parameterize this?
@@ -16,6 +17,7 @@ async function uploadSpec({
 }): Promise<string> {
   jobRunner.debug("Creating new spec to upload")
   const newSpecResp = await fetch(`${API_BASE}/api/account/specs`, {
+    method: "POST",
     headers: {
       Authorization: `Token ${apiKey}`,
       "Content-Type": "application/json"
@@ -27,12 +29,13 @@ async function uploadSpec({
     throw new Error(`Error creating spec to upload: ${newSpecResp.statusText}: ${await newSpecResp.text()}`)
   }
 
-  const {spec: {id: specId}, upload_url} = await newSpecResp.json();
+  const {id: specId, upload_url} = await newSpecResp.json();
   jobRunner.debug(`Spec created: ${specId}. Uploading...`);
 
   const uploadResult = await fetch(upload_url, {
+    method: "PUT",
     headers: {
-      "Content-Type": "application/json"
+      "x-amz-server-side-encryption": "AES256",
     },
     body: specContents
   });

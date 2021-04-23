@@ -30,7 +30,7 @@ export function setMetadata(body: string, data: any): string {
   })} -->`
 }
 
-const cloudSpecViewerBase = `https://specs.useoptic.com/public-specs`
+const cloudSpecViewerBase = `https://spec.useoptic.com/public-specs`
 export function generateCommentBody({
   changes,
   subscribers,
