@@ -87,3 +87,10 @@ Pinging subscribers ${subscriberText}`
 
   return baseBody
 }
+
+export function generateBadApiKeyCommentBody() : string {
+  return `## Optic Changelog
+
+Your \`OPTIC_API_KEY\` is missing or invalid. Follow these docs!
+`
+}

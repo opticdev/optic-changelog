@@ -1,6 +1,6 @@
 import {Changelog, IJobRunner} from './types'
 import fetch from "node-fetch";
-import {setMetadata, isOpticComment, generateCommentBody} from './pr'
+import {setMetadata, isOpticComment, generateCommentBody, generateBadApiKeyCommentBody} from './pr'
 
 // TODO(jshearer): Possibly parameterize this?
 const API_BASE = "https://api.useoptic.com";
@@ -61,11 +61,11 @@ export async function runOpticChangelog({
   jobRunner,
   generateEndpointChanges
 }): Promise<void> {
-  let headContent: string, baseContent: string
+  let headContent: any[], baseContent: any[]
 
   // This may fail if the file was moved or it's a new Optic setup
   try {
-    headContent = await gitProvider.getFileContent(headSha, opticSpecPath)
+    headContent = JSON.parse(await gitProvider.getFileContent(headSha, opticSpecPath))
   } catch (error) {
     // Failing silently here
     jobRunner.info(
@@ -76,32 +76,27 @@ export async function runOpticChangelog({
 
   // This may fail if the file was moved or it's a new Optic setup
   try {
-    baseContent = await gitProvider.getFileContent(baseSha, opticSpecPath)
+    baseContent = JSON.parse(await gitProvider.getFileContent(baseSha, opticSpecPath))
   } catch (error) {
     // Failing silently here
     jobRunner.info(
       `Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`
     )
-    return
+    baseContent = [];
   }
 
   // TODO: use new changelog library here
   const changes: Changelog = await generateEndpointChanges(
-    JSON.parse(baseContent),
-    JSON.parse(headContent)
+    baseContent,
+    headContent
   )
   jobRunner.debug(changes)
-
-  if (changes.data.endpointChanges.endpoints.length === 0) {
-    jobRunner.info('No API changes in this PR.')
-    return
-  }
 
   let specId: string|undefined = undefined;
   if(apiKey && apiKey.length > 0 && changes.data.endpointChanges.endpoints.length > 0){
     specId = await uploadSpec({
       apiKey,
-      specContents: headContent,
+      specContents: JSON.stringify(headContent),
       jobRunner,
       metadata: {
         prNumber,
@@ -111,7 +106,18 @@ export async function runOpticChangelog({
     })
   }
 
-  const message = generateCommentBody({changes, subscribers, specId})
+  if (changes.data.endpointChanges.endpoints.length === 0) {
+    jobRunner.info('No API changes in this PR.');
+    return;
+  }
+
+  let message: string;
+  if(apiKey){
+    message = generateCommentBody({changes, subscribers, specId})
+  } else {
+    message = generateBadApiKeyCommentBody();
+  }
+
   const body = setMetadata(message, {})
 
   jobRunner.debug('Created body for comment')
