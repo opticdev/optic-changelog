@@ -3,19 +3,21 @@ import fetch from "node-fetch";
 import hash from "object-hash";
 import {setMetadata, isOpticComment, generateCommentBody, generateBadApiKeyCommentBody, getMetadata} from './pr'
 
-// TODO(jshearer): Possibly parameterize this?
-const API_BASE = "https://api.useoptic.com";
-async function uploadSpec({
-  apiKey,
-  specContents, 
-  jobRunner,
-  metadata = {}
-}: {
+export type UploadParams = {
   apiKey: string,
   specContents: string,
   jobRunner: IJobRunner,
   metadata?: Record<string, any>
-}): Promise<string> {
+};
+
+// TODO(jshearer): Possibly parameterize this?
+const API_BASE = "https://api.useoptic.com";
+async function networkUpload({
+  apiKey,
+  specContents, 
+  jobRunner,
+  metadata = {}
+}: UploadParams): Promise<string> {
   jobRunner.debug("Creating new spec to upload")
   const newSpecResp = await fetch(`${API_BASE}/api/account/specs`, {
     method: "POST",
@@ -50,6 +52,20 @@ async function uploadSpec({
   return specId;
 }
 
+export type ChangelogParams = {
+  apiKey: string|undefined,
+  subscribers: string[],
+  opticSpecPath: string,
+  gitProvider: IGitProvider,
+  headSha: string,
+  baseSha: string,
+  baseBranch: string,
+  prNumber: number,
+  jobRunner: IJobRunner,
+  generateEndpointChanges: any, // todo(jshearer): specify this type
+  uploadSpec: (UploadParams) => Promise<string>
+};
+
 export async function runOpticChangelog({
   apiKey,
   subscribers,
@@ -60,19 +76,9 @@ export async function runOpticChangelog({
   baseBranch,
   prNumber,
   jobRunner,
-  generateEndpointChanges
-}: {
-  apiKey: string,
-  subscribers: string[],
-  opticSpecPath: string,
-  gitProvider: IGitProvider,
-  headSha: string,
-  baseSha: string,
-  baseBranch: string,
-  prNumber: number,
-  jobRunner: IJobRunner,
-  generateEndpointChanges: any // todo(jshearer): specify this type
-}): Promise<void> {
+  generateEndpointChanges,
+  uploadSpec = networkUpload
+}: ChangelogParams): Promise<void> {
   let headContent: any[], baseContent: any[]
 
   // This may fail if the file was moved or it's a new Optic setup

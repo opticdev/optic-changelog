@@ -3,35 +3,45 @@
 exports[`Changelog creates a comment 1`] = `
 Array [
   Array [
-    Object {
-      "data": Object {
-        "endpointChanges": Object {
-          "endpoints": Array [
-            Object {
-              "change": Object {
-                "category": "added",
-              },
-              "method": "POST",
-              "path": "/user",
-            },
-          ],
-        },
-      },
-    },
+    "{
+    \\"data\\": {
+        \\"endpointChanges\\": {
+            \\"endpoints\\": [
+                {
+                    \\"change\\": {
+                        \\"category\\": \\"added\\"
+                    },
+                    \\"pathId\\": \\"path_VyuFAjdBCO\\",
+                    \\"path\\": \\"/user\\",
+                    \\"method\\": \\"POST\\"
+                }
+            ]
+        }
+    }
+}",
   ],
   Array [
     "Created body for comment",
   ],
   Array [
-    "## Optic Changelog
-  
-* Endpoints added: 1
-* Endpoints updated: 0
+    "# Optic PR Check
+_Last updated @ 2021-04-21 15:06:33 UTC_
 
-Last updated: 2021-04-21 15:06:33
+## Project name @ \`/.optic/api/specification.yml\`
+### Optic detected 1 added endpoint(s)
+
+[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/documentation)
+
+### 🟢 added Endpoints
+
+| Endpoint | Description |     |
+| -------- | ----------- | --: |
+**POST** /user | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e/paths/path_VyuFAjdBCO/methods/POST) |
+
+#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/using/baseline)
 
 
-<!-- optic = {} -->",
+<!-- optic = {\\"messageHash\\":\\"9adb3fdab9b378806963fbc0dd8dc62fe5144e93\\"} -->",
   ],
   Array [
     "Creating comment for PR 100",
@@ -39,20 +49,306 @@ Last updated: 2021-04-21 15:06:33
 ]
 `;
 
-exports[`Changelog fails silently when there isn't a spec in the base branch 1`] = `
-[MockFunction] {
-  "calls": Array [
-    Array [
-      "Could not find the Optic spec in the base branch main. Looking in .optic/api/specification.yml.",
-    ],
+exports[`Changelog creates a new comment when new commits change the spec 1`] = `
+Array [
+  Array [
+    "{
+    \\"data\\": {
+        \\"endpointChanges\\": {
+            \\"endpoints\\": [
+                {
+                    \\"change\\": {
+                        \\"category\\": \\"added\\"
+                    },
+                    \\"pathId\\": \\"path_VyuFAjdBCO\\",
+                    \\"path\\": \\"/user\\",
+                    \\"method\\": \\"POST\\"
+                }
+            ]
+        }
+    }
+}",
   ],
-  "results": Array [
-    Object {
-      "type": "return",
-      "value": undefined,
-    },
+  Array [
+    "Created body for comment",
   ],
-}
+  Array [
+    "# Optic PR Check
+_Last updated @ 2021-04-21 15:06:33 UTC_
+
+## Project name @ \`/.optic/api/specification.yml\`
+### Optic detected 1 added endpoint(s)
+
+[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/documentation)
+
+### 🟢 added Endpoints
+
+| Endpoint | Description |     |
+| -------- | ----------- | --: |
+**POST** /user | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e/paths/path_VyuFAjdBCO/methods/POST) |
+
+#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/using/baseline)
+
+
+<!-- optic = {\\"messageHash\\":\\"9adb3fdab9b378806963fbc0dd8dc62fe5144e93\\"} -->",
+  ],
+  Array [
+    "Creating comment for PR 100",
+  ],
+]
+`;
+
+exports[`Changelog creates a new comment when new commits change the spec 2`] = `
+Array [
+  Array [
+    "{
+    \\"data\\": {
+        \\"endpointChanges\\": {
+            \\"endpoints\\": [
+                {
+                    \\"change\\": {
+                        \\"category\\": \\"added\\"
+                    },
+                    \\"pathId\\": \\"path_VyuFAjdBCO\\",
+                    \\"path\\": \\"/user\\",
+                    \\"method\\": \\"POST\\"
+                }
+            ]
+        }
+    }
+}",
+  ],
+  Array [
+    "Created body for comment",
+  ],
+  Array [
+    "# Optic PR Check
+_Last updated @ 2021-04-21 15:06:33 UTC_
+
+## Project name @ \`/.optic/api/specification.yml\`
+### Optic detected 1 added endpoint(s)
+
+[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/documentation)
+
+### 🟢 added Endpoints
+
+| Endpoint | Description |     |
+| -------- | ----------- | --: |
+**POST** /user | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e/paths/path_VyuFAjdBCO/methods/POST) |
+
+#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/using/baseline)
+
+
+<!-- optic = {\\"messageHash\\":\\"9adb3fdab9b378806963fbc0dd8dc62fe5144e93\\"} -->",
+  ],
+  Array [
+    "Creating comment for PR 100",
+  ],
+  Array [
+    "{
+    \\"data\\": {
+        \\"endpointChanges\\": {
+            \\"endpoints\\": [
+                {
+                    \\"change\\": {
+                        \\"category\\": \\"added\\"
+                    },
+                    \\"pathId\\": \\"root\\",
+                    \\"path\\": \\"\\",
+                    \\"method\\": \\"GET\\"
+                },
+                {
+                    \\"change\\": {
+                        \\"category\\": \\"updated\\"
+                    },
+                    \\"pathId\\": \\"path_jleYfnE1Ru\\",
+                    \\"path\\": \\"/api/account/specs\\",
+                    \\"method\\": \\"GET\\"
+                },
+                {
+                    \\"change\\": {
+                        \\"category\\": \\"added\\"
+                    },
+                    \\"pathId\\": \\"path_to6GIY7tL3\\",
+                    \\"path\\": \\"/healthcheck\\",
+                    \\"method\\": \\"GET\\"
+                },
+                {
+                    \\"change\\": {
+                        \\"category\\": \\"added\\"
+                    },
+                    \\"pathId\\": \\"path_Zbx2qte52s\\",
+                    \\"path\\": \\"/api/account/tokens\\",
+                    \\"method\\": \\"GET\\"
+                },
+                {
+                    \\"change\\": {
+                        \\"category\\": \\"added\\"
+                    },
+                    \\"pathId\\": \\"path_Zbx2qte52s\\",
+                    \\"path\\": \\"/api/account/tokens\\",
+                    \\"method\\": \\"POST\\"
+                },
+                {
+                    \\"change\\": {
+                        \\"category\\": \\"added\\"
+                    },
+                    \\"pathId\\": \\"path_jleYfnE1Ru\\",
+                    \\"path\\": \\"/api/account/specs\\",
+                    \\"method\\": \\"POST\\"
+                },
+                {
+                    \\"change\\": {
+                        \\"category\\": \\"added\\"
+                    },
+                    \\"pathId\\": \\"path_td6dXtR2C5\\",
+                    \\"path\\": \\"/api/specs/{specId}\\",
+                    \\"method\\": \\"GET\\"
+                }
+            ]
+        }
+    }
+}",
+  ],
+  Array [
+    "Created body for comment",
+  ],
+  Array [
+    "# Optic PR Check
+_Last updated @ 2021-04-21 15:06:33 UTC_
+
+## Project name @ \`/.optic/api/specification.yml\`
+### Optic detected 6 added endpoint(s), 1 updated endpoint(s)
+
+[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/documentation)
+
+### 🟢 added Endpoints
+
+| Endpoint | Description |     |
+| -------- | ----------- | --: |
+**GET**  | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/b261e2d4-4a2a-43fd-9d95-bcd891519474/paths/root/methods/GET) |,**GET** /healthcheck | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/b261e2d4-4a2a-43fd-9d95-bcd891519474/paths/path_to6GIY7tL3/methods/GET) |,**GET** /api/account/tokens | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/b261e2d4-4a2a-43fd-9d95-bcd891519474/paths/path_Zbx2qte52s/methods/GET) |,**POST** /api/account/tokens | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/b261e2d4-4a2a-43fd-9d95-bcd891519474/paths/path_Zbx2qte52s/methods/POST) |,**POST** /api/account/specs | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/b261e2d4-4a2a-43fd-9d95-bcd891519474/paths/path_jleYfnE1Ru/methods/POST) |,**GET** /api/specs/{specId} | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/b261e2d4-4a2a-43fd-9d95-bcd891519474/paths/path_td6dXtR2C5/methods/GET) |
+### 📝 updated Endpoints
+
+| Endpoint | Description |     |
+| -------- | ----------- | --: |
+**GET** /api/account/specs | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/b261e2d4-4a2a-43fd-9d95-bcd891519474/paths/path_jleYfnE1Ru/methods/GET) |
+
+#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/using/baseline)
+
+
+<!-- optic = {\\"messageHash\\":\\"93b9f53af16d9eee7782a9a6567ecc94a47fb96d\\"} -->",
+  ],
+  Array [
+    "Creating comment for PR 100",
+  ],
+]
+`;
+
+exports[`Changelog doesn't create a comment when new commits don't change the spec 1`] = `
+Array [
+  Array [
+    "{
+    \\"data\\": {
+        \\"endpointChanges\\": {
+            \\"endpoints\\": [
+                {
+                    \\"change\\": {
+                        \\"category\\": \\"added\\"
+                    },
+                    \\"pathId\\": \\"path_VyuFAjdBCO\\",
+                    \\"path\\": \\"/user\\",
+                    \\"method\\": \\"POST\\"
+                }
+            ]
+        }
+    }
+}",
+  ],
+  Array [
+    "Created body for comment",
+  ],
+  Array [
+    "# Optic PR Check
+_Last updated @ 2021-04-21 15:06:33 UTC_
+
+## Project name @ \`/.optic/api/specification.yml\`
+### Optic detected 1 added endpoint(s)
+
+[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/documentation)
+
+### 🟢 added Endpoints
+
+| Endpoint | Description |     |
+| -------- | ----------- | --: |
+**POST** /user | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e/paths/path_VyuFAjdBCO/methods/POST) |
+
+#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/using/baseline)
+
+
+<!-- optic = {\\"messageHash\\":\\"9adb3fdab9b378806963fbc0dd8dc62fe5144e93\\"} -->",
+  ],
+  Array [
+    "Creating comment for PR 100",
+  ],
+]
+`;
+
+exports[`Changelog doesn't create a comment when new commits don't change the spec 2`] = `
+Array [
+  Array [
+    "{
+    \\"data\\": {
+        \\"endpointChanges\\": {
+            \\"endpoints\\": [
+                {
+                    \\"change\\": {
+                        \\"category\\": \\"added\\"
+                    },
+                    \\"pathId\\": \\"path_VyuFAjdBCO\\",
+                    \\"path\\": \\"/user\\",
+                    \\"method\\": \\"POST\\"
+                }
+            ]
+        }
+    }
+}",
+  ],
+  Array [
+    "Created body for comment",
+  ],
+  Array [
+    "# Optic PR Check
+_Last updated @ 2021-04-21 15:06:33 UTC_
+
+## Project name @ \`/.optic/api/specification.yml\`
+### Optic detected 1 added endpoint(s)
+
+[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/documentation)
+
+### 🟢 added Endpoints
+
+| Endpoint | Description |     |
+| -------- | ----------- | --: |
+**POST** /user | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e/paths/path_VyuFAjdBCO/methods/POST) |
+
+#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/using/baseline)
+
+
+<!-- optic = {\\"messageHash\\":\\"9adb3fdab9b378806963fbc0dd8dc62fe5144e93\\"} -->",
+  ],
+  Array [
+    "Creating comment for PR 100",
+  ],
+  Array [
+    "{
+    \\"data\\": {
+        \\"endpointChanges\\": {
+            \\"endpoints\\": []
+        }
+    }
+}",
+  ],
+]
 `;
 
 exports[`Changelog fails silently when there isn't a spec in the head branch 1`] = `
@@ -71,41 +367,59 @@ exports[`Changelog fails silently when there isn't a spec in the head branch 1`]
 }
 `;
 
-exports[`Changelog updates a comment 1`] = `
+exports[`Changelog works correctly when there isn't a spec in the base branch 1`] = `
 Array [
   Array [
-    Object {
-      "data": Object {
-        "endpointChanges": Object {
-          "endpoints": Array [
-            Object {
-              "change": Object {
-                "category": "added",
-              },
-              "method": "POST",
-              "path": "/user",
-            },
-          ],
-        },
-      },
-    },
+    "{
+    \\"data\\": {
+        \\"endpointChanges\\": {
+            \\"endpoints\\": [
+                {
+                    \\"change\\": {
+                        \\"category\\": \\"added\\"
+                    },
+                    \\"pathId\\": \\"path_VyuFAjdBCO\\",
+                    \\"path\\": \\"/user\\",
+                    \\"method\\": \\"POST\\"
+                },
+                {
+                    \\"change\\": {
+                        \\"category\\": \\"added\\"
+                    },
+                    \\"pathId\\": \\"path_VyuFAjdBCO\\",
+                    \\"path\\": \\"/user\\",
+                    \\"method\\": \\"GET\\"
+                }
+            ]
+        }
+    }
+}",
   ],
   Array [
     "Created body for comment",
   ],
   Array [
-    "## Optic Changelog
-  
-* Endpoints added: 1
-* Endpoints updated: 0
+    "# Optic PR Check
+_Last updated @ 2021-04-21 15:06:33 UTC_
 
-Last updated: 2021-04-21 15:06:33
+## Project name @ \`/.optic/api/specification.yml\`
+### Optic detected 2 added endpoint(s)
+
+[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/documentation)
+
+### 🟢 added Endpoints
+
+| Endpoint | Description |     |
+| -------- | ----------- | --: |
+**POST** /user | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/documentation/paths/path_VyuFAjdBCO/methods/POST) |,**GET** /user | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/documentation/paths/path_VyuFAjdBCO/methods/GET) |
+
+#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/using/baseline)
 
 
-<!-- optic = {} -->",
+<!-- optic = {\\"messageHash\\":\\"438eb42872f756d3314bf623cf5c88faa2dd8c29\\"} -->",
   ],
   Array [
-    "Updating comment 1",
+    "Creating comment for PR 100",
   ],
 ]
 `;
