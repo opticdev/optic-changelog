@@ -74,6 +74,6 @@ ${spec({
     specUrl: `${cloudSpecViewerBase}/${specId}/documentation`
 }, tables.join("\n"))}
 ${subscribersPing({subscribers})}
-#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/documenting-your-api/)
+#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/using/baseline)
 `
 }

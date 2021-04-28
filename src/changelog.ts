@@ -194,8 +194,13 @@ export async function runOpticChangelog({
       const commentMeta = getMetadata(comment.body);
 
       if(commentMeta?.messageHash === msgHash) {
-        jobRunner.debug(`Existing comment with same hash found. No changes!`)
-        return
+        if(comment.body === body) {
+          jobRunner.debug(`Existing comment with same hash, and no comment differences found. No changes!`)
+          return
+        } else {
+          jobRunner.debug(`Existing comment with same hash, but some comment differences found. Updating that comment!`)
+          await gitProvider.updatePrComment(comment.id, body)
+        }
       }
     }
 

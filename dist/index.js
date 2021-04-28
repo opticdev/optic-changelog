@@ -161,8 +161,14 @@ function runOpticChangelog({ apiKey, subscribers, opticSpecPath, gitProvider, he
                 const comment = existingBotComments[existingBotComments.length - 1];
                 const commentMeta = pr_1.getMetadata(comment.body);
                 if ((commentMeta === null || commentMeta === void 0 ? void 0 : commentMeta.messageHash) === msgHash) {
-                    jobRunner.debug(`Existing comment with same hash found. No changes!`);
-                    return;
+                    if (comment.body === body) {
+                        jobRunner.debug(`Existing comment with same hash, and no comment differences found. No changes!`);
+                        return;
+                    }
+                    else {
+                        jobRunner.debug(`Existing comment with same hash, but some comment differences found. Updating that comment!`);
+                        yield gitProvider.updatePrComment(comment.id, body);
+                    }
                 }
             }
             // Or make a new comment -- no updating
@@ -579,7 +585,7 @@ ${spec_1.spec({
         specUrl: `${cloudSpecViewerBase}/${specId}/documentation`
     }, tables.join("\n"))}
 ${subscribersPing({ subscribers })}
-#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/documenting-your-api/)
+#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/using/baseline)
 `;
 }
 exports.mainCommentTemplate = mainCommentTemplate;
