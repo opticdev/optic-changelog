@@ -1,25 +1,30 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import {generateEndpointChanges} from '@useoptic/changelog'
-import {runOpticChangelog} from '../src/changelog'
+import {ChangelogParams, runOpticChangelog} from '../src/changelog'
+import { IGitProvider } from '../src/types'
 
 const BASE_SHA = 'base-sha'
 const HEAD_SHA = 'head-sha'
+const NEXT_SHA = 'next-sha'
 
-const baseGitProvider = {
+const pathMap = {
+  [BASE_SHA]: 'specs/add-method/initial.json',
+  [HEAD_SHA]: 'specs/add-method/current.json',
+  [NEXT_SHA]: 'specs/add-method/next.json'
+}
+
+const baseGitProvider: IGitProvider = {
   getFileContent: async (sha: string) => {
-    if (sha === BASE_SHA) {
-      return fs
-        .readFileSync(path.join(__dirname, 'specs/add-method/initial.json'))
-        .toString()
-    }
     return fs
-      .readFileSync(path.join(__dirname, 'specs/add-method/current.json'))
+      .readFileSync(path.join(__dirname, pathMap[sha]))
       .toString()
   },
   getPrBotComments: async () => [],
   updatePrComment: jest.fn(),
-  createPrComment: jest.fn()
+  createPrComment: jest.fn(),
+  getPrInfo: jest.fn(),
+  getRepoInfo: jest.fn(),
 }
 
 const mockJobRunner = {
@@ -28,7 +33,8 @@ const mockJobRunner = {
   setFailed: jest.fn()
 }
 
-const baseOpticChangelog = {
+const baseOpticChangelog: ChangelogParams = {
+  apiKey: "pizza",
   subscribers: [],
   opticSpecPath: '.optic/api/specification.yml',
   gitProvider: baseGitProvider,
@@ -37,7 +43,8 @@ const baseOpticChangelog = {
   baseBranch: 'main',
   prNumber: 100,
   jobRunner: mockJobRunner,
-  generateEndpointChanges
+  generateEndpointChanges,
+  uploadSpec: jest.fn().mockResolvedValue("")
 }
 
 describe('Changelog', () => {
@@ -50,21 +57,33 @@ describe('Changelog', () => {
     expectCommentWasCreated()
   })
 
-  it('updates a comment', async () => {
-    const gitProvider = {
-      ...baseGitProvider,
-      getPrBotComments: async () => [
-        {
-          id: 1,
-          body: 'Optic comment\n\n<!-- optic = {} -->'
-        }
-      ]
-    }
+  it("doesn't create a comment when new commits don't change the spec", async () => {
+    await runOpticChangelog(baseOpticChangelog)
+    expectCommentWasCreated()
+
     await runOpticChangelog({
       ...baseOpticChangelog,
-      gitProvider
-    })
-    expectCommentWasUpdated()
+      baseSha: HEAD_SHA
+    });
+
+    expectCommentWasCreated();
+
+  })
+
+  it("creates a new comment when new commits change the spec", async () => {
+    await runOpticChangelog(baseOpticChangelog)
+    expectCommentWasCreated()
+
+    await runOpticChangelog({
+      ...baseOpticChangelog,
+      baseSha: HEAD_SHA,
+      headSha: NEXT_SHA,
+    });
+
+    expect(baseGitProvider.createPrComment).toBeCalledTimes(2)
+    expect(baseGitProvider.updatePrComment).toBeCalledTimes(0)
+    expect(mockJobRunner.setFailed).toBeCalledTimes(0)
+    expect(mockJobRunner.debug.mock.calls).toMatchSnapshot();
   })
 
   it("fails silently when there isn't a spec in the head branch", async () => {
@@ -83,33 +102,25 @@ describe('Changelog', () => {
     expect(mockJobRunner.info).toMatchSnapshot()
   })
 
-  it("fails silently when there isn't a spec in the base branch", async () => {
+  it("works correctly when there isn't a spec in the base branch", async () => {
     const gitProvider = {
       ...baseGitProvider,
-      getFileContent: jest.fn().mockImplementation(sha => {
+      getFileContent: jest.fn().mockImplementation((sha, path) => {
         if (sha === baseOpticChangelog.baseSha) throw Error()
-        return '[]'
+        return baseGitProvider.getFileContent(sha, path);
       })
     }
     await runOpticChangelog({
       ...baseOpticChangelog,
       gitProvider
     })
-    expectToFailSilently()
-    expect(mockJobRunner.info).toMatchSnapshot()
+    expectCommentWasCreated()
   })
 })
 
 function expectCommentWasCreated() {
   expect(baseGitProvider.createPrComment).toBeCalledTimes(1)
   expect(baseGitProvider.updatePrComment).toBeCalledTimes(0)
-  expect(mockJobRunner.setFailed).toBeCalledTimes(0)
-  expect(mockJobRunner.debug.mock.calls).toMatchSnapshot()
-}
-
-function expectCommentWasUpdated() {
-  expect(baseGitProvider.createPrComment).toBeCalledTimes(0)
-  expect(baseGitProvider.updatePrComment).toBeCalledTimes(1)
   expect(mockJobRunner.setFailed).toBeCalledTimes(0)
   expect(mockJobRunner.debug.mock.calls).toMatchSnapshot()
 }

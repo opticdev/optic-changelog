@@ -1,20 +1,23 @@
-import {Changelog, IJobRunner} from './types'
+import {Changelog, IGitProvider, IJobRunner} from './types'
 import fetch from "node-fetch";
-import {setMetadata, isOpticComment, generateCommentBody, generateBadApiKeyCommentBody} from './pr'
+import hash from "object-hash";
+import {setMetadata, isOpticComment, generateCommentBody, generateBadApiKeyCommentBody, getMetadata} from './pr'
 
-// TODO(jshearer): Possibly parameterize this?
-const API_BASE = "https://api.useoptic.com";
-async function uploadSpec({
-  apiKey,
-  specContents, 
-  jobRunner,
-  metadata = {}
-}: {
+export type UploadParams = {
   apiKey: string,
   specContents: string,
   jobRunner: IJobRunner,
   metadata?: Record<string, any>
-}): Promise<string> {
+};
+
+// TODO(jshearer): Possibly parameterize this?
+const API_BASE = "https://api.useoptic.com";
+async function networkUpload({
+  apiKey,
+  specContents, 
+  jobRunner,
+  metadata = {}
+}: UploadParams): Promise<string> {
   jobRunner.debug("Creating new spec to upload")
   const newSpecResp = await fetch(`${API_BASE}/api/account/specs`, {
     method: "POST",
@@ -49,6 +52,20 @@ async function uploadSpec({
   return specId;
 }
 
+export type ChangelogParams = {
+  apiKey: string|undefined,
+  subscribers: string[],
+  opticSpecPath: string,
+  gitProvider: IGitProvider,
+  headSha: string,
+  baseSha: string,
+  baseBranch: string,
+  prNumber: number,
+  jobRunner: IJobRunner,
+  generateEndpointChanges: any, // todo(jshearer): specify this type
+  uploadSpec: (UploadParams) => Promise<string>
+};
+
 export async function runOpticChangelog({
   apiKey,
   subscribers,
@@ -59,8 +76,9 @@ export async function runOpticChangelog({
   baseBranch,
   prNumber,
   jobRunner,
-  generateEndpointChanges
-}): Promise<void> {
+  generateEndpointChanges,
+  uploadSpec = networkUpload
+}: ChangelogParams): Promise<void> {
   let headContent: any[], baseContent: any[]
 
   // This may fail if the file was moved or it's a new Optic setup
@@ -90,7 +108,7 @@ export async function runOpticChangelog({
     baseContent,
     headContent
   )
-  jobRunner.debug(changes)
+  jobRunner.debug(JSON.stringify(changes, null, 4))
 
   let specId: string|undefined = undefined;
   if(apiKey && apiKey.length > 0 && changes.data.endpointChanges.endpoints.length > 0){
@@ -118,7 +136,9 @@ export async function runOpticChangelog({
     message = generateBadApiKeyCommentBody();
   }
 
-  const body = setMetadata(message, {})
+  const msgHash = hash({changes, subscribers, specId});
+
+  const body = setMetadata(message, {messageHash: msgHash})
 
   jobRunner.debug('Created body for comment')
   jobRunner.debug(body)
@@ -129,18 +149,25 @@ export async function runOpticChangelog({
       await gitProvider.getPrBotComments(prNumber)
     ).filter(comment => isOpticComment(comment.body!))
 
+    
+    // Bail because of existing comment with same hash
     if (existingBotComments.length) {
-      const comment = existingBotComments[0]
-      jobRunner.debug(`Updating comment ${comment.id}`)
-      // TODO: need to pull out metadata and combine with new (maybe)
-      await gitProvider.updatePrComment(comment.id, body)
-    } else {
-      jobRunner.debug(`Creating comment for PR ${prNumber}`)
-      await gitProvider.createPrComment(prNumber, body)
+      const comment = existingBotComments[existingBotComments.length-1];
+      
+      const commentMeta = getMetadata(comment.body);
+
+      if(commentMeta?.messageHash === msgHash) {
+        jobRunner.debug(`Existing comment with same hash found. No changes!`)
+        return
+      }
     }
+
+    // Or make a new comment -- no updating
+    jobRunner.debug(`Creating comment for PR ${prNumber}`)
+    await gitProvider.createPrComment(prNumber, body)
   } catch (error) {
     jobRunner.info(
-      `There was an error creating or updating a PR comment. Error message: ${error.message}`
+      `There was an error creating a PR comment. Error message: ${error.message}`
     )
     return
   }
