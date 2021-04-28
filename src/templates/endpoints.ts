@@ -39,7 +39,7 @@ export function endpointTable({
   endpoints,
   endpointLinkGenerator
 }: EndpointTableProps): string {
-  return `### ${iconMap[type]} ${type} Endpoints
+  return `###### ${iconMap[type]} ${type} Endpoints (${endpoints.length})
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |

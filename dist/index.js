@@ -47,16 +47,15 @@ const in_memory_1 = __webpack_require__(9834);
 const OpticEngine = __importStar(__webpack_require__(5535));
 const spectacle_1 = __webpack_require__(8714);
 const main_1 = __webpack_require__(1519);
-// TODO(jshearer): Possibly parameterize this?
-const API_BASE = "https://api.useoptic.com";
+const constants_1 = __webpack_require__(5105);
 function networkUpload({ apiKey, specContents, jobRunner, metadata = {} }) {
     return __awaiter(this, void 0, void 0, function* () {
-        jobRunner.debug("Creating new spec to upload");
-        const newSpecResp = yield node_fetch_1.default(`${API_BASE}/api/account/specs`, {
-            method: "POST",
+        jobRunner.debug('Creating new spec to upload');
+        const newSpecResp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/account/specs`, {
+            method: 'POST',
             headers: {
                 Authorization: `Token ${apiKey}`,
-                "Content-Type": "application/json"
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(metadata)
         });
@@ -66,9 +65,9 @@ function networkUpload({ apiKey, specContents, jobRunner, metadata = {} }) {
         const { id: specId, upload_url } = yield newSpecResp.json();
         jobRunner.debug(`Spec created: ${specId}. Uploading...`);
         const uploadResult = yield node_fetch_1.default(upload_url, {
-            method: "PUT",
+            method: 'PUT',
             headers: {
-                "x-amz-server-side-encryption": "AES256",
+                'x-amz-server-side-encryption': 'AES256'
             },
             body: specContents
         });
@@ -79,7 +78,8 @@ function networkUpload({ apiKey, specContents, jobRunner, metadata = {} }) {
         return specId;
     });
 }
-function latestBatchCommit(events) {
+function getLatestBatchCommit(events) {
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         if (events.length < 1) {
             return null;
@@ -94,9 +94,9 @@ function latestBatchCommit(events) {
         batchId
       }
     }`,
-            variables: {},
+            variables: {}
         });
-        const latestBatchCommit = batchCommitResults.data.batchCommits.reduce((result, batchCommit) => {
+        const latestBatchCommit = (_b = (_a = batchCommitResults.data) === null || _a === void 0 ? void 0 : _a.batchCommits) === null || _b === void 0 ? void 0 : _b.reduce((result, batchCommit) => {
             return batchCommit.createdAt > result.createdAt ? batchCommit : result;
         });
         return latestBatchCommit.batchId;
@@ -117,7 +117,7 @@ function runOpticChangelog({ apiKey, subscribers, opticSpecPath, gitProvider, he
         // This may fail if the file was moved or it's a new Optic setup
         try {
             baseContent = JSON.parse(yield gitProvider.getFileContent(baseSha, opticSpecPath));
-            baseBatchCommit = yield latestBatchCommit(baseContent);
+            baseBatchCommit = yield getLatestBatchCommit(baseContent);
         }
         catch (error) {
             // Failing silently here
@@ -129,7 +129,9 @@ function runOpticChangelog({ apiKey, subscribers, opticSpecPath, gitProvider, he
         const changes = yield generateEndpointChanges(baseContent, headContent);
         jobRunner.debug(JSON.stringify(changes, null, 4));
         let specId = undefined;
-        if (apiKey && apiKey.length > 0 && changes.data.endpointChanges.endpoints.length > 0) {
+        if (apiKey &&
+            apiKey.length > 0 &&
+            changes.data.endpointChanges.endpoints.length > 0) {
             specId = yield uploadSpec({
                 apiKey,
                 specContents: JSON.stringify(headContent),
@@ -144,7 +146,13 @@ function runOpticChangelog({ apiKey, subscribers, opticSpecPath, gitProvider, he
         }
         let message;
         if (apiKey && specId) {
-            message = main_1.mainCommentTemplate({ changes, specPath: opticSpecPath, subscribers, specId, baseBatchCommit });
+            message = main_1.mainCommentTemplate({
+                changes,
+                specPath: opticSpecPath,
+                subscribers,
+                specId,
+                baseBatchCommit
+            });
         }
         else {
             message = pr_1.generateBadApiKeyCommentBody();
@@ -182,6 +190,20 @@ function runOpticChangelog({ apiKey, subscribers, opticSpecPath, gitProvider, he
     });
 }
 exports.runOpticChangelog = runOpticChangelog;
+
+
+/***/ }),
+
+/***/ 5105:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.COMMENT_HEADER_IMG = exports.CLOUD_SPEC_VIEWER_BASE = exports.API_BASE = void 0;
+exports.API_BASE = 'https://api.useoptic.com';
+exports.CLOUD_SPEC_VIEWER_BASE = 'https://spec.useoptic.com/public-specs';
+exports.COMMENT_HEADER_IMG = 'https://user-images.githubusercontent.com/4368270/116313128-5bece580-a77b-11eb-9356-cee1ee1ee367.png';
 
 
 /***/ }),
@@ -236,7 +258,7 @@ function getJobInputs() {
 exports.getJobInputs = getJobInputs;
 function getRepoInfo() {
     const { payload: { repository, pull_request: pullRequest }, sha: headSha } = github.context;
-    const { full_name: repoFullName = '' } = repository;
+    const { full_name: repoFullName = '' } = repository !== null && repository !== void 0 ? repository : {};
     const [owner, repo] = repoFullName.split('/');
     return {
         prNumber: pullRequest === null || pullRequest === void 0 ? void 0 : pullRequest.number,
@@ -312,7 +334,7 @@ class GitHubRepository {
             const existingBotComments = issueComments.data.filter(comment => { var _a; return ((_a = comment.user) === null || _a === void 0 ? void 0 : _a.login) === 'github-actions[bot]'; });
             return existingBotComments.map(comment => ({
                 id: comment.id,
-                body: comment.body
+                body: comment.body || ''
             }));
         });
     }
@@ -413,7 +435,7 @@ if (process.env['NODE_ENV'] !== 'test') {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.generateBadApiKeyCommentBody = exports.generateCommentBody = exports.setMetadata = exports.getMetadata = exports.isOpticComment = void 0;
+exports.generateBadApiKeyCommentBody = exports.setMetadata = exports.getMetadata = exports.isOpticComment = void 0;
 const REGEX = /\n\n<!-- optic = (.*) -->/;
 function isOpticComment(body) {
     return body.match(REGEX) ? true : false;
@@ -436,51 +458,6 @@ function setMetadata(body, data) {
     return `${bodyText}\n\n<!-- optic = ${JSON.stringify(Object.assign(Object.assign({}, currentData), data))} -->`;
 }
 exports.setMetadata = setMetadata;
-const cloudSpecViewerBase = `https://spec.useoptic.com/public-specs`;
-function generateCommentBody({ changes, subscribers, specId }) {
-    const results = {
-        added: 0,
-        updated: 0,
-        removed: 0
-    };
-    for (const endpoint of changes.data.endpointChanges.endpoints) {
-        switch (endpoint.change.category) {
-            case 'added':
-                results.added++;
-                break;
-            case 'updated':
-                results.updated++;
-                break;
-            case 'removed':
-                results.removed++;
-                break;
-        }
-    }
-    const timestamp = new Date()
-        .toISOString()
-        .replace(/T/, ' ')
-        .replace(/\..+/, '');
-    const baseBody = `## Optic Changelog
-  
-* Endpoints added: ${results.added}
-* Endpoints updated: ${results.updated}
-
-Last updated: ${timestamp}
-
-${specId && `View spec: [Here](${cloudSpecViewerBase}/${specId})`}
-`;
-    if (subscribers.length) {
-        const subscriberText = subscribers
-            .map(subscriber => `@${subscriber}`)
-            .join(', ');
-        return `${baseBody}
----
-
-Pinging subscribers ${subscriberText}`;
-    }
-    return baseBody;
-}
-exports.generateCommentBody = generateCommentBody;
 function generateBadApiKeyCommentBody() {
     return `## Optic Changelog
 
@@ -505,18 +482,18 @@ function endpointRow({ endpoint, description, endpointLink }) {
 }
 exports.endpointRow = endpointRow;
 const iconMap = {
-    'added': '🟢',
-    'updated': '📝',
-    'removed': '❌'
+    added: '🟢',
+    updated: '📝',
+    removed: '❌'
 };
 function endpointTable({ type, endpoints, endpointLinkGenerator }) {
-    return `### ${iconMap[type]} ${type} Endpoints
+    return `###### ${iconMap[type]} ${type} Endpoints (${endpoints.length})
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
 ${endpoints.map(endpoint => endpointRow({
         endpoint,
-        description: "not yet",
+        description: 'not yet',
         endpointLink: endpointLinkGenerator(endpoint)
     }))}`;
 }
@@ -534,83 +511,60 @@ exports.endpointTable = endpointTable;
 // _Last updated @ {{ updateTime }} UTC_
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.mainCommentTemplate = void 0;
+const constants_1 = __webpack_require__(5105);
 const endpoints_1 = __webpack_require__(5850);
-const spec_1 = __webpack_require__(4973);
 // {{#specs}}
 // {{content}}
 // {{/specs}}
 // #### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/documenting-your-api/)
 function subscribersPing({ subscribers }) {
-    let filteredSubs = subscribers.filter(f => (f === null || f === void 0 ? void 0 : f.length) > 0);
+    const filteredSubs = subscribers.filter(f => (f === null || f === void 0 ? void 0 : f.length) > 0);
     if (filteredSubs.length > 0) {
         return `
 ---
 Pinging subscribers:
-${filteredSubs.map(sub => `* @${sub}`).join("\n")}
+${filteredSubs.map(sub => `* @${sub}`).join('\n')}
 `;
     }
     else {
-        return "";
+        return '';
     }
 }
-const cloudSpecViewerBase = `https://spec.useoptic.com/public-specs`;
 function mainCommentTemplate({ changes, specPath, baseBatchCommit, specId, subscribers = [] }) {
-    const timestamp = new Date()
-        .toISOString()
-        .replace(/T/, ' ')
-        .replace(/\..+/, '');
     const linkGen = (endpoint) => {
         if (baseBatchCommit) {
-            return `${cloudSpecViewerBase}/${specId}/changes-since/${baseBatchCommit}/paths/${endpoint.pathId}/methods/${endpoint.method}`;
+            return `${constants_1.CLOUD_SPEC_VIEWER_BASE}/${specId}/changes-since/${baseBatchCommit}/paths/${endpoint.pathId}/methods/${endpoint.method}`;
         }
         else {
-            return `${cloudSpecViewerBase}/${specId}/documentation/paths/${endpoint.pathId}/methods/${endpoint.method}`;
+            return `${constants_1.CLOUD_SPEC_VIEWER_BASE}/${specId}/documentation/paths/${endpoint.pathId}/methods/${endpoint.method}`;
         }
     };
-    let changes_by_category = changes.data.endpointChanges.endpoints.reduce((accum, current) => {
-        return Object.assign(Object.assign({}, accum), { [current.change.category]: [...(accum[current.change.category] || []), current] });
+    const changes_by_category = changes.data.endpointChanges.endpoints.reduce((accum, current) => {
+        return Object.assign(Object.assign({}, accum), { [current.change.category]: [
+                ...(accum[current.change.category] || []),
+                current
+            ] });
     }, {});
-    let tables = Object.entries(changes_by_category).map(([category, changes]) => endpoints_1.endpointTable({
+    const tables = Object.entries(changes_by_category).map(([category, category_changes]) => endpoints_1.endpointTable({
         type: category,
-        endpoints: changes,
+        endpoints: category_changes,
         endpointLinkGenerator: linkGen
     }));
-    return `# Optic PR Check
-_Last updated @ ${timestamp} UTC_
-
-${spec_1.spec({
-        name: "Project name",
-        specPath,
-        title: `Optic detected ${Object.entries(changes_by_category).map(([category, changes]) => `${changes.length} ${category} endpoint(s)`).join(", ")}`,
-        specUrl: `${cloudSpecViewerBase}/${specId}/documentation`
-    }, tables.join("\n"))}
-${subscribersPing({ subscribers })}
-#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/using/baseline)
-`;
-}
-exports.mainCommentTemplate = mainCommentTemplate;
-
-
-/***/ }),
-
-/***/ 4973:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-// ## {{ name }} @ `/{{ specPath }}`
-// ### {{ title }}
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.spec = void 0;
-function spec({ name, specPath, specUrl, title }, children) {
-    return `## ${name} @ \`/${specPath}\`
-### ${title}
+    const specUrl = `${constants_1.CLOUD_SPEC_VIEWER_BASE}/${specId}/${baseBatchCommit ? `changes-since/${baseBatchCommit}` : `documentation`}`;
+    const projectName = 'Name';
+    return `![changelog](${constants_1.COMMENT_HEADER_IMG})
 
 [Click Here to See the Documentation](${specUrl})
 
-${children}`;
+##### Changelog for ${projectName} \`/${specPath}\
+
+${tables.join('\n')}
+
+${subscribersPing({ subscribers })}
+> Powered by [Optic](https://www.useoptic.com). [Learn how it works!](https://www.useoptic.com/docs/using/baseline)
+`;
 }
-exports.spec = spec;
+exports.mainCommentTemplate = mainCommentTemplate;
 
 
 /***/ }),

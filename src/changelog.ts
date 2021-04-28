@@ -11,6 +11,7 @@ import {InMemoryOpticContextBuilder} from '@useoptic/spectacle/build/in-memory'
 import * as OpticEngine from '@useoptic/diff-engine-wasm/engine/build'
 import {makeSpectacle} from '@useoptic/spectacle'
 import {mainCommentTemplate} from './templates/main'
+import {API_BASE} from './constants'
 
 export type UploadParams = {
   apiKey: string
@@ -19,8 +20,6 @@ export type UploadParams = {
   metadata?: Record<string, any>
 }
 
-// TODO(jshearer): Possibly parameterize this?
-const API_BASE = 'https://api.useoptic.com'
 async function networkUpload({
   apiKey,
   specContents,
