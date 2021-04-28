@@ -1,6 +1,7 @@
 import {Changelog, IGitProvider, IJobRunner} from './types'
 import fetch from 'node-fetch'
 import hash from 'object-hash'
+import yaml from 'js-yaml'
 import {
   setMetadata,
   isOpticComment,
@@ -12,6 +13,7 @@ import * as OpticEngine from '@useoptic/diff-engine-wasm/engine/build'
 import {makeSpectacle} from '@useoptic/spectacle'
 import {mainCommentTemplate} from './templates/main'
 import {API_BASE} from './constants'
+import {join} from 'path'
 
 export type UploadParams = {
   apiKey: string
@@ -188,12 +190,24 @@ export async function runOpticChangelog({
 
   let message: string
   if (apiKey && specId) {
+    // path.join("mydir/.optic/api/spec.json","../../..") => "mydir"
+    const opticYamlPath = join(opticSpecPath, '../../../optic.yml')
+    let projectName: string | null
+    try {
+      const opticYaml: {name: string} = yaml.load(
+        await gitProvider.getFileContent(headSha, opticYamlPath)
+      ) as any
+      projectName = opticYaml.name
+    } catch (e) {
+      projectName = null
+    }
     message = mainCommentTemplate({
       changes,
       specPath: opticSpecPath,
       subscribers,
       specId,
-      baseBatchCommit
+      baseBatchCommit,
+      projectName
     })
   } else {
     message = generateBadApiKeyCommentBody()

@@ -32,12 +32,14 @@ export type MainProps = {
   baseBatchCommit: string | null
   specId: string
   specPath: string
+  projectName: string | null
   subscribers?: string[]
 }
 
 export function mainCommentTemplate({
   changes,
   specPath,
+  projectName,
   baseBatchCommit,
   specId,
   subscribers = []
@@ -76,13 +78,11 @@ export function mainCommentTemplate({
     baseBatchCommit ? `changes-since/${baseBatchCommit}` : `documentation`
   }`
 
-  const projectName = 'Name'
-
   return `![changelog](${COMMENT_HEADER_IMG})
 
 [Click Here to See the Documentation](${specUrl})
 
-##### Changelog for ${projectName} \`/${specPath}\
+##### Changelog for ${projectName ?? ''} \`/${specPath}\`
 
 ${tables.join('\n')}
 
