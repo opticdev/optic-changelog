@@ -101,7 +101,7 @@ export class GitHubRepository implements IGitProvider {
 
     return existingBotComments.map(comment => ({
       id: comment.id,
-      body: comment.body!
+      body: comment.body || ''
     }))
   }
 }
