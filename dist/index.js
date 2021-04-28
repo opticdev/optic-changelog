@@ -488,7 +488,7 @@ const iconMap = {
     removed: '❌'
 };
 function endpointTable({ type, endpoints, endpointLinkGenerator }) {
-    return `###### ${iconMap[type]} ${type} Endpoints (${endpoints.length})
+    return `###### ${iconMap[type]}\u2003${type} Endpoints (${endpoints.length})
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
