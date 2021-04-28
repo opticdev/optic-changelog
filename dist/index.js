@@ -176,6 +176,7 @@ function runOpticChangelog({ apiKey, subscribers, opticSpecPath, gitProvider, he
                     else {
                         jobRunner.debug(`Existing comment with same hash, but some comment differences found. Updating that comment!`);
                         yield gitProvider.updatePrComment(comment.id, body);
+                        return;
                     }
                 }
             }

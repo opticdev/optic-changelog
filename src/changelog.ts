@@ -229,6 +229,7 @@ export async function runOpticChangelog({
             `Existing comment with same hash, but some comment differences found. Updating that comment!`
           )
           await gitProvider.updatePrComment(comment.id, body)
+          return
         }
       }
     }
