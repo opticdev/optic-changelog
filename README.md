@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: opticdev/optic-changelog
+      - uses: opticdev/github-actions-optic-changelog
         with:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
 ```
