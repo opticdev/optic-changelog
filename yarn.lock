@@ -863,33 +863,33 @@
     "@typescript-eslint/types" "4.22.0"
     eslint-visitor-keys "^2.0.0"
 
-"@useoptic/changelog@https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b137/changelog-10.0.1-alpha.b137.tgz":
-  version "10.0.1-alpha.b137"
-  resolved "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b137/changelog-10.0.1-alpha.b137.tgz#d948037211d4371bce551913548998043838815c"
+"@useoptic/changelog@https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b147/changelog-10.0.1-alpha.b147.tgz":
+  version "10.0.1-alpha.b147"
+  resolved "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b147/changelog-10.0.1-alpha.b147.tgz#09cbc9bb984e82e354672220689e6143004e119c"
   dependencies:
-    "@useoptic/diff-engine-wasm" "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b137/diff-engine-wasm-10.0.1-alpha.b137.tgz"
-    "@useoptic/graph-lib" "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b137/graph-lib-10.0.1-alpha.b137.tgz"
-    "@useoptic/spectacle" "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b137/spectacle-10.0.1-alpha.b137.tgz"
+    "@useoptic/diff-engine-wasm" "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b147/diff-engine-wasm-10.0.1-alpha.b147.tgz"
+    "@useoptic/graph-lib" "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b147/graph-lib-10.0.1-alpha.b147.tgz"
+    "@useoptic/spectacle" "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b147/spectacle-10.0.1-alpha.b147.tgz"
 
-"@useoptic/diff-engine-wasm@https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b137/diff-engine-wasm-10.0.1-alpha.b137.tgz":
-  version "10.0.1-alpha.b137"
-  resolved "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b137/diff-engine-wasm-10.0.1-alpha.b137.tgz#a846f7c07ae4ea3432913edfff18f3a542986318"
+"@useoptic/diff-engine-wasm@https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b147/diff-engine-wasm-10.0.1-alpha.b147.tgz":
+  version "10.0.1-alpha.b147"
+  uid "163521366840541f1c8649bd0c4a6df047279c6a"
+  resolved "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b147/diff-engine-wasm-10.0.1-alpha.b147.tgz#163521366840541f1c8649bd0c4a6df047279c6a"
   dependencies:
     axax "^0.2.2"
     stream-json "^1.7.1"
 
-"@useoptic/graph-lib@https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b137/graph-lib-10.0.1-alpha.b137.tgz":
-  version "10.0.1-alpha.b137"
-  uid a9da9f32b907f5f6b7ecfce6cc9cb78c293677b2
-  resolved "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b137/graph-lib-10.0.1-alpha.b137.tgz#a9da9f32b907f5f6b7ecfce6cc9cb78c293677b2"
+"@useoptic/graph-lib@https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b147/graph-lib-10.0.1-alpha.b147.tgz":
+  version "10.0.1-alpha.b147"
+  resolved "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b147/graph-lib-10.0.1-alpha.b147.tgz#1d8774f1054dc22968cb23f38634a752fe9331bc"
 
-"@useoptic/spectacle@https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b137/spectacle-10.0.1-alpha.b137.tgz":
-  version "10.0.1-alpha.b137"
-  resolved "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b137/spectacle-10.0.1-alpha.b137.tgz#8b4eb8433adbda0f18e0aeb32fed0d798ede7b43"
+"@useoptic/spectacle@https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b147/spectacle-10.0.1-alpha.b147.tgz":
+  version "10.0.1-alpha.b147"
+  resolved "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b147/spectacle-10.0.1-alpha.b147.tgz#1cea934425eaae2e00d166d8f9ab0c86682bcf52"
   dependencies:
     "@graphql-tools/schema" "^7.1.3"
-    "@useoptic/diff-engine-wasm" "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b137/diff-engine-wasm-10.0.1-alpha.b137.tgz"
-    "@useoptic/graph-lib" "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b137/graph-lib-10.0.1-alpha.b137.tgz"
+    "@useoptic/diff-engine-wasm" "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b147/diff-engine-wasm-10.0.1-alpha.b147.tgz"
+    "@useoptic/graph-lib" "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b147/graph-lib-10.0.1-alpha.b147.tgz"
     graphql "^15.5.0"
     graphql-type-json "^0.3.2"
     uuid "^8.3.2"

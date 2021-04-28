@@ -44,7 +44,7 @@ const baseOpticChangelog: ChangelogParams = {
   prNumber: 100,
   jobRunner: mockJobRunner,
   generateEndpointChanges,
-  uploadSpec: jest.fn().mockResolvedValue("")
+  uploadSpec: jest.fn().mockResolvedValue("spec-id")
 }
 
 describe('Changelog', () => {

@@ -28,7 +28,7 @@
     "@actions/core": "^1.2.6",
     "@actions/github": "^4.0.0",
     "@actions/http-client": "^1.0.9",
-    "@useoptic/changelog": "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b137/changelog-10.0.1-alpha.b137.tgz",
+    "@useoptic/changelog": "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b147/changelog-10.0.1-alpha.b147.tgz",
     "node-fetch": "^2.6.1",
     "object-hash": "^2.1.1"
   },

@@ -5,12 +5,15 @@ export type Changelog = {
         change: {
           category: string
         }
+        pathId: string
         path: string
         method: string
       }[]
     }
   }
 }
+
+export type Endpoint = Changelog["data"]["endpointChanges"]["endpoints"][0];
 
 export type JobInputs = {
   repoToken?: string
