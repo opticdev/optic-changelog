@@ -1,6 +1,6 @@
 // ### {{ icon }} {{ type}} Endpoints
 
-import { Changelog, Endpoint } from "../types";
+import {Endpoint} from '../types'
 
 // | Endpoint | Description |     |
 // | -------- | ----------- | --: |
@@ -9,36 +9,45 @@ import { Changelog, Endpoint } from "../types";
 // {{/endpoints}}
 
 export type EndpointRowProps = {
-    endpoint: Endpoint,
-    description: string,
-    endpointLink: string
+  endpoint: Endpoint
+  description: string
+  endpointLink: string
 }
 
-export function endpointRow({endpoint, description, endpointLink}: EndpointRowProps) {
-    return `**${endpoint.method}** ${endpoint.path} | ${description} | [**Review**](${endpointLink}) |`;
+export function endpointRow({
+  endpoint,
+  description,
+  endpointLink
+}: EndpointRowProps): string {
+  return `**${endpoint.method}** ${endpoint.path} | ${description} | [**Review**](${endpointLink}) |`
 }
 
 const iconMap = {
-    'added': '🟢',
-    'updated': '📝',
-    'removed': '❌'
+  added: '🟢',
+  updated: '📝',
+  removed: '❌'
 }
-
 
 export type EndpointTableProps = {
-    type: keyof typeof iconMap,
-    endpoints: Endpoint[],
-    endpointLinkGenerator: (e: Endpoint) => string
+  type: keyof typeof iconMap
+  endpoints: Endpoint[]
+  endpointLinkGenerator: (e: Endpoint) => string
 }
 
-export function endpointTable({type, endpoints, endpointLinkGenerator}: EndpointTableProps) {
-    return `### ${iconMap[type]} ${type} Endpoints
+export function endpointTable({
+  type,
+  endpoints,
+  endpointLinkGenerator
+}: EndpointTableProps): string {
+  return `### ${iconMap[type]} ${type} Endpoints
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
-${endpoints.map(endpoint => endpointRow({
+${endpoints.map(endpoint =>
+  endpointRow({
     endpoint,
-    description: "not yet",
+    description: 'not yet',
     endpointLink: endpointLinkGenerator(endpoint)
-}))}`;
+  })
+)}`
 }

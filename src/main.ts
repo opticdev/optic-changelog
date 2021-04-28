@@ -14,9 +14,9 @@ async function run(): Promise<void> {
       )
     }
 
-    if(!opticApiKey){
+    if (!opticApiKey) {
       core.warning("No OPTIC_API_KEY provided, spec links won't get generated.")
-    } 
+    }
 
     const octokit = github.getOctokit(repoToken)
 
@@ -30,8 +30,6 @@ async function run(): Promise<void> {
 
     const gitHubRepo = new GitHubRepository(octokit, owner, repo)
     const {baseSha, baseBranch} = await gitHubRepo.getPrInfo(prNumber)
-
-    
 
     await runOpticChangelog({
       apiKey: opticApiKey,
