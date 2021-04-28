@@ -4,8 +4,7 @@ import {GitHub} from '@actions/github/lib/utils'
 import {IGitProvider, JobInputs, RepoInfo, PrInfo, PrComment} from './types'
 
 export function getJobInputs(): JobInputs {
-  const repoToken =
-    core.getInput('GITHUB_TOKEN')! || process.env['GITHUB_TOKEN']!
+  const repoToken = core.getInput('GITHUB_TOKEN') || process.env['GITHUB_TOKEN']
 
   const subscribers = core
     .getInput('subscribers')
@@ -23,7 +22,7 @@ export function getRepoInfo(): RepoInfo {
     payload: {repository, pull_request: pullRequest},
     sha: headSha
   } = github.context
-  const {full_name: repoFullName = ''} = repository!
+  const {full_name: repoFullName = ''} = repository ?? {}
   const [owner, repo] = repoFullName.split('/')
 
   return {
@@ -54,7 +53,7 @@ export class GitHubRepository implements IGitProvider {
     const buff = Buffer.from(response.data.content, 'base64')
     return buff.toString('utf-8')
   }
-  
+
   getRepoInfo(): RepoInfo {
     return getRepoInfo()
   }

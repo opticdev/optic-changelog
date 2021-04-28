@@ -13,7 +13,7 @@ export type Changelog = {
   }
 }
 
-export type Endpoint = Changelog["data"]["endpointChanges"]["endpoints"][0];
+export type Endpoint = Changelog['data']['endpointChanges']['endpoints'][0]
 
 export type JobInputs = {
   repoToken?: string
@@ -44,7 +44,7 @@ export declare interface IGitProvider {
   getPrInfo(prNumber: number): Promise<PrInfo>
   updatePrComment(commentId: number, body: string): Promise<void>
   createPrComment(prNumber: number, body: string): Promise<void>
-  getRepoInfo(): RepoInfo;
+  getRepoInfo(): RepoInfo
   getPrBotComments(prNumber: number): Promise<PrComment[]>
 }
 

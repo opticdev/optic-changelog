@@ -36,8 +36,8 @@ export function generateCommentBody({
   subscribers,
   specId
 }: {
-  changes: Changelog,
-  subscribers: string[],
+  changes: Changelog
+  subscribers: string[]
   specId?: string
 }): string {
   const results = {
@@ -88,7 +88,7 @@ Pinging subscribers ${subscriberText}`
   return baseBody
 }
 
-export function generateBadApiKeyCommentBody() : string {
+export function generateBadApiKeyCommentBody(): string {
   return `## Optic Changelog
 
 Your \`OPTIC_API_KEY\` is missing or invalid. Follow these docs!
