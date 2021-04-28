@@ -555,10 +555,10 @@ function mainCommentTemplate({ changes, specPath, baseBatchCommit, specId, subsc
         .replace(/\..+/, '');
     const linkGen = (endpoint) => {
         if (baseBatchCommit) {
-            return `${cloudSpecViewerBase}/${specId}/changes-since/${baseBatchCommit}/paths${endpoint.path}/methods/${endpoint.method}`;
+            return `${cloudSpecViewerBase}/${specId}/changes-since/${baseBatchCommit}/paths/${endpoint.pathId}/methods/${endpoint.method}`;
         }
         else {
-            return `${cloudSpecViewerBase}/${specId}/documentation/paths${endpoint.path}/methods/${endpoint.method}`;
+            return `${cloudSpecViewerBase}/${specId}/documentation/paths/${endpoint.pathId}/methods/${endpoint.method}`;
         }
     };
     let changes_by_category = changes.data.endpointChanges.endpoints.reduce((accum, current) => {
@@ -576,7 +576,7 @@ ${spec_1.spec({
         name: "Project name",
         specPath,
         title: `Optic detected ${Object.entries(changes_by_category).map(([category, changes]) => `${changes.length} ${category} endpoint(s)`).join(", ")}`,
-        specUrl: "url"
+        specUrl: `${cloudSpecViewerBase}/${specId}/documentation`
     }, tables.join("\n"))}
 ${subscribersPing({ subscribers })}
 #### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/documenting-your-api/)
@@ -9995,19 +9995,19 @@ async function generateEndpointChanges(initialEvents = [], currentEvents) {
           batchId
         }
       }`,
-            variables: {}
+            variables: {},
         });
         // TODO: consider making this into a query
-        const latestBatchCommit = batchCommitResults.data.batchCommits
-            .reduce((result, batchCommit) => {
+        const latestBatchCommit = batchCommitResults.data.batchCommits.reduce((result, batchCommit) => {
             return batchCommit.createdAt > result.createdAt ? batchCommit : result;
         });
         query = `{
-      endpointChanges(since: "${latestBatchCommit.createdAt}") {
+      endpointChanges(sinceBatchCommitId: "${latestBatchCommit.batchId}") {
         endpoints {
           change {
             category
           }
+          pathId
           path
           method
         }
@@ -10021,6 +10021,7 @@ async function generateEndpointChanges(initialEvents = [], currentEvents) {
           change {
             category
           }
+          pathId
           path
           method
         }
@@ -10031,7 +10032,7 @@ async function generateEndpointChanges(initialEvents = [], currentEvents) {
     const currentSpectacle = await spectacle_1.makeSpectacle(currentOpticContext);
     return await currentSpectacle({
         query,
-        variables: {}
+        variables: {},
     });
 }
 exports.generateEndpointChanges = generateEndpointChanges;
@@ -10276,6 +10277,53 @@ module.exports.try_apply_commands = function(commands_json, events_json, batch_i
         var ptr3 = passStringToWasm0(commit_message, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         var len3 = WASM_VECTOR_LEN;
         wasm.try_apply_commands(retptr, ptr0, len0, ptr1, len1, ptr2, len2, ptr3, len3);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+    } finally {
+        wasm.__wbindgen_export_2.value += 16;
+        wasm.__wbindgen_free(r0, r1);
+    }
+};
+
+/**
+* @param {WasmSpecProjection} spec
+* @param {string} interactions_json
+* @returns {string}
+*/
+module.exports.learn_undocumented_bodies = function(spec, interactions_json) {
+    try {
+        const retptr = wasm.__wbindgen_export_2.value - 16;
+        wasm.__wbindgen_export_2.value = retptr;
+        _assertClass(spec, WasmSpecProjection);
+        var ptr0 = passStringToWasm0(interactions_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len0 = WASM_VECTOR_LEN;
+        wasm.learn_undocumented_bodies(retptr, spec.ptr, ptr0, len0);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+    } finally {
+        wasm.__wbindgen_export_2.value += 16;
+        wasm.__wbindgen_free(r0, r1);
+    }
+};
+
+/**
+* @param {WasmSpecProjection} spec
+* @param {string} diff_results_json
+* @param {string} tagged_interactions_json
+* @returns {string}
+*/
+module.exports.learn_shape_diff_affordances = function(spec, diff_results_json, tagged_interactions_json) {
+    try {
+        const retptr = wasm.__wbindgen_export_2.value - 16;
+        wasm.__wbindgen_export_2.value = retptr;
+        _assertClass(spec, WasmSpecProjection);
+        var ptr0 = passStringToWasm0(diff_results_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len0 = WASM_VECTOR_LEN;
+        var ptr1 = passStringToWasm0(tagged_interactions_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len1 = WASM_VECTOR_LEN;
+        wasm.learn_shape_diff_affordances(retptr, spec.ptr, ptr0, len0, ptr1, len1);
         var r0 = getInt32Memory0()[retptr / 4 + 0];
         var r1 = getInt32Memory0()[retptr / 4 + 1];
         return getStringFromWasm0(r0, r1);
@@ -10569,10 +10617,14 @@ var __asyncValues = (this && this.__asyncValues) || function (o) {
     function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
     function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.tap = exports.fromReadableJSONL = exports.fromReadable = exports.lastBy = exports.reduce = void 0;
+exports.tap = exports.fromJSONMap = exports.fromReadableJSONL = exports.fromReadable = exports.lastBy = exports.reduce = void 0;
 __exportStar(__webpack_require__(3698), exports);
 const Parser_1 = __webpack_require__(5771);
+const StreamObject_1 = __importDefault(__webpack_require__(5790));
 const reduce_1 = __webpack_require__(1394);
 Object.defineProperty(exports, "reduce", ({ enumerable: true, get: function () { return reduce_1.reduce; } }));
 function lastBy(predicate) {
@@ -10641,10 +10693,32 @@ function fromReadableJSONL() {
     };
 }
 exports.fromReadableJSONL = fromReadableJSONL;
-function tap(predicate) {
+function fromJSONMap() {
     return function (source) {
         return __asyncGenerator(this, arguments, function* () {
             var e_3, _a;
+            let parseResults = source.pipe(StreamObject_1.default.withParser());
+            try {
+                for (var parseResults_2 = __asyncValues(parseResults), parseResults_2_1; parseResults_2_1 = yield __await(parseResults_2.next()), !parseResults_2_1.done;) {
+                    let parseResult = parseResults_2_1.value;
+                    yield yield __await(parseResult);
+                }
+            }
+            catch (e_3_1) { e_3 = { error: e_3_1 }; }
+            finally {
+                try {
+                    if (parseResults_2_1 && !parseResults_2_1.done && (_a = parseResults_2.return)) yield __await(_a.call(parseResults_2));
+                }
+                finally { if (e_3) throw e_3.error; }
+            }
+        });
+    };
+}
+exports.fromJSONMap = fromJSONMap;
+function tap(predicate) {
+    return function (source) {
+        return __asyncGenerator(this, arguments, function* () {
+            var e_4, _a;
             try {
                 for (var source_1 = __asyncValues(source), source_1_1; source_1_1 = yield __await(source_1.next()), !source_1_1.done;) {
                     let chunk = source_1_1.value;
@@ -10652,12 +10726,12 @@ function tap(predicate) {
                     yield yield __await(chunk);
                 }
             }
-            catch (e_3_1) { e_3 = { error: e_3_1 }; }
+            catch (e_4_1) { e_4 = { error: e_4_1 }; }
             finally {
                 try {
                     if (source_1_1 && !source_1_1.done && (_a = source_1.return)) yield __await(_a.call(source_1));
                 }
-                finally { if (e_3) throw e_3.error; }
+                finally { if (e_4) throw e_4.error; }
             }
         });
     };
@@ -10772,8 +10846,13 @@ var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _ar
     function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.lastUnique = exports.normalize = void 0;
+exports.lastUnique = exports.normalize = exports.fromJSONL = void 0;
 const async_tools_1 = __webpack_require__(7396);
+const async_tools_2 = __webpack_require__(7396);
+function fromJSONL() {
+    return async_tools_2.fromReadableJSONL();
+}
+exports.fromJSONL = fromJSONL;
 function normalize(diffResults) {
     return __asyncGenerator(this, arguments, function* normalize_1() {
         var e_1, _a;
@@ -10882,13 +10961,69 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Commands = __importStar(__webpack_require__(8996));
 exports.DiffResults = __importStar(__webpack_require__(8224));
 exports.HttpInteractions = __importStar(__webpack_require__(5409));
-exports.LearningResults = __importStar(__webpack_require__(614));
+exports.LearningResults = __importStar(__webpack_require__(6672));
 exports.UndocumentedUrls = __importStar(__webpack_require__(7508));
 
 
 /***/ }),
 
-/***/ 614:
+/***/ 6672:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.UndocumentedEndpointBodies = __importStar(__webpack_require__(504));
+exports.ShapeDiffAffordances = __importStar(__webpack_require__(5575));
+
+
+/***/ }),
+
+/***/ 5575:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.affordancesByFingerprint = exports.lastUnique = exports.fromJSONL = void 0;
+const async_tools_1 = __webpack_require__(7396);
+function fromJSONL() {
+    return async_tools_1.fromReadableJSONL();
+}
+exports.fromJSONL = fromJSONL;
+// yield each last unique diff result (using fingerprint as identity)
+exports.lastUnique = async_tools_1.lastBy(([_affordances, fingerprint]) => fingerprint);
+function affordancesByFingerprint() {
+    return async_tools_1.reduce((affordancesByFingerprint, [affordance, fingerprint]) => {
+        affordancesByFingerprint[fingerprint] = affordance;
+        return affordancesByFingerprint;
+    }, {});
+}
+exports.affordancesByFingerprint = affordancesByFingerprint;
+
+
+/***/ }),
+
+/***/ 504:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
@@ -11101,6 +11236,31 @@ class PathNodeWrapper {
     responses() {
         return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Response);
     }
+    components() {
+        let pathNode = this;
+        let parentPath = pathNode.parentPath();
+        const components = [pathNode];
+        while (parentPath !== null) {
+            components.push(parentPath);
+            pathNode = parentPath;
+            parentPath = pathNode.parentPath();
+        }
+        return components.reverse();
+    }
+    get absolutePathPatternWithParameterNames() {
+        let path = '';
+        for (const component of this.components()) {
+            if (component.value.pathId === 'root')
+                continue;
+            if (component.value.isParameterized) {
+                path = `${path}/{${component.value.name}}`;
+            }
+            else {
+                path = `${path}/${component.value.name}`;
+            }
+        }
+        return path;
+    }
 }
 exports.PathNodeWrapper = PathNodeWrapper;
 class BatchCommitNodeWrapper {
@@ -11149,16 +11309,19 @@ class GraphQueries {
         const neighborsOfType = neighbors.get(outgoingNeighborType);
         return this.wrapList(outgoingNeighborType, neighborsOfType || []);
     }
-    *descendantsIterator(nodeId) {
+    *descendantsIterator(nodeId, seenSet = new Set()) {
         const inboundNeighbors = this.index.inboundNeighbors.get(nodeId);
         if (!inboundNeighbors) {
             return;
         }
+        if (seenSet.has(nodeId)) {
+            return;
+        }
+        seenSet.add(nodeId);
         for (const neighborsByNodeType of inboundNeighbors.values()) {
             for (const neighborNode of neighborsByNodeType) {
                 yield neighborNode;
-                // @ts-ignore
-                yield* this.descendantsIterator(neighborNode.id);
+                yield* this.descendantsIterator(neighborNode.id, seenSet);
             }
         }
     }
@@ -11364,16 +11527,19 @@ class GraphQueries {
     listNodesByType(type) {
         return this.wrapList(type, this.index.nodesByType.get(type) || []);
     }
-    *descendantsIterator(nodeId) {
+    *descendantsIterator(nodeId, seenSet = new Set()) {
         const inboundNeighbors = this.index.inboundNeighbors.get(nodeId);
         if (!inboundNeighbors) {
             return;
         }
+        if (seenSet.has(nodeId)) {
+            return;
+        }
+        seenSet.add(nodeId);
         for (const neighborsByNodeType of inboundNeighbors.values()) {
             for (const neighborNode of neighborsByNodeType) {
                 yield neighborNode;
-                // @ts-ignore
-                yield* this.descendantsIterator(neighborNode.id);
+                yield* this.descendantsIterator(neighborNode.id, seenSet);
             }
         }
     }
@@ -11483,7 +11649,7 @@ type StartDiffResult {
 type Query {
   requests: [HttpRequest]
   shapeChoices(shapeId: ID): [OpticShape]
-  endpointChanges(since: String): EndpointChanges
+  endpointChanges(sinceBatchCommitId: String): EndpointChanges
   batchCommits: [BatchCommit]
   diff(diffId: ID): DiffState
 }
@@ -11499,6 +11665,7 @@ type HttpRequest {
   id: ID
   pathComponents: [PathComponent]
   absolutePathPattern: String
+  absolutePathPatternWithParameterNames: String
   pathId: ID
   method: String
   bodies: [HttpBody]
@@ -11549,6 +11716,7 @@ type EndpointChanges {
 }
 type EndpointChange {
   change: EndpointChangeMetadata
+  pathId: String
   path: String
   method: String
 }
@@ -11571,7 +11739,7 @@ type BatchCommit {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getResponseChanges = exports.getRequestChanges = exports.getArrayChanges = exports.getFieldChanges = exports.getShapeChanges = exports.buildEndpointChanges = exports.buildShapesGraph = exports.buildEndpointsGraph = void 0;
+exports.getArrayChanges = exports.getFieldChanges = exports.getShapeChanges = exports.buildEndpointChanges = exports.buildShapesGraph = exports.buildEndpointsGraph = void 0;
 const graph_lib_1 = __webpack_require__(3194);
 const shapes_graph_1 = __webpack_require__(912);
 function buildEndpointsGraph(spec, opticEngine) {
@@ -11623,16 +11791,21 @@ function buildShapesGraph(spec, opticEngine) {
     return queries;
 }
 exports.buildShapesGraph = buildShapesGraph;
-function buildEndpointChanges(endpointQueries, shapeQueries, since) {
-    let sortedBatchCommits = endpointQueries
+function buildEndpointChanges(endpointQueries, shapeQueries, sinceBatchCommitId) {
+    const sortedBatchCommits = endpointQueries
         .listNodesByType(graph_lib_1.endpoints.NodeType.BatchCommit)
         .results.sort((a, b) => {
         return a.result.data.createdAt < b.result.data.createdAt ? 1 : -1;
     });
-    // If there is no `since` date, we want to use every batch commit
-    const deltaBatchCommits = since
-        ? sortedBatchCommits.filter((batchCommit) => batchCommit.result.data.createdAt > since)
-        : sortedBatchCommits;
+    let deltaBatchCommits;
+    if (sinceBatchCommitId) {
+        const sinceBatchCommit = endpointQueries.findNodeById(sinceBatchCommitId);
+        deltaBatchCommits = sortedBatchCommits.filter((batchCommit) => batchCommit.result.data.createdAt >
+            sinceBatchCommit.result.data.createdAt);
+    }
+    else {
+        deltaBatchCommits = sortedBatchCommits;
+    }
     const changes = new Changes();
     deltaBatchCommits.forEach((batchCommit) => {
         batchCommit.requests().results.forEach((request) => {
@@ -11699,6 +11872,7 @@ class Changes {
             return false;
         this.changes.set(endpoint.endpointId, {
             change: { category },
+            pathId: endpoint.pathId,
             path: endpoint.path,
             method: endpoint.method,
         });
@@ -11713,18 +11887,20 @@ class Changes {
     }
 }
 function endpointFromRequest(request) {
-    const pathNode = request.path();
-    const path = pathNode.result.data.absolutePathPattern;
+    let pathNode = request.path();
+    const pathId = pathNode.result.data.pathId;
+    const path = pathNode.absolutePathPatternWithParameterNames;
     const method = request.result.data.httpMethod;
     const endpointId = JSON.stringify({ path, method });
-    return { endpointId, path, method };
+    return { endpointId, pathId, path, method };
 }
 function endpointFromResponse(response) {
-    const pathNode = response.path();
-    const path = pathNode.result.data.absolutePathPattern;
+    let pathNode = response.path();
+    const pathId = pathNode.result.data.pathId;
+    const path = pathNode.absolutePathPatternWithParameterNames;
     const method = response.result.data.httpMethod;
     const endpointId = JSON.stringify({ path, method });
-    return { endpointId, path, method };
+    return { endpointId, pathId, path, method };
 }
 //@TODO remove if not needed after testing
 function getShapeChanges(shapeQueries, shapeId, sinceBatchCommitId) {
@@ -11762,7 +11938,7 @@ function getFieldChanges(shapeQueries, fieldId, shapeId, sinceBatchCommitId) {
     for (const batchCommitId of deltaBatchCommits.keys()) {
         for (const node of shapeQueries.listOutgoingNeighborsByEdgeType(fieldId, graph_lib_1.shapes.EdgeType.UpdatedIn).results) {
             if (node.result.id === batchCommitId)
-                return Object.assign(Object.assign({}, results), { added: true });
+                return Object.assign(Object.assign({}, results), { changed: true });
         }
     }
     // If a field is an array, there may be changes related to the shape but not
@@ -11795,88 +11971,6 @@ function checkForArrayChanges(shapeQueries, deltaBatchCommits, results, shapeId)
     }
     return results;
 }
-function getRequestChanges(endpointQueries, shapeQueries, requestId, sinceBatchCommitId) {
-    const results = {
-        added: false,
-        changed: false,
-    };
-    const deltaBatchCommits = getDeltaBatchCommitsForEndpoints(endpointQueries, sinceBatchCommitId);
-    for (const batchCommit of endpointQueries.listOutgoingNeighborsByType(requestId, graph_lib_1.endpoints.NodeType.BatchCommit).results) {
-        if (deltaBatchCommits.has(batchCommit.result.id))
-            return Object.assign(Object.assign({}, results), { added: true });
-    }
-    const request = endpointQueries.findNodeById(requestId);
-    // TODO: this is really all neighbors and descendants
-    const batchCommitNeighborIds = new Map();
-    for (const batchCommit of deltaBatchCommits.values()) {
-        const batchCommitId = batchCommit.result.id;
-        // TODO: create query for neighbors of all types
-        shapeQueries
-            .listIncomingNeighborsByType(batchCommitId, shapes_graph_1.NodeType.Shape)
-            .results.forEach((shape) => {
-            batchCommitNeighborIds.set(shape.result.id, batchCommitId);
-        });
-        shapeQueries
-            .listIncomingNeighborsByType(batchCommitId, shapes_graph_1.NodeType.Field)
-            .results.forEach((field) => {
-            batchCommitNeighborIds.set(field.result.id, batchCommitId);
-        });
-    }
-    for (const body of request.bodies().results) {
-        const { rootShapeId } = body.result.data;
-        if (batchCommitNeighborIds.has(rootShapeId)) {
-            return Object.assign(Object.assign({}, results), { changed: true });
-        }
-        for (const descendant of shapeQueries.descendantsIterator(rootShapeId)) {
-            if (batchCommitNeighborIds.has(descendant.id)) {
-                return Object.assign(Object.assign({}, results), { changed: true });
-            }
-        }
-    }
-    return results;
-}
-exports.getRequestChanges = getRequestChanges;
-function getResponseChanges(endpointQueries, shapeQueries, responseId, sinceBatchCommitId) {
-    const results = {
-        added: false,
-        changed: false,
-    };
-    const deltaBatchCommits = getDeltaBatchCommitsForEndpoints(endpointQueries, sinceBatchCommitId);
-    for (const batchCommit of endpointQueries.listOutgoingNeighborsByType(responseId, graph_lib_1.endpoints.NodeType.BatchCommit).results) {
-        if (deltaBatchCommits.has(batchCommit.result.id))
-            return Object.assign(Object.assign({}, results), { added: true });
-    }
-    const response = endpointQueries.findNodeById(responseId);
-    // TODO: this is really all neighbors and descendants
-    const batchCommitNeighborIds = new Map();
-    for (const batchCommit of deltaBatchCommits.values()) {
-        const batchCommitId = batchCommit.result.id;
-        // TODO: create query for neighbors of all types
-        shapeQueries
-            .listIncomingNeighborsByType(batchCommitId, shapes_graph_1.NodeType.Shape)
-            .results.forEach((shape) => {
-            batchCommitNeighborIds.set(shape.result.id, batchCommitId);
-        });
-        shapeQueries
-            .listIncomingNeighborsByType(batchCommitId, shapes_graph_1.NodeType.Field)
-            .results.forEach((field) => {
-            batchCommitNeighborIds.set(field.result.id, batchCommitId);
-        });
-    }
-    for (const body of response.bodies().results) {
-        const { rootShapeId } = body.result.data;
-        if (batchCommitNeighborIds.has(rootShapeId)) {
-            return Object.assign(Object.assign({}, results), { changed: true });
-        }
-        for (const descendant of shapeQueries.descendantsIterator(rootShapeId)) {
-            if (batchCommitNeighborIds.has(descendant.id)) {
-                return Object.assign(Object.assign({}, results), { changed: true });
-            }
-        }
-    }
-    return results;
-}
-exports.getResponseChanges = getResponseChanges;
 // TODO: use the endpointQueries one below
 function getDeltaBatchCommits(shapeQueries, sinceBatchCommitId) {
     let sortedBatchCommits = shapeQueries
@@ -11885,22 +11979,6 @@ function getDeltaBatchCommits(shapeQueries, sinceBatchCommitId) {
         return a.result.data.createdAt < b.result.data.createdAt ? 1 : -1;
     });
     const sinceBatchCommit = shapeQueries.findNodeById(sinceBatchCommitId);
-    const deltaBatchCommits = new Map();
-    (sinceBatchCommitId
-        ? sortedBatchCommits.filter((batchCommit) => batchCommit.result.data.createdAt >
-            sinceBatchCommit.result.data.createdAt)
-        : sortedBatchCommits).forEach((batchCommit) => {
-        deltaBatchCommits.set(batchCommit.result.id, batchCommit);
-    });
-    return deltaBatchCommits;
-}
-function getDeltaBatchCommitsForEndpoints(endpointsQueries, sinceBatchCommitId) {
-    let sortedBatchCommits = endpointsQueries
-        .listNodesByType(graph_lib_1.endpoints.NodeType.BatchCommit)
-        .results.sort((a, b) => {
-        return a.result.data.createdAt < b.result.data.createdAt ? 1 : -1;
-    });
-    const sinceBatchCommit = endpointsQueries.findNodeById(sinceBatchCommitId);
     const deltaBatchCommits = new Map();
     (sinceBatchCommitId
         ? sortedBatchCommits.filter((batchCommit) => batchCommit.result.data.createdAt >
@@ -12026,8 +12104,8 @@ class InMemoryDiffService {
         this.dependencies = dependencies;
     }
     async listDiffs() {
-        const diffs = (await this.dependencies.diff.getNormalizedDiffs()).map(([diff, tags]) => {
-            return [diff, tags];
+        const diffs = (await this.dependencies.diff.getNormalizedDiffs()).map(([diff, tags, fingerprint]) => {
+            return [diff, tags, fingerprint];
         });
         return { diffs };
     }
@@ -12053,11 +12131,7 @@ class InMemoryDiff {
                     let parsedResults = JSON.parse(results);
                     let taggedResults = (parsedResults = parsedResults.map((item) => {
                         const [diffResult, fingerprint] = item;
-                        return [
-                            diffResult,
-                            [interaction.uuid],
-                            fingerprint,
-                        ];
+                        return [diffResult, [interaction.uuid], fingerprint];
                     }));
                     for (let result of taggedResults) {
                         yield yield __await(result);
@@ -12113,7 +12187,9 @@ class InMemoryOpticContextBuilder {
         const diffRepository = new InMemoryDiffRepository();
         const interactionsRepository = new InMemoryInteractionsRepository();
         const configRepository = new InMemoryConfigRepository();
-        const specRepository = new InMemorySpecRepository(notifications, { events });
+        const specRepository = new InMemorySpecRepository(notifications, {
+            events,
+        });
         return {
             opticEngine,
             capturesService: new InMemoryCapturesService({
@@ -12134,7 +12210,9 @@ class InMemoryOpticContextBuilder {
         const interactionsRepository = new InMemoryInteractionsRepository();
         await interactionsRepository.set(captureId, interactions);
         const configRepository = new InMemoryConfigRepository();
-        const specRepository = new InMemorySpecRepository(notifications, { events });
+        const specRepository = new InMemorySpecRepository(notifications, {
+            events,
+        });
         return {
             opticEngine,
             capturesService: new InMemoryCapturesService({
@@ -12233,8 +12311,8 @@ async function makeSpectacle(opticContext) {
             shapeChoices: (parent, args, context, info) => {
                 return Promise.resolve(context.shapeViewerProjection[args.shapeId]);
             },
-            endpointChanges: (parent, { since }, context, info) => {
-                const endpointChanges = helpers_1.buildEndpointChanges(endpointsQueries, shapeQueries, since);
+            endpointChanges: (parent, { sinceBatchCommitId }, context, info) => {
+                const endpointChanges = helpers_1.buildEndpointChanges(endpointsQueries, shapeQueries, sinceBatchCommitId);
                 return Promise.resolve(endpointChanges);
             },
             batchCommits: (parent, args, context, info) => {
@@ -12263,16 +12341,12 @@ async function makeSpectacle(opticContext) {
             absolutePathPattern: (parent) => {
                 return Promise.resolve(parent.path().value.absolutePathPattern);
             },
+            absolutePathPatternWithParameterNames: (parent) => {
+                return Promise.resolve(parent.path().absolutePathPatternWithParameterNames);
+            },
             pathComponents: (parent) => {
                 let path = parent.path();
-                let parentPath = path.parentPath();
-                const components = [path.value];
-                while (parentPath !== null) {
-                    components.push(parentPath.value);
-                    path = parentPath;
-                    parentPath = path.parentPath();
-                }
-                return Promise.resolve(components.reverse());
+                return Promise.resolve(path.components());
             },
             method: (parent) => {
                 return Promise.resolve(parent.value.httpMethod);
@@ -12282,9 +12356,6 @@ async function makeSpectacle(opticContext) {
             },
             responses: (parent) => {
                 return Promise.resolve(parent.path().responses().results);
-            },
-            changes: (parent, args, context) => {
-                return Promise.resolve(helpers_1.getRequestChanges(context.endpointsQueries, context.shapeQueries, parent.result.id, args.sinceBatchCommitId));
             },
         },
         HttpResponse: {
@@ -12296,9 +12367,6 @@ async function makeSpectacle(opticContext) {
             },
             bodies: (parent) => {
                 return Promise.resolve(parent.bodies().results);
-            },
-            changes: (parent, args, context) => {
-                return Promise.resolve(helpers_1.getResponseChanges(context.endpointsQueries, context.shapeQueries, parent.result.id, args.sinceBatchCommitId));
             },
         },
         PathComponent: {
@@ -12360,6 +12428,9 @@ async function makeSpectacle(opticContext) {
             },
             path: (parent) => {
                 return Promise.resolve(parent.path);
+            },
+            pathId: (parent) => {
+                return Promise.resolve(parent.pathId);
             },
             method: (parent) => {
                 return Promise.resolve(parent.method);
@@ -36512,6 +36583,908 @@ exports.pascalCase = pascalCase;
 
 /***/ }),
 
+/***/ 9996:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+const {Readable, Writable, Duplex, Transform} = __webpack_require__(2413);
+
+const none = Symbol.for('object-stream.none');
+const finalSymbol = Symbol.for('object-stream.final');
+const manySymbol = Symbol.for('object-stream.many');
+
+const final = value => ({[finalSymbol]: value});
+const many = values => ({[manySymbol]: values});
+
+const isFinal = o => o && typeof o == 'object' && finalSymbol in o;
+const isMany = o => o && typeof o == 'object' && manySymbol in o;
+
+const getFinalValue = o => o[finalSymbol];
+const getManyValues = o => o[manySymbol];
+
+const runAsyncGenerator = async (gen, stream) => {
+  for (;;) {
+    let data = gen.next();
+    if (data && typeof data.then == 'function') {
+      data = await data;
+    }
+    if (data.done) break;
+    let value = data.value;
+    if (value && typeof value.then == 'function') {
+      value = await value;
+    }
+    Chain.sanitize(value, stream);
+  }
+};
+
+const wrapFunction = fn =>
+  new Transform({
+    writableObjectMode: true,
+    readableObjectMode: true,
+    transform(chunk, encoding, callback) {
+      try {
+        const result = fn.call(this, chunk, encoding);
+        if (result && typeof result.then == 'function') {
+          // thenable
+          result.then(result => (Chain.sanitize(result, this), callback(null)), error => callback(error));
+          return;
+        }
+        if (result && typeof result.next == 'function') {
+          // generator
+          runAsyncGenerator(result, this).then(() => callback(null), error => callback(error));
+          return;
+        }
+        Chain.sanitize(result, this);
+        callback(null);
+      } catch (error) {
+        callback(error);
+      }
+    }
+  });
+
+const wrapArray = fns =>
+  new Transform({
+    writableObjectMode: true,
+    readableObjectMode: true,
+    transform(chunk, encoding, callback) {
+      try {
+        let value = chunk;
+        for (let i = 0; i < fns.length; ++i) {
+          const result = fns[i].call(this, value, encoding);
+          if (result === Chain.none) {
+            callback(null);
+            return;
+          }
+          if (Chain.isFinal(result)) {
+            value = Chain.getFinalValue(result);
+            break;
+          }
+          value = result;
+        }
+        Chain.sanitize(value, this);
+        callback(null);
+      } catch (error) {
+        callback(error);
+      }
+    }
+  });
+
+class Chain extends Duplex {
+  constructor(fns, options) {
+    super(options || {writableObjectMode: true, readableObjectMode: true});
+
+    if (!(fns instanceof Array) || !fns.length) {
+      throw Error("Chain's argument should be a non-empty array.");
+    }
+
+    this.streams = fns
+      .filter(fn => fn)
+      .map((fn, index, fns) => {
+        if (typeof fn === 'function' || fn instanceof Array) return Chain.convertToTransform(fn);
+        if (
+          fn instanceof Duplex ||
+          fn instanceof Transform ||
+          (!index && fn instanceof Readable) ||
+          (index === fns.length - 1 && fn instanceof Writable)
+        ) {
+          return fn;
+        }
+        throw Error('Arguments should be functions, arrays or streams.');
+      })
+      .filter(s => s);
+    this.input = this.streams[0];
+    this.output = this.streams.reduce((output, stream) => (output && output.pipe(stream)) || stream);
+
+    if (!(this.input instanceof Writable)) {
+      this._write = (_1, _2, callback) => callback(null);
+      this._final = callback => callback(null); // unavailable in Node 6
+      this.input.on('end', () => this.end());
+    }
+
+    if (this.output instanceof Readable) {
+      this.output.on('data', chunk => !this.push(chunk) && this.output.pause());
+      this.output.on('end', () => this.push(null));
+    } else {
+      this._read = () => {}; // nop
+      this.resume();
+      this.output.on('finish', () => this.push(null));
+    }
+
+    // connect events
+    if (!options || !options.skipEvents) {
+      this.streams.forEach(stream => stream.on('error', error => this.emit('error', error)));
+    }
+  }
+  _write(chunk, encoding, callback) {
+    let error = null;
+    try {
+      this.input.write(chunk, encoding, e => callback(e || error));
+    } catch (e) {
+      error = e;
+    }
+  }
+  _final(callback) {
+    let error = null;
+    try {
+      this.input.end(null, null, e => callback(e || error));
+    } catch (e) {
+      error = e;
+    }
+  }
+  _read() {
+    this.output.resume();
+  }
+  static make(fns, options) {
+    return new Chain(fns, options);
+  }
+  static sanitize(result, stream) {
+    if (Chain.isFinal(result)) {
+      result = Chain.getFinalValue(result);
+    } else if (Chain.isMany(result)) {
+      result = Chain.getManyValues(result);
+    }
+    if (result !== undefined && result !== null && result !== Chain.none) {
+      if (result instanceof Array) {
+        result.forEach(value => value !== undefined && value !== null && stream.push(value));
+      } else {
+        stream.push(result);
+      }
+    }
+  }
+  static convertToTransform(fn) {
+    if (typeof fn === 'function') return wrapFunction(fn);
+    if (fn instanceof Array) return fn.length ? wrapArray(fn) : null;
+    return null;
+  }
+}
+
+Chain.none = none;
+Chain.final = final;
+Chain.isFinal = isFinal;
+Chain.getFinalValue = getFinalValue;
+Chain.many = many;
+Chain.isMany = isMany;
+Chain.getManyValues = getManyValues;
+
+Chain.chain = Chain.make;
+Chain.make.Constructor = Chain;
+
+module.exports = Chain;
+
+
+/***/ }),
+
+/***/ 9345:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+const EventEmitter = __webpack_require__(8614);
+
+const startObject = Ctr =>
+  function () {
+    if (this.done) {
+      this.done = false;
+    } else {
+      this.stack.push(this.current, this.key);
+    }
+    this.current = new Ctr();
+    this.key = null;
+  };
+
+class Assembler extends EventEmitter {
+  static connectTo(stream, options) {
+    return new Assembler(options).connectTo(stream);
+  }
+
+  constructor(options) {
+    super();
+    this.stack = [];
+    this.current = this.key = null;
+    this.done = true;
+    if (options) {
+      this.reviver = typeof options.reviver == 'function' && options.reviver;
+      if (this.reviver) {
+        this.stringValue = this._saveValue = this._saveValueWithReviver;
+      }
+    }
+  }
+
+  connectTo(stream) {
+    stream.on('data', chunk => {
+      if (this[chunk.name]) {
+        this[chunk.name](chunk.value);
+        if (this.done) this.emit('done', this);
+      }
+    });
+    return this;
+  }
+
+  get depth() {
+    return (this.stack.length >> 1) + (this.done ? 0 : 1);
+  }
+
+  get path() {
+    const path = [];
+    for (let i = 0; i < this.stack.length; i += 2) {
+      const key = this.stack[i + 1];
+      path.push(key === null ? this.stack[i].length : key);
+    }
+    return path;
+  }
+
+  dropToLevel(level) {
+    if (level < this.depth) {
+      if (level) {
+        const index = (level - 1) << 1;
+        this.current = this.stack[index];
+        this.key = this.stack[index + 1];
+        this.stack.splice(index);
+      } else {
+        this.stack = [];
+        this.current = this.key = null;
+        this.done = true;
+      }
+    }
+    return this;
+  }
+
+  consume(chunk) {
+    this[chunk.name] && this[chunk.name](chunk.value);
+    return this;
+  }
+
+  keyValue(value) {
+    this.key = value;
+  }
+
+  //stringValue() - aliased below to _saveValue()
+
+  numberValue(value) {
+    this._saveValue(parseFloat(value));
+  }
+  nullValue() {
+    this._saveValue(null);
+  }
+  trueValue() {
+    this._saveValue(true);
+  }
+  falseValue() {
+    this._saveValue(false);
+  }
+
+  //startObject() - assigned below
+
+  endObject() {
+    if (this.stack.length) {
+      const value = this.current;
+      this.key = this.stack.pop();
+      this.current = this.stack.pop();
+      this._saveValue(value);
+    } else {
+      this.done = true;
+    }
+  }
+
+  //startArray() - assigned below
+  //endArray() - aliased below to endObject()
+
+  _saveValue(value) {
+    if (this.done) {
+      this.current = value;
+    } else {
+      if (this.current instanceof Array) {
+        this.current.push(value);
+      } else {
+        this.current[this.key] = value;
+        this.key = null;
+      }
+    }
+  }
+  _saveValueWithReviver(value) {
+    if (this.done) {
+      this.current = this.reviver('', value);
+    } else {
+      if (this.current instanceof Array) {
+        value = this.reviver('' + this.current.length, value);
+        this.current.push(value);
+        if (value === undefined) {
+          delete this.current[this.current.length - 1];
+        }
+      } else {
+        value = this.reviver(this.key, value);
+        if (value !== undefined) {
+          this.current[this.key] = value;
+        }
+        this.key = null;
+      }
+    }
+  }
+}
+
+Assembler.prototype.stringValue = Assembler.prototype._saveValue;
+Assembler.prototype.startObject = startObject(Object);
+Assembler.prototype.startArray = startObject(Array);
+Assembler.prototype.endArray = Assembler.prototype.endObject;
+
+module.exports = Assembler;
+
+
+/***/ }),
+
+/***/ 9066:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+const Utf8Stream = __webpack_require__(2465);
+
+const patterns = {
+  value1: /^(?:[\"\{\[\]\-\d]|true\b|false\b|null\b|\s{1,256})/,
+  string: /^(?:[^\"\\]{1,256}|\\[bfnrt\"\\\/]|\\u[\da-fA-F]{4}|\")/,
+  key1: /^(?:[\"\}]|\s{1,256})/,
+  colon: /^(?:\:|\s{1,256})/,
+  comma: /^(?:[\,\]\}]|\s{1,256})/,
+  ws: /^\s{1,256}/,
+  numberStart: /^\d/,
+  numberDigit: /^\d{0,256}/,
+  numberFraction: /^[\.eE]/,
+  numberExponent: /^[eE]/,
+  numberExpSign: /^[-+]/
+};
+const MAX_PATTERN_SIZE = 16;
+
+let noSticky = true;
+try {
+  new RegExp('.', 'y');
+  noSticky = false;
+} catch (e) {
+  // suppress
+}
+
+!noSticky &&
+  Object.keys(patterns).forEach(key => {
+    let src = patterns[key].source.slice(1); // lop off ^
+    if (src.slice(0, 3) === '(?:' && src.slice(-1) === ')') {
+      src = src.slice(3, -1);
+    }
+    patterns[key] = new RegExp(src, 'y');
+  });
+
+patterns.numberFracStart = patterns.numberExpStart = patterns.numberStart;
+patterns.numberFracDigit = patterns.numberExpDigit = patterns.numberDigit;
+
+const values = {true: true, false: false, null: null},
+  expected = {object: 'objectStop', array: 'arrayStop', '': 'done'};
+
+// long hexadecimal codes: \uXXXX
+const fromHex = s => String.fromCharCode(parseInt(s.slice(2), 16));
+
+// short codes: \b \f \n \r \t \" \\ \/
+const codes = {b: '\b', f: '\f', n: '\n', r: '\r', t: '\t', '"': '"', '\\': '\\', '/': '/'};
+
+class Parser extends Utf8Stream {
+  static make(options) {
+    return new Parser(options);
+  }
+
+  constructor(options) {
+    super(Object.assign({}, options, {readableObjectMode: true}));
+
+    this._packKeys = this._packStrings = this._packNumbers = this._streamKeys = this._streamStrings = this._streamNumbers = true;
+    if (options) {
+      'packValues' in options && (this._packKeys = this._packStrings = this._packNumbers = options.packValues);
+      'packKeys' in options && (this._packKeys = options.packKeys);
+      'packStrings' in options && (this._packStrings = options.packStrings);
+      'packNumbers' in options && (this._packNumbers = options.packNumbers);
+      'streamValues' in options && (this._streamKeys = this._streamStrings = this._streamNumbers = options.streamValues);
+      'streamKeys' in options && (this._streamKeys = options.streamKeys);
+      'streamStrings' in options && (this._streamStrings = options.streamStrings);
+      'streamNumbers' in options && (this._streamNumbers = options.streamNumbers);
+      this._jsonStreaming = options.jsonStreaming;
+    }
+    !this._packKeys && (this._streamKeys = true);
+    !this._packStrings && (this._streamStrings = true);
+    !this._packNumbers && (this._streamNumbers = true);
+
+    this._done = false;
+    this._expect = this._jsonStreaming ? 'done' : 'value';
+    this._stack = [];
+    this._parent = '';
+    this._open_number = false;
+    this._accumulator = '';
+  }
+
+  _flush(callback) {
+    this._done = true;
+    super._flush(error => {
+      if (error) return callback(error);
+      if (this._open_number) {
+        if (this._streamNumbers) {
+          this.push({name: 'endNumber'});
+        }
+        this._open_number = false;
+        if (this._packNumbers) {
+          this.push({name: 'numberValue', value: this._accumulator});
+          this._accumulator = '';
+        }
+      }
+      callback(null);
+    });
+  }
+
+  _processBuffer(callback) {
+    let match,
+      value,
+      index = 0;
+    main: for (;;) {
+      switch (this._expect) {
+        case 'value1':
+        case 'value':
+          patterns.value1.lastIndex = index;
+          match = patterns.value1.exec(this._buffer);
+          if (!match) {
+            if (this._done || index + MAX_PATTERN_SIZE < this._buffer.length) {
+              if (index < this._buffer.length) return callback(new Error('Parser cannot parse input: expected a value'));
+              return callback(new Error('Parser has expected a value'));
+            }
+            break main; // wait for more input
+          }
+          value = match[0];
+          switch (value) {
+            case '"':
+              this._streamStrings && this.push({name: 'startString'});
+              this._expect = 'string';
+              break;
+            case '{':
+              this.push({name: 'startObject'});
+              this._stack.push(this._parent);
+              this._parent = 'object';
+              this._expect = 'key1';
+              break;
+            case '[':
+              this.push({name: 'startArray'});
+              this._stack.push(this._parent);
+              this._parent = 'array';
+              this._expect = 'value1';
+              break;
+            case ']':
+              if (this._expect !== 'value1') return callback(new Error("Parser cannot parse input: unexpected token ']'"));
+              if (this._open_number) {
+                this._streamNumbers && this.push({name: 'endNumber'});
+                this._open_number = false;
+                if (this._packNumbers) {
+                  this.push({name: 'numberValue', value: this._accumulator});
+                  this._accumulator = '';
+                }
+              }
+              this.push({name: 'endArray'});
+              this._parent = this._stack.pop();
+              this._expect = expected[this._parent];
+              break;
+            case '-':
+              this._open_number = true;
+              if (this._streamNumbers) {
+                this.push({name: 'startNumber'});
+                this.push({name: 'numberChunk', value: '-'});
+              }
+              this._packNumbers && (this._accumulator = '-');
+              this._expect = 'numberStart';
+              break;
+            case '0':
+              this._open_number = true;
+              if (this._streamNumbers) {
+                this.push({name: 'startNumber'});
+                this.push({name: 'numberChunk', value: '0'});
+              }
+              this._packNumbers && (this._accumulator = '0');
+              this._expect = 'numberFraction';
+              break;
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+              this._open_number = true;
+              if (this._streamNumbers) {
+                this.push({name: 'startNumber'});
+                this.push({name: 'numberChunk', value: value});
+              }
+              this._packNumbers && (this._accumulator = value);
+              this._expect = 'numberDigit';
+              break;
+            case 'true':
+            case 'false':
+            case 'null':
+              if (this._buffer.length - index === value.length && !this._done) break main; // wait for more input
+              this.push({name: value + 'Value', value: values[value]});
+              this._expect = expected[this._parent];
+              break;
+            // default: // ws
+          }
+          if (noSticky) {
+            this._buffer = this._buffer.slice(value.length);
+          } else {
+            index += value.length;
+          }
+          break;
+        case 'keyVal':
+        case 'string':
+          patterns.string.lastIndex = index;
+          match = patterns.string.exec(this._buffer);
+          if (!match) {
+            if (index < this._buffer.length && (this._done || this._buffer.length - index >= 6))
+              return callback(new Error('Parser cannot parse input: escaped characters'));
+            if (this._done) return callback(new Error('Parser has expected a string value'));
+            break main; // wait for more input
+          }
+          value = match[0];
+          if (value === '"') {
+            if (this._expect === 'keyVal') {
+              this._streamKeys && this.push({name: 'endKey'});
+              if (this._packKeys) {
+                this.push({name: 'keyValue', value: this._accumulator});
+                this._accumulator = '';
+              }
+              this._expect = 'colon';
+            } else {
+              this._streamStrings && this.push({name: 'endString'});
+              if (this._packStrings) {
+                this.push({name: 'stringValue', value: this._accumulator});
+                this._accumulator = '';
+              }
+              this._expect = expected[this._parent];
+            }
+          } else if (value.length > 1 && value.charAt(0) === '\\') {
+            const t = value.length == 2 ? codes[value.charAt(1)] : fromHex(value);
+            if (this._expect === 'keyVal' ? this._streamKeys : this._streamStrings) {
+              this.push({name: 'stringChunk', value: t});
+            }
+            if (this._expect === 'keyVal' ? this._packKeys : this._packStrings) {
+              this._accumulator += t;
+            }
+          } else {
+            if (this._expect === 'keyVal' ? this._streamKeys : this._streamStrings) {
+              this.push({name: 'stringChunk', value: value});
+            }
+            if (this._expect === 'keyVal' ? this._packKeys : this._packStrings) {
+              this._accumulator += value;
+            }
+          }
+          if (noSticky) {
+            this._buffer = this._buffer.slice(value.length);
+          } else {
+            index += value.length;
+          }
+          break;
+        case 'key1':
+        case 'key':
+          patterns.key1.lastIndex = index;
+          match = patterns.key1.exec(this._buffer);
+          if (!match) {
+            if (index < this._buffer.length || this._done) return callback(new Error('Parser cannot parse input: expected an object key'));
+            break main; // wait for more input
+          }
+          value = match[0];
+          if (value === '"') {
+            this._streamKeys && this.push({name: 'startKey'});
+            this._expect = 'keyVal';
+          } else if (value === '}') {
+            if (this._expect !== 'key1') return callback(new Error("Parser cannot parse input: unexpected token '}'"));
+            this.push({name: 'endObject'});
+            this._parent = this._stack.pop();
+            this._expect = expected[this._parent];
+          }
+          if (noSticky) {
+            this._buffer = this._buffer.slice(value.length);
+          } else {
+            index += value.length;
+          }
+          break;
+        case 'colon':
+          patterns.colon.lastIndex = index;
+          match = patterns.colon.exec(this._buffer);
+          if (!match) {
+            if (index < this._buffer.length || this._done) return callback(new Error("Parser cannot parse input: expected ':'"));
+            break main; // wait for more input
+          }
+          value = match[0];
+          value === ':' && (this._expect = 'value');
+          if (noSticky) {
+            this._buffer = this._buffer.slice(value.length);
+          } else {
+            index += value.length;
+          }
+          break;
+        case 'arrayStop':
+        case 'objectStop':
+          patterns.comma.lastIndex = index;
+          match = patterns.comma.exec(this._buffer);
+          if (!match) {
+            if (index < this._buffer.length || this._done) return callback(new Error("Parser cannot parse input: expected ','"));
+            break main; // wait for more input
+          }
+          if (this._open_number) {
+            this._streamNumbers && this.push({name: 'endNumber'});
+            this._open_number = false;
+            if (this._packNumbers) {
+              this.push({name: 'numberValue', value: this._accumulator});
+              this._accumulator = '';
+            }
+          }
+          value = match[0];
+          if (value === ',') {
+            this._expect = this._expect === 'arrayStop' ? 'value' : 'key';
+          } else if (value === '}' || value === ']') {
+            this.push({name: value === '}' ? 'endObject' : 'endArray'});
+            this._parent = this._stack.pop();
+            this._expect = expected[this._parent];
+          }
+          if (noSticky) {
+            this._buffer = this._buffer.slice(value.length);
+          } else {
+            index += value.length;
+          }
+          break;
+        // number chunks
+        case 'numberStart': // [0-9]
+          patterns.numberStart.lastIndex = index;
+          match = patterns.numberStart.exec(this._buffer);
+          if (!match) {
+            if (index < this._buffer.length || this._done) return callback(new Error('Parser cannot parse input: expected a starting digit'));
+            break main; // wait for more input
+          }
+          value = match[0];
+          this._streamNumbers && this.push({name: 'numberChunk', value: value});
+          this._packNumbers && (this._accumulator += value);
+          this._expect = value === '0' ? 'numberFraction' : 'numberDigit';
+          if (noSticky) {
+            this._buffer = this._buffer.slice(value.length);
+          } else {
+            index += value.length;
+          }
+          break;
+        case 'numberDigit': // [0-9]*
+          patterns.numberDigit.lastIndex = index;
+          match = patterns.numberDigit.exec(this._buffer);
+          if (!match) {
+            if (index < this._buffer.length || this._done) return callback(new Error('Parser cannot parse input: expected a digit'));
+            break main; // wait for more input
+          }
+          value = match[0];
+          if (value) {
+            this._streamNumbers && this.push({name: 'numberChunk', value: value});
+            this._packNumbers && (this._accumulator += value);
+            if (noSticky) {
+              this._buffer = this._buffer.slice(value.length);
+            } else {
+              index += value.length;
+            }
+          } else {
+            if (index < this._buffer.length) {
+              this._expect = 'numberFraction';
+              break;
+            }
+            if (this._done) {
+              this._expect = expected[this._parent];
+              break;
+            }
+            break main; // wait for more input
+          }
+          break;
+        case 'numberFraction': // [\.eE]?
+          patterns.numberFraction.lastIndex = index;
+          match = patterns.numberFraction.exec(this._buffer);
+          if (!match) {
+            if (index < this._buffer.length || this._done) {
+              this._expect = expected[this._parent];
+              break;
+            }
+            break main; // wait for more input
+          }
+          value = match[0];
+          this._streamNumbers && this.push({name: 'numberChunk', value: value});
+          this._packNumbers && (this._accumulator += value);
+          this._expect = value === '.' ? 'numberFracStart' : 'numberExpSign';
+          if (noSticky) {
+            this._buffer = this._buffer.slice(value.length);
+          } else {
+            index += value.length;
+          }
+          break;
+        case 'numberFracStart': // [0-9]
+          patterns.numberFracStart.lastIndex = index;
+          match = patterns.numberFracStart.exec(this._buffer);
+          if (!match) {
+            if (index < this._buffer.length || this._done) return callback(new Error('Parser cannot parse input: expected a fractional part of a number'));
+            break main; // wait for more input
+          }
+          value = match[0];
+          this._streamNumbers && this.push({name: 'numberChunk', value: value});
+          this._packNumbers && (this._accumulator += value);
+          this._expect = 'numberFracDigit';
+          if (noSticky) {
+            this._buffer = this._buffer.slice(value.length);
+          } else {
+            index += value.length;
+          }
+          break;
+        case 'numberFracDigit': // [0-9]*
+          patterns.numberFracDigit.lastIndex = index;
+          match = patterns.numberFracDigit.exec(this._buffer);
+          value = match[0];
+          if (value) {
+            this._streamNumbers && this.push({name: 'numberChunk', value: value});
+            this._packNumbers && (this._accumulator += value);
+            if (noSticky) {
+              this._buffer = this._buffer.slice(value.length);
+            } else {
+              index += value.length;
+            }
+          } else {
+            if (index < this._buffer.length) {
+              this._expect = 'numberExponent';
+              break;
+            }
+            if (this._done) {
+              this._expect = expected[this._parent];
+              break;
+            }
+            break main; // wait for more input
+          }
+          break;
+        case 'numberExponent': // [eE]?
+          patterns.numberExponent.lastIndex = index;
+          match = patterns.numberExponent.exec(this._buffer);
+          if (!match) {
+            if (index < this._buffer.length) {
+              this._expect = expected[this._parent];
+              break;
+            }
+            if (this._done) {
+              this._expect = 'done';
+              break;
+            }
+            break main; // wait for more input
+          }
+          value = match[0];
+          this._streamNumbers && this.push({name: 'numberChunk', value: value});
+          this._packNumbers && (this._accumulator += value);
+          this._expect = 'numberExpSign';
+          if (noSticky) {
+            this._buffer = this._buffer.slice(value.length);
+          } else {
+            index += value.length;
+          }
+          break;
+        case 'numberExpSign': // [-+]?
+          patterns.numberExpSign.lastIndex = index;
+          match = patterns.numberExpSign.exec(this._buffer);
+          if (!match) {
+            if (index < this._buffer.length) {
+              this._expect = 'numberExpStart';
+              break;
+            }
+            if (this._done) return callback(new Error('Parser has expected an exponent value of a number'));
+            break main; // wait for more input
+          }
+          value = match[0];
+          this._streamNumbers && this.push({name: 'numberChunk', value: value});
+          this._packNumbers && (this._accumulator += value);
+          this._expect = 'numberExpStart';
+          if (noSticky) {
+            this._buffer = this._buffer.slice(value.length);
+          } else {
+            index += value.length;
+          }
+          break;
+        case 'numberExpStart': // [0-9]
+          patterns.numberExpStart.lastIndex = index;
+          match = patterns.numberExpStart.exec(this._buffer);
+          if (!match) {
+            if (index < this._buffer.length || this._done) return callback(new Error('Parser cannot parse input: expected an exponent part of a number'));
+            break main; // wait for more input
+          }
+          value = match[0];
+          this._streamNumbers && this.push({name: 'numberChunk', value: value});
+          this._packNumbers && (this._accumulator += value);
+          this._expect = 'numberExpDigit';
+          if (noSticky) {
+            this._buffer = this._buffer.slice(value.length);
+          } else {
+            index += value.length;
+          }
+          break;
+        case 'numberExpDigit': // [0-9]*
+          patterns.numberExpDigit.lastIndex = index;
+          match = patterns.numberExpDigit.exec(this._buffer);
+          value = match[0];
+          if (value) {
+            this._streamNumbers && this.push({name: 'numberChunk', value: value});
+            this._packNumbers && (this._accumulator += value);
+            if (noSticky) {
+              this._buffer = this._buffer.slice(value.length);
+            } else {
+              index += value.length;
+            }
+          } else {
+            if (index < this._buffer.length || this._done) {
+              this._expect = expected[this._parent];
+              break;
+            }
+            break main; // wait for more input
+          }
+          break;
+        case 'done':
+          patterns.ws.lastIndex = index;
+          match = patterns.ws.exec(this._buffer);
+          if (!match) {
+            if (index < this._buffer.length) {
+              if (this._jsonStreaming) {
+                this._expect = 'value';
+                break;
+              }
+              return callback(new Error('Parser cannot parse input: unexpected characters'));
+            }
+            break main; // wait for more input
+          }
+          value = match[0];
+          if (this._open_number) {
+            this._streamNumbers && this.push({name: 'endNumber'});
+            this._open_number = false;
+            if (this._packNumbers) {
+              this.push({name: 'numberValue', value: this._accumulator});
+              this._accumulator = '';
+            }
+          }
+          if (noSticky) {
+            this._buffer = this._buffer.slice(value.length);
+          } else {
+            index += value.length;
+          }
+          break;
+      }
+    }
+    !noSticky && (this._buffer = this._buffer.slice(index));
+    callback(null);
+  }
+}
+Parser.parser = Parser.make;
+Parser.make.Constructor = Parser;
+
+module.exports = Parser;
+
+
+/***/ }),
+
 /***/ 5771:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
@@ -36561,6 +37534,166 @@ JsonlParser.parser = JsonlParser.make;
 JsonlParser.make.Constructor = JsonlParser;
 
 module.exports = JsonlParser;
+
+
+/***/ }),
+
+/***/ 4002:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+const {Transform} = __webpack_require__(2413);
+const Assembler = __webpack_require__(9345);
+
+class Counter {
+  constructor(initialDepth) {
+    this.depth = initialDepth;
+  }
+  startObject() {
+    ++this.depth;
+  }
+  endObject() {
+    --this.depth;
+  }
+  startArray() {
+    ++this.depth;
+  }
+  endArray() {
+    --this.depth;
+  }
+}
+
+class StreamBase extends Transform {
+  constructor(options) {
+    super(Object.assign({}, options, {writableObjectMode: true, readableObjectMode: true}));
+    if (options) {
+      this.objectFilter = options.objectFilter;
+      this.includeUndecided = options.includeUndecided;
+    }
+    if (typeof this.objectFilter != 'function') {
+      this._filter = this._transform;
+    }
+    this._transform = this._wait || this._filter;
+    this._assembler = new Assembler(options && {reviver: options.reviver});
+  }
+
+  _transform(chunk, encoding, callback) {
+    if (this._assembler[chunk.name]) {
+      this._assembler[chunk.name](chunk.value);
+      if (this._assembler.depth === this._level) {
+        this._push();
+      }
+    }
+    callback(null);
+  }
+
+  _filter(chunk, encoding, callback) {
+    if (this._assembler[chunk.name]) {
+      this._assembler[chunk.name](chunk.value);
+      const result = this.objectFilter(this._assembler);
+      if (result) {
+        if (this._assembler.depth === this._level) {
+          this._push();
+          this._transform = this._filter;
+        }
+        this._transform = this._accept;
+        return callback(null);
+      }
+      if (result === false) {
+        this._saved_assembler = this._assembler;
+        this._assembler = new Counter(this._saved_assembler.depth);
+        this._saved_assembler.dropToLevel(this._level);
+        if (this._assembler.depth === this._level) {
+          this._assembler = this._saved_assembler;
+          this._transform = this._filter;
+        }
+        this._transform = this._reject;
+        return callback(null);
+      }
+      if (this._assembler.depth === this._level) {
+        this._push(!this.includeUndecided);
+      }
+    }
+    callback(null);
+  }
+
+  _accept(chunk, encoding, callback) {
+    if (this._assembler[chunk.name]) {
+      this._assembler[chunk.name](chunk.value);
+      if (this._assembler.depth === this._level) {
+        this._push();
+        this._transform = this._filter;
+      }
+    }
+    callback(null);
+  }
+
+  _reject(chunk, encoding, callback) {
+    if (this._assembler[chunk.name]) {
+      this._assembler[chunk.name](chunk.value);
+      if (this._assembler.depth === this._level) {
+        this._assembler = this._saved_assembler;
+        this._transform = this._filter;
+      }
+    }
+    callback(null);
+  }
+}
+
+module.exports = StreamBase;
+
+
+/***/ }),
+
+/***/ 5790:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+const StreamBase = __webpack_require__(4002);
+const withParser = __webpack_require__(8425);
+
+class StreamObject extends StreamBase {
+  static make(options) {
+    return new StreamObject(options);
+  }
+
+  static withParser(options) {
+    return withParser(StreamObject.make, options);
+  }
+
+  constructor(options) {
+    super(options);
+    this._level = 1;
+    this._lastKey = null;
+  }
+
+  _wait(chunk, _, callback) {
+    // first chunk should open an array
+    if (chunk.name !== 'startObject') {
+      return callback(new Error('Top-level object should be an object.'));
+    }
+    this._transform = this._filter;
+    return this._transform(chunk, _, callback);
+  }
+
+  _push(discard) {
+    if (this._lastKey === null) {
+      this._lastKey = this._assembler.key;
+    } else {
+      !discard && this.push({key: this._lastKey, value: this._assembler.current[this._lastKey]});
+      this._assembler.current = {};
+      this._lastKey = null;
+    }
+  }
+}
+StreamObject.streamObject = StreamObject.make;
+StreamObject.make.Constructor = StreamObject;
+
+module.exports = StreamObject;
 
 
 /***/ }),
@@ -36622,6 +37755,24 @@ class Utf8Stream extends Transform {
 }
 
 module.exports = Utf8Stream;
+
+
+/***/ }),
+
+/***/ 8425:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+const Chain = __webpack_require__(9996);
+
+const Parser = __webpack_require__(9066);
+
+const withParser = (fn, options) =>
+  new Chain([new Parser(options), fn(options)], Object.assign({}, options, {writableObjectMode: false, readableObjectMode: true}));
+
+module.exports = withParser;
 
 
 /***/ }),

@@ -45,9 +45,9 @@ export function mainCommentTemplate({changes, specPath, baseBatchCommit, specId,
 
     const linkGen = (endpoint: Endpoint) => {
         if(baseBatchCommit) {
-            return `${cloudSpecViewerBase}/${specId}/changes-since/${baseBatchCommit}/paths${endpoint.path}/methods/${endpoint.method}`
+            return `${cloudSpecViewerBase}/${specId}/changes-since/${baseBatchCommit}/paths/${endpoint.pathId}/methods/${endpoint.method}`
         } else {
-            return `${cloudSpecViewerBase}/${specId}/documentation/paths${endpoint.path}/methods/${endpoint.method}`;
+            return `${cloudSpecViewerBase}/${specId}/documentation/paths/${endpoint.pathId}/methods/${endpoint.method}`;
         }
     }
 
@@ -71,7 +71,7 @@ ${spec({
     name: "Project name",
     specPath,
     title: `Optic detected ${Object.entries(changes_by_category).map(([category, changes]) => `${changes.length} ${category} endpoint(s)`).join(", ")}`,
-    specUrl: "url"
+    specUrl: `${cloudSpecViewerBase}/${specId}/documentation`
 }, tables.join("\n"))}
 ${subscribersPing({subscribers})}
 #### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/documenting-your-api/)
