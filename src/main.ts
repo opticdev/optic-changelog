@@ -31,6 +31,8 @@ async function run(): Promise<void> {
     const gitHubRepo = new GitHubRepository(octokit, owner, repo)
     const {baseSha, baseBranch} = await gitHubRepo.getPrInfo(prNumber)
 
+    
+
     await runOpticChangelog({
       apiKey: opticApiKey,
       subscribers,

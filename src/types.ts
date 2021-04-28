@@ -12,6 +12,8 @@ export type Changelog = {
   }
 }
 
+export type Endpoint = Changelog["data"]["endpointChanges"]["endpoints"][0];
+
 export type JobInputs = {
   repoToken?: string
   subscribers: string[]

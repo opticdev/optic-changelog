@@ -2,6 +2,10 @@ import {Changelog, IGitProvider, IJobRunner} from './types'
 import fetch from "node-fetch";
 import hash from "object-hash";
 import {setMetadata, isOpticComment, generateCommentBody, generateBadApiKeyCommentBody, getMetadata} from './pr'
+import { InMemoryOpticContextBuilder } from '@useoptic/spectacle/build/in-memory';
+import * as OpticEngine from '@useoptic/diff-engine-wasm/engine/build';
+import { makeSpectacle } from '@useoptic/spectacle';
+import { mainCommentTemplate } from './templates/main';
 
 export type UploadParams = {
   apiKey: string,
@@ -63,8 +67,39 @@ export type ChangelogParams = {
   prNumber: number,
   jobRunner: IJobRunner,
   generateEndpointChanges: any, // todo(jshearer): specify this type
-  uploadSpec: (UploadParams) => Promise<string>
+  uploadSpec?: (UploadParams) => Promise<string>
 };
+
+async function latestBatchCommit(events: any[]): Promise<string|null> {
+  if(events.length < 1){
+    return null;
+  }
+
+  // Mostly copied from `opticdev/optic/workspaces/changelog/src/index.ts
+  const initialOpticContext = await InMemoryOpticContextBuilder.fromEvents(
+    OpticEngine,
+    events,
+  );
+  const initialSpectacle = await makeSpectacle(initialOpticContext);
+
+  const batchCommitResults = await initialSpectacle({
+    query: `{
+      batchCommits {
+        createdAt
+        batchId
+      }
+    }`,
+    variables: {},
+  });
+
+  const latestBatchCommit = batchCommitResults.data!.batchCommits!.reduce(
+    (result: any, batchCommit: any) => {
+      return batchCommit.createdAt > result.createdAt ? batchCommit : result;
+    },
+  );
+
+  return latestBatchCommit.batchId
+}
 
 export async function runOpticChangelog({
   apiKey,
@@ -79,7 +114,7 @@ export async function runOpticChangelog({
   generateEndpointChanges,
   uploadSpec = networkUpload
 }: ChangelogParams): Promise<void> {
-  let headContent: any[], baseContent: any[]
+  let headContent: any[], baseContent: any[], baseBatchCommit: string|null;
 
   // This may fail if the file was moved or it's a new Optic setup
   try {
@@ -94,13 +129,15 @@ export async function runOpticChangelog({
 
   // This may fail if the file was moved or it's a new Optic setup
   try {
-    baseContent = JSON.parse(await gitProvider.getFileContent(baseSha, opticSpecPath))
+    baseContent = JSON.parse(await gitProvider.getFileContent(baseSha, opticSpecPath));
+    baseBatchCommit = await latestBatchCommit(baseContent);
   } catch (error) {
     // Failing silently here
     jobRunner.info(
       `Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`
     )
     baseContent = [];
+    baseBatchCommit = null;
   }
 
   // TODO: use new changelog library here
@@ -130,8 +167,8 @@ export async function runOpticChangelog({
   }
 
   let message: string;
-  if(apiKey){
-    message = generateCommentBody({changes, subscribers, specId})
+  if(apiKey && specId){
+    message = mainCommentTemplate({changes, specPath: opticSpecPath, subscribers, specId, baseBatchCommit})
   } else {
     message = generateBadApiKeyCommentBody();
   }

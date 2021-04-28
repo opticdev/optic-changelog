@@ -7,6 +7,25 @@ require('./sourcemap-register.js');module.exports =
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -22,10 +41,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.runOpticChangelog = void 0;
 const node_fetch_1 = __importDefault(__webpack_require__(467));
+const object_hash_1 = __importDefault(__webpack_require__(4856));
 const pr_1 = __webpack_require__(515);
+const in_memory_1 = __webpack_require__(9834);
+const OpticEngine = __importStar(__webpack_require__(5535));
+const spectacle_1 = __webpack_require__(8714);
+const main_1 = __webpack_require__(1519);
 // TODO(jshearer): Possibly parameterize this?
 const API_BASE = "https://api.useoptic.com";
-function uploadSpec({ apiKey, specContents, jobRunner, metadata = {} }) {
+function networkUpload({ apiKey, specContents, jobRunner, metadata = {} }) {
     return __awaiter(this, void 0, void 0, function* () {
         jobRunner.debug("Creating new spec to upload");
         const newSpecResp = yield node_fetch_1.default(`${API_BASE}/api/account/specs`, {
@@ -55,12 +79,35 @@ function uploadSpec({ apiKey, specContents, jobRunner, metadata = {} }) {
         return specId;
     });
 }
-function runOpticChangelog({ apiKey, subscribers, opticSpecPath, gitProvider, headSha, baseSha, baseBranch, prNumber, jobRunner, generateEndpointChanges }) {
+function latestBatchCommit(events) {
     return __awaiter(this, void 0, void 0, function* () {
-        let headContent, baseContent;
+        if (events.length < 1) {
+            return null;
+        }
+        // Mostly copied from `opticdev/optic/workspaces/changelog/src/index.ts
+        const initialOpticContext = yield in_memory_1.InMemoryOpticContextBuilder.fromEvents(OpticEngine, events);
+        const initialSpectacle = yield spectacle_1.makeSpectacle(initialOpticContext);
+        const batchCommitResults = yield initialSpectacle({
+            query: `{
+      batchCommits {
+        createdAt
+        batchId
+      }
+    }`,
+            variables: {},
+        });
+        const latestBatchCommit = batchCommitResults.data.batchCommits.reduce((result, batchCommit) => {
+            return batchCommit.createdAt > result.createdAt ? batchCommit : result;
+        });
+        return latestBatchCommit.batchId;
+    });
+}
+function runOpticChangelog({ apiKey, subscribers, opticSpecPath, gitProvider, headSha, baseSha, baseBranch, prNumber, jobRunner, generateEndpointChanges, uploadSpec = networkUpload }) {
+    return __awaiter(this, void 0, void 0, function* () {
+        let headContent, baseContent, baseBatchCommit;
         // This may fail if the file was moved or it's a new Optic setup
         try {
-            headContent = yield gitProvider.getFileContent(headSha, opticSpecPath);
+            headContent = JSON.parse(yield gitProvider.getFileContent(headSha, opticSpecPath));
         }
         catch (error) {
             // Failing silently here
@@ -69,50 +116,61 @@ function runOpticChangelog({ apiKey, subscribers, opticSpecPath, gitProvider, he
         }
         // This may fail if the file was moved or it's a new Optic setup
         try {
-            baseContent = yield gitProvider.getFileContent(baseSha, opticSpecPath);
+            baseContent = JSON.parse(yield gitProvider.getFileContent(baseSha, opticSpecPath));
+            baseBatchCommit = yield latestBatchCommit(baseContent);
         }
         catch (error) {
             // Failing silently here
             jobRunner.info(`Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`);
-            return;
+            baseContent = [];
+            baseBatchCommit = null;
         }
         // TODO: use new changelog library here
-        const changes = yield generateEndpointChanges(JSON.parse(baseContent), JSON.parse(headContent));
-        jobRunner.debug(changes);
-        if (changes.data.endpointChanges.endpoints.length === 0) {
-            jobRunner.info('No API changes in this PR.');
-            return;
-        }
+        const changes = yield generateEndpointChanges(baseContent, headContent);
+        jobRunner.debug(JSON.stringify(changes, null, 4));
         let specId = undefined;
         if (apiKey && apiKey.length > 0 && changes.data.endpointChanges.endpoints.length > 0) {
             specId = yield uploadSpec({
                 apiKey,
-                specContents: headContent,
+                specContents: JSON.stringify(headContent),
                 jobRunner,
                 metadata: Object.assign({ prNumber,
                     baseBranch }, gitProvider.getRepoInfo())
             });
         }
-        const message = pr_1.generateCommentBody({ changes, subscribers, specId });
-        const body = pr_1.setMetadata(message, {});
+        if (changes.data.endpointChanges.endpoints.length === 0) {
+            jobRunner.info('No API changes in this PR.');
+            return;
+        }
+        let message;
+        if (apiKey && specId) {
+            message = main_1.mainCommentTemplate({ changes, specPath: opticSpecPath, subscribers, specId, baseBatchCommit });
+        }
+        else {
+            message = pr_1.generateBadApiKeyCommentBody();
+        }
+        const msgHash = object_hash_1.default({ changes, subscribers, specId });
+        const body = pr_1.setMetadata(message, { messageHash: msgHash });
         jobRunner.debug('Created body for comment');
         jobRunner.debug(body);
         try {
             // TODO: probably should be simplified a bit
             const existingBotComments = (yield gitProvider.getPrBotComments(prNumber)).filter(comment => pr_1.isOpticComment(comment.body));
+            // Bail because of existing comment with same hash
             if (existingBotComments.length) {
-                const comment = existingBotComments[0];
-                jobRunner.debug(`Updating comment ${comment.id}`);
-                // TODO: need to pull out metadata and combine with new (maybe)
-                yield gitProvider.updatePrComment(comment.id, body);
+                const comment = existingBotComments[existingBotComments.length - 1];
+                const commentMeta = pr_1.getMetadata(comment.body);
+                if ((commentMeta === null || commentMeta === void 0 ? void 0 : commentMeta.messageHash) === msgHash) {
+                    jobRunner.debug(`Existing comment with same hash found. No changes!`);
+                    return;
+                }
             }
-            else {
-                jobRunner.debug(`Creating comment for PR ${prNumber}`);
-                yield gitProvider.createPrComment(prNumber, body);
-            }
+            // Or make a new comment -- no updating
+            jobRunner.debug(`Creating comment for PR ${prNumber}`);
+            yield gitProvider.createPrComment(prNumber, body);
         }
         catch (error) {
-            jobRunner.info(`There was an error creating or updating a PR comment. Error message: ${error.message}`);
+            jobRunner.info(`There was an error creating a PR comment. Error message: ${error.message}`);
             return;
         }
     });
@@ -349,7 +407,7 @@ if (process.env['NODE_ENV'] !== 'test') {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.generateCommentBody = exports.setMetadata = exports.getMetadata = exports.isOpticComment = void 0;
+exports.generateBadApiKeyCommentBody = exports.generateCommentBody = exports.setMetadata = exports.getMetadata = exports.isOpticComment = void 0;
 const REGEX = /\n\n<!-- optic = (.*) -->/;
 function isOpticComment(body) {
     return body.match(REGEX) ? true : false;
@@ -417,6 +475,136 @@ Pinging subscribers ${subscriberText}`;
     return baseBody;
 }
 exports.generateCommentBody = generateCommentBody;
+function generateBadApiKeyCommentBody() {
+    return `## Optic Changelog
+
+Your \`OPTIC_API_KEY\` is missing or invalid. Follow these docs!
+`;
+}
+exports.generateBadApiKeyCommentBody = generateBadApiKeyCommentBody;
+
+
+/***/ }),
+
+/***/ 5850:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+// ### {{ icon }} {{ type}} Endpoints
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.endpointTable = exports.endpointRow = void 0;
+function endpointRow({ endpoint, description, endpointLink }) {
+    return `**${endpoint.method}** ${endpoint.path} | ${description} | [**Review**](${endpointLink}) |`;
+}
+exports.endpointRow = endpointRow;
+const iconMap = {
+    'added': '🟢',
+    'updated': '📝',
+    'removed': '❌'
+};
+function endpointTable({ type, endpoints, endpointLinkGenerator }) {
+    return `### ${iconMap[type]} ${type} Endpoints
+
+| Endpoint | Description |     |
+| -------- | ----------- | --: |
+${endpoints.map(endpoint => endpointRow({
+        endpoint,
+        description: "not yet",
+        endpointLink: endpointLinkGenerator(endpoint)
+    }))}`;
+}
+exports.endpointTable = endpointTable;
+
+
+/***/ }),
+
+/***/ 1519:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+// # Optic PR Check
+// _Last updated @ {{ updateTime }} UTC_
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.mainCommentTemplate = void 0;
+const endpoints_1 = __webpack_require__(5850);
+const spec_1 = __webpack_require__(4973);
+// {{#specs}}
+// {{content}}
+// {{/specs}}
+// #### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/documenting-your-api/)
+function subscribersPing({ subscribers }) {
+    let filteredSubs = subscribers.filter(f => (f === null || f === void 0 ? void 0 : f.length) > 0);
+    if (filteredSubs.length > 0) {
+        return `
+---
+Pinging subscribers:
+${filteredSubs.map(sub => `* @${sub}`).join("\n")}
+`;
+    }
+    else {
+        return "";
+    }
+}
+const cloudSpecViewerBase = `https://spec.useoptic.com/public-specs`;
+function mainCommentTemplate({ changes, specPath, baseBatchCommit, specId, subscribers = [] }) {
+    const timestamp = new Date()
+        .toISOString()
+        .replace(/T/, ' ')
+        .replace(/\..+/, '');
+    const linkGen = (endpoint) => {
+        if (baseBatchCommit) {
+            return `${cloudSpecViewerBase}/${specId}/changes-since/${baseBatchCommit}/paths${endpoint.path}/methods/${endpoint.method}`;
+        }
+        else {
+            return `${cloudSpecViewerBase}/${specId}/documentation/paths${endpoint.path}/methods/${endpoint.method}`;
+        }
+    };
+    let changes_by_category = changes.data.endpointChanges.endpoints.reduce((accum, current) => {
+        return Object.assign(Object.assign({}, accum), { [current.change.category]: [...(accum[current.change.category] || []), current] });
+    }, {});
+    let tables = Object.entries(changes_by_category).map(([category, changes]) => endpoints_1.endpointTable({
+        type: category,
+        endpoints: changes,
+        endpointLinkGenerator: linkGen
+    }));
+    return `# Optic PR Check
+_Last updated @ ${timestamp} UTC_
+
+${spec_1.spec({
+        name: "Project name",
+        specPath,
+        title: `Optic detected ${Object.entries(changes_by_category).map(([category, changes]) => `${changes.length} ${category} endpoint(s)`).join(", ")}`,
+        specUrl: "url"
+    }, tables.join("\n"))}
+${subscribersPing({ subscribers })}
+#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/documenting-your-api/)
+`;
+}
+exports.mainCommentTemplate = mainCommentTemplate;
+
+
+/***/ }),
+
+/***/ 4973:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+// ## {{ name }} @ `/{{ specPath }}`
+// ### {{ title }}
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.spec = void 0;
+function spec({ name, specPath, specUrl, title }, children) {
+    return `## ${name} @ \`/${specPath}\`
+### ${title}
+
+[Click Here to See the Documentation](${specUrl})
+
+${children}`;
+}
+exports.spec = spec;
 
 
 /***/ }),
@@ -11981,7 +12169,7 @@ const graphql_1 = __webpack_require__(6155);
 const schema_1 = __webpack_require__(8706);
 const schema_2 = __webpack_require__(3185);
 const graphql_type_json_1 = __importDefault(__webpack_require__(7636));
-const uuid_1 = __webpack_require__(9521);
+const uuid_1 = __webpack_require__(4552);
 const helpers_1 = __webpack_require__(4342);
 const graph_lib_1 = __webpack_require__(3194);
 ////////////////////////////////////////////////////////////////////////////////
@@ -35786,6 +35974,464 @@ exports.FetchError = FetchError;
 
 /***/ }),
 
+/***/ 4856:
+/***/ ((module, exports, __webpack_require__) => {
+
+"use strict";
+
+
+var crypto = __webpack_require__(6417);
+
+/**
+ * Exported function
+ *
+ * Options:
+ *
+ *  - `algorithm` hash algo to be used by this instance: *'sha1', 'md5'
+ *  - `excludeValues` {true|*false} hash object keys, values ignored
+ *  - `encoding` hash encoding, supports 'buffer', '*hex', 'binary', 'base64'
+ *  - `ignoreUnknown` {true|*false} ignore unknown object types
+ *  - `replacer` optional function that replaces values before hashing
+ *  - `respectFunctionProperties` {*true|false} consider function properties when hashing
+ *  - `respectFunctionNames` {*true|false} consider 'name' property of functions for hashing
+ *  - `respectType` {*true|false} Respect special properties (prototype, constructor)
+ *    when hashing to distinguish between types
+ *  - `unorderedArrays` {true|*false} Sort all arrays before hashing
+ *  - `unorderedSets` {*true|false} Sort `Set` and `Map` instances before hashing
+ *  * = default
+ *
+ * @param {object} object value to hash
+ * @param {object} options hashing options
+ * @return {string} hash value
+ * @api public
+ */
+exports = module.exports = objectHash;
+
+function objectHash(object, options){
+  options = applyDefaults(object, options);
+
+  return hash(object, options);
+}
+
+/**
+ * Exported sugar methods
+ *
+ * @param {object} object value to hash
+ * @return {string} hash value
+ * @api public
+ */
+exports.sha1 = function(object){
+  return objectHash(object);
+};
+exports.keys = function(object){
+  return objectHash(object, {excludeValues: true, algorithm: 'sha1', encoding: 'hex'});
+};
+exports.MD5 = function(object){
+  return objectHash(object, {algorithm: 'md5', encoding: 'hex'});
+};
+exports.keysMD5 = function(object){
+  return objectHash(object, {algorithm: 'md5', encoding: 'hex', excludeValues: true});
+};
+
+// Internals
+var hashes = crypto.getHashes ? crypto.getHashes().slice() : ['sha1', 'md5'];
+hashes.push('passthrough');
+var encodings = ['buffer', 'hex', 'binary', 'base64'];
+
+function applyDefaults(object, sourceOptions){
+  sourceOptions = sourceOptions || {};
+
+  // create a copy rather than mutating
+  var options = {};
+  options.algorithm = sourceOptions.algorithm || 'sha1';
+  options.encoding = sourceOptions.encoding || 'hex';
+  options.excludeValues = sourceOptions.excludeValues ? true : false;
+  options.algorithm = options.algorithm.toLowerCase();
+  options.encoding = options.encoding.toLowerCase();
+  options.ignoreUnknown = sourceOptions.ignoreUnknown !== true ? false : true; // default to false
+  options.respectType = sourceOptions.respectType === false ? false : true; // default to true
+  options.respectFunctionNames = sourceOptions.respectFunctionNames === false ? false : true;
+  options.respectFunctionProperties = sourceOptions.respectFunctionProperties === false ? false : true;
+  options.unorderedArrays = sourceOptions.unorderedArrays !== true ? false : true; // default to false
+  options.unorderedSets = sourceOptions.unorderedSets === false ? false : true; // default to false
+  options.unorderedObjects = sourceOptions.unorderedObjects === false ? false : true; // default to true
+  options.replacer = sourceOptions.replacer || undefined;
+  options.excludeKeys = sourceOptions.excludeKeys || undefined;
+
+  if(typeof object === 'undefined') {
+    throw new Error('Object argument required.');
+  }
+
+  // if there is a case-insensitive match in the hashes list, accept it
+  // (i.e. SHA256 for sha256)
+  for (var i = 0; i < hashes.length; ++i) {
+    if (hashes[i].toLowerCase() === options.algorithm.toLowerCase()) {
+      options.algorithm = hashes[i];
+    }
+  }
+
+  if(hashes.indexOf(options.algorithm) === -1){
+    throw new Error('Algorithm "' + options.algorithm + '"  not supported. ' +
+      'supported values: ' + hashes.join(', '));
+  }
+
+  if(encodings.indexOf(options.encoding) === -1 &&
+     options.algorithm !== 'passthrough'){
+    throw new Error('Encoding "' + options.encoding + '"  not supported. ' +
+      'supported values: ' + encodings.join(', '));
+  }
+
+  return options;
+}
+
+/** Check if the given function is a native function */
+function isNativeFunction(f) {
+  if ((typeof f) !== 'function') {
+    return false;
+  }
+  var exp = /^function\s+\w*\s*\(\s*\)\s*{\s+\[native code\]\s+}$/i;
+  return exp.exec(Function.prototype.toString.call(f)) != null;
+}
+
+function hash(object, options) {
+  var hashingStream;
+
+  if (options.algorithm !== 'passthrough') {
+    hashingStream = crypto.createHash(options.algorithm);
+  } else {
+    hashingStream = new PassThrough();
+  }
+
+  if (typeof hashingStream.write === 'undefined') {
+    hashingStream.write = hashingStream.update;
+    hashingStream.end   = hashingStream.update;
+  }
+
+  var hasher = typeHasher(options, hashingStream);
+  hasher.dispatch(object);
+  if (!hashingStream.update) {
+    hashingStream.end('');
+  }
+
+  if (hashingStream.digest) {
+    return hashingStream.digest(options.encoding === 'buffer' ? undefined : options.encoding);
+  }
+
+  var buf = hashingStream.read();
+  if (options.encoding === 'buffer') {
+    return buf;
+  }
+
+  return buf.toString(options.encoding);
+}
+
+/**
+ * Expose streaming API
+ *
+ * @param {object} object  Value to serialize
+ * @param {object} options  Options, as for hash()
+ * @param {object} stream  A stream to write the serializiation to
+ * @api public
+ */
+exports.writeToStream = function(object, options, stream) {
+  if (typeof stream === 'undefined') {
+    stream = options;
+    options = {};
+  }
+
+  options = applyDefaults(object, options);
+
+  return typeHasher(options, stream).dispatch(object);
+};
+
+function typeHasher(options, writeTo, context){
+  context = context || [];
+  var write = function(str) {
+    if (writeTo.update) {
+      return writeTo.update(str, 'utf8');
+    } else {
+      return writeTo.write(str, 'utf8');
+    }
+  };
+
+  return {
+    dispatch: function(value){
+      if (options.replacer) {
+        value = options.replacer(value);
+      }
+
+      var type = typeof value;
+      if (value === null) {
+        type = 'null';
+      }
+
+      //console.log("[DEBUG] Dispatch: ", value, "->", type, " -> ", "_" + type);
+
+      return this['_' + type](value);
+    },
+    _object: function(object) {
+      var pattern = (/\[object (.*)\]/i);
+      var objString = Object.prototype.toString.call(object);
+      var objType = pattern.exec(objString);
+      if (!objType) { // object type did not match [object ...]
+        objType = 'unknown:[' + objString + ']';
+      } else {
+        objType = objType[1]; // take only the class name
+      }
+
+      objType = objType.toLowerCase();
+
+      var objectNumber = null;
+
+      if ((objectNumber = context.indexOf(object)) >= 0) {
+        return this.dispatch('[CIRCULAR:' + objectNumber + ']');
+      } else {
+        context.push(object);
+      }
+
+      if (typeof Buffer !== 'undefined' && Buffer.isBuffer && Buffer.isBuffer(object)) {
+        write('buffer:');
+        return write(object);
+      }
+
+      if(objType !== 'object' && objType !== 'function' && objType !== 'asyncfunction') {
+        if(this['_' + objType]) {
+          this['_' + objType](object);
+        } else if (options.ignoreUnknown) {
+          return write('[' + objType + ']');
+        } else {
+          throw new Error('Unknown object type "' + objType + '"');
+        }
+      }else{
+        var keys = Object.keys(object);
+        if (options.unorderedObjects) {
+          keys = keys.sort();
+        }
+        // Make sure to incorporate special properties, so
+        // Types with different prototypes will produce
+        // a different hash and objects derived from
+        // different functions (`new Foo`, `new Bar`) will
+        // produce different hashes.
+        // We never do this for native functions since some
+        // seem to break because of that.
+        if (options.respectType !== false && !isNativeFunction(object)) {
+          keys.splice(0, 0, 'prototype', '__proto__', 'constructor');
+        }
+
+        if (options.excludeKeys) {
+          keys = keys.filter(function(key) { return !options.excludeKeys(key); });
+        }
+
+        write('object:' + keys.length + ':');
+        var self = this;
+        return keys.forEach(function(key){
+          self.dispatch(key);
+          write(':');
+          if(!options.excludeValues) {
+            self.dispatch(object[key]);
+          }
+          write(',');
+        });
+      }
+    },
+    _array: function(arr, unordered){
+      unordered = typeof unordered !== 'undefined' ? unordered :
+        options.unorderedArrays !== false; // default to options.unorderedArrays
+
+      var self = this;
+      write('array:' + arr.length + ':');
+      if (!unordered || arr.length <= 1) {
+        return arr.forEach(function(entry) {
+          return self.dispatch(entry);
+        });
+      }
+
+      // the unordered case is a little more complicated:
+      // since there is no canonical ordering on objects,
+      // i.e. {a:1} < {a:2} and {a:1} > {a:2} are both false,
+      // we first serialize each entry using a PassThrough stream
+      // before sorting.
+      // also: we can’t use the same context array for all entries
+      // since the order of hashing should *not* matter. instead,
+      // we keep track of the additions to a copy of the context array
+      // and add all of them to the global context array when we’re done
+      var contextAdditions = [];
+      var entries = arr.map(function(entry) {
+        var strm = new PassThrough();
+        var localContext = context.slice(); // make copy
+        var hasher = typeHasher(options, strm, localContext);
+        hasher.dispatch(entry);
+        // take only what was added to localContext and append it to contextAdditions
+        contextAdditions = contextAdditions.concat(localContext.slice(context.length));
+        return strm.read().toString();
+      });
+      context = context.concat(contextAdditions);
+      entries.sort();
+      return this._array(entries, false);
+    },
+    _date: function(date){
+      return write('date:' + date.toJSON());
+    },
+    _symbol: function(sym){
+      return write('symbol:' + sym.toString());
+    },
+    _error: function(err){
+      return write('error:' + err.toString());
+    },
+    _boolean: function(bool){
+      return write('bool:' + bool.toString());
+    },
+    _string: function(string){
+      write('string:' + string.length + ':');
+      write(string.toString());
+    },
+    _function: function(fn){
+      write('fn:');
+      if (isNativeFunction(fn)) {
+        this.dispatch('[native]');
+      } else {
+        this.dispatch(fn.toString());
+      }
+
+      if (options.respectFunctionNames !== false) {
+        // Make sure we can still distinguish native functions
+        // by their name, otherwise String and Function will
+        // have the same hash
+        this.dispatch("function-name:" + String(fn.name));
+      }
+
+      if (options.respectFunctionProperties) {
+        this._object(fn);
+      }
+    },
+    _number: function(number){
+      return write('number:' + number.toString());
+    },
+    _xml: function(xml){
+      return write('xml:' + xml.toString());
+    },
+    _null: function() {
+      return write('Null');
+    },
+    _undefined: function() {
+      return write('Undefined');
+    },
+    _regexp: function(regex){
+      return write('regex:' + regex.toString());
+    },
+    _uint8array: function(arr){
+      write('uint8array:');
+      return this.dispatch(Array.prototype.slice.call(arr));
+    },
+    _uint8clampedarray: function(arr){
+      write('uint8clampedarray:');
+      return this.dispatch(Array.prototype.slice.call(arr));
+    },
+    _int8array: function(arr){
+      write('uint8array:');
+      return this.dispatch(Array.prototype.slice.call(arr));
+    },
+    _uint16array: function(arr){
+      write('uint16array:');
+      return this.dispatch(Array.prototype.slice.call(arr));
+    },
+    _int16array: function(arr){
+      write('uint16array:');
+      return this.dispatch(Array.prototype.slice.call(arr));
+    },
+    _uint32array: function(arr){
+      write('uint32array:');
+      return this.dispatch(Array.prototype.slice.call(arr));
+    },
+    _int32array: function(arr){
+      write('uint32array:');
+      return this.dispatch(Array.prototype.slice.call(arr));
+    },
+    _float32array: function(arr){
+      write('float32array:');
+      return this.dispatch(Array.prototype.slice.call(arr));
+    },
+    _float64array: function(arr){
+      write('float64array:');
+      return this.dispatch(Array.prototype.slice.call(arr));
+    },
+    _arraybuffer: function(arr){
+      write('arraybuffer:');
+      return this.dispatch(new Uint8Array(arr));
+    },
+    _url: function(url) {
+      return write('url:' + url.toString(), 'utf8');
+    },
+    _map: function(map) {
+      write('map:');
+      var arr = Array.from(map);
+      return this._array(arr, options.unorderedSets !== false);
+    },
+    _set: function(set) {
+      write('set:');
+      var arr = Array.from(set);
+      return this._array(arr, options.unorderedSets !== false);
+    },
+    _file: function(file) {
+      write('file:');
+      return this.dispatch([file.name, file.size, file.type, file.lastModfied]);
+    },
+    _blob: function() {
+      if (options.ignoreUnknown) {
+        return write('[blob]');
+      }
+
+      throw Error('Hashing Blob objects is currently not supported\n' +
+        '(see https://github.com/puleos/object-hash/issues/26)\n' +
+        'Use "options.replacer" or "options.ignoreUnknown"\n');
+    },
+    _domwindow: function() { return write('domwindow'); },
+    /* Node.js standard native objects */
+    _process: function() { return write('process'); },
+    _timer: function() { return write('timer'); },
+    _pipe: function() { return write('pipe'); },
+    _tcp: function() { return write('tcp'); },
+    _udp: function() { return write('udp'); },
+    _tty: function() { return write('tty'); },
+    _statwatcher: function() { return write('statwatcher'); },
+    _securecontext: function() { return write('securecontext'); },
+    _connection: function() { return write('connection'); },
+    _zlib: function() { return write('zlib'); },
+    _context: function() { return write('context'); },
+    _nodescript: function() { return write('nodescript'); },
+    _httpparser: function() { return write('httpparser'); },
+    _dataview: function() { return write('dataview'); },
+    _signal: function() { return write('signal'); },
+    _fsevent: function() { return write('fsevent'); },
+    _tlswrap: function() { return write('tlswrap'); },
+  };
+}
+
+// Mini-implementation of stream.PassThrough
+// We are far from having need for the full implementation, and we can
+// make assumptions like "many writes, then only one final read"
+// and we can ignore encoding specifics
+function PassThrough() {
+  return {
+    buf: '',
+
+    write: function(b) {
+      this.buf += b;
+    },
+
+    end: function(b) {
+      this.buf += b;
+    },
+
+    read: function() {
+      return this.buf;
+    }
+  };
+}
+
+
+/***/ }),
+
 /***/ 1223:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
@@ -36556,7 +37202,7 @@ exports.getUserAgent = getUserAgent;
 
 /***/ }),
 
-/***/ 9521:
+/***/ 4552:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
@@ -36576,9 +37222,9 @@ __webpack_require__.d(__webpack_exports__, {
   "version": () => /* reexport */ esm_node_version
 });
 
-// CONCATENATED MODULE: external "crypto"
-const external_crypto_namespaceObject = require("crypto");;
-var external_crypto_default = /*#__PURE__*/__webpack_require__.n(external_crypto_namespaceObject);
+// EXTERNAL MODULE: external "crypto"
+var external_crypto_ = __webpack_require__(6417);
+var external_crypto_default = /*#__PURE__*/__webpack_require__.n(external_crypto_);
 
 // CONCATENATED MODULE: ./node_modules/uuid/dist/esm-node/rng.js
 
@@ -36973,6 +37619,14 @@ module.exports = eval("require")("encoding");
 
 "use strict";
 module.exports = require("assert");;
+
+/***/ }),
+
+/***/ 6417:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("crypto");;
 
 /***/ }),
 
