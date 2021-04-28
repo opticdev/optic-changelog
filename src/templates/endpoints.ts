@@ -28,6 +28,12 @@ const iconMap = {
   removed: '❌'
 }
 
+const textMap = {
+  added: 'Added',
+  updated: 'Updated',
+  removed: 'Removed'
+}
+
 export type EndpointTableProps = {
   type: keyof typeof iconMap
   endpoints: Endpoint[]
@@ -39,7 +45,9 @@ export function endpointTable({
   endpoints,
   endpointLinkGenerator
 }: EndpointTableProps): string {
-  return `###### ${iconMap[type]}\u2003${type} Endpoints (${endpoints.length})
+  return `###### ${iconMap[type]}\u2003${textMap[type]} Endpoints (${
+    endpoints.length
+  })
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |

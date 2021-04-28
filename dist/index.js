@@ -500,8 +500,13 @@ const iconMap = {
     updated: '📝',
     removed: '❌'
 };
+const textMap = {
+    added: 'Added',
+    updated: 'Updated',
+    removed: 'Removed'
+};
 function endpointTable({ type, endpoints, endpointLinkGenerator }) {
-    return `###### ${iconMap[type]}\u2003${type} Endpoints (${endpoints.length})
+    return `###### ${iconMap[type]}\u2003${textMap[type]} Endpoints (${endpoints.length})
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
