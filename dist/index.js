@@ -149,7 +149,7 @@ function runOpticChangelog({ apiKey, subscribers, opticSpecPath, gitProvider, he
         else {
             message = pr_1.generateBadApiKeyCommentBody();
         }
-        const msgHash = object_hash_1.default({ changes, subscribers, specId });
+        const msgHash = object_hash_1.default({ changes, subscribers });
         const body = pr_1.setMetadata(message, { messageHash: msgHash });
         jobRunner.debug('Created body for comment');
         jobRunner.debug(body);

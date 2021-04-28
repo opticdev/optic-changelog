@@ -173,7 +173,7 @@ export async function runOpticChangelog({
     message = generateBadApiKeyCommentBody();
   }
 
-  const msgHash = hash({changes, subscribers, specId});
+  const msgHash = hash({changes, subscribers});
 
   const body = setMetadata(message, {messageHash: msgHash})
 
