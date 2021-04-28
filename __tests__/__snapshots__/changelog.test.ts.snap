@@ -24,21 +24,19 @@ Array [
     "Created body for comment",
   ],
   Array [
-    "# Optic PR Check
-_Last updated @ 2021-04-21 15:06:33 UTC_
+    "![changelog](https://user-images.githubusercontent.com/4368270/116313128-5bece580-a77b-11eb-9356-cee1ee1ee367.png)
 
-## Project name @ \`/.optic/api/specification.yml\`
-### Optic detected 1 added endpoint(s)
+[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e)
 
-[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/documentation)
-
-### 🟢 added Endpoints
+##### Changelog for Name \`/.optic/api/specification.yml
+###### 🟢 added Endpoints (1)
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
 **POST** /user | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e/paths/path_VyuFAjdBCO/methods/POST) |
 
-#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/using/baseline)
+
+> Powered by [Optic](https://www.useoptic.com). [Learn how it works!](https://www.useoptic.com/docs/using/baseline)
 
 
 <!-- optic = {\\"messageHash\\":\\"b1b86d581c9dd29b5ad67cbafb53dd81149a21d9\\"} -->",
@@ -73,21 +71,19 @@ Array [
     "Created body for comment",
   ],
   Array [
-    "# Optic PR Check
-_Last updated @ 2021-04-21 15:06:33 UTC_
+    "![changelog](https://user-images.githubusercontent.com/4368270/116313128-5bece580-a77b-11eb-9356-cee1ee1ee367.png)
 
-## Project name @ \`/.optic/api/specification.yml\`
-### Optic detected 1 added endpoint(s)
+[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e)
 
-[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/documentation)
-
-### 🟢 added Endpoints
+##### Changelog for Name \`/.optic/api/specification.yml
+###### 🟢 added Endpoints (1)
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
 **POST** /user | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e/paths/path_VyuFAjdBCO/methods/POST) |
 
-#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/using/baseline)
+
+> Powered by [Optic](https://www.useoptic.com). [Learn how it works!](https://www.useoptic.com/docs/using/baseline)
 
 
 <!-- optic = {\\"messageHash\\":\\"b1b86d581c9dd29b5ad67cbafb53dd81149a21d9\\"} -->",
@@ -122,21 +118,19 @@ Array [
     "Created body for comment",
   ],
   Array [
-    "# Optic PR Check
-_Last updated @ 2021-04-21 15:06:33 UTC_
+    "![changelog](https://user-images.githubusercontent.com/4368270/116313128-5bece580-a77b-11eb-9356-cee1ee1ee367.png)
 
-## Project name @ \`/.optic/api/specification.yml\`
-### Optic detected 1 added endpoint(s)
+[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e)
 
-[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/documentation)
-
-### 🟢 added Endpoints
+##### Changelog for Name \`/.optic/api/specification.yml
+###### 🟢 added Endpoints (1)
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
 **POST** /user | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e/paths/path_VyuFAjdBCO/methods/POST) |
 
-#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/using/baseline)
+
+> Powered by [Optic](https://www.useoptic.com). [Learn how it works!](https://www.useoptic.com/docs/using/baseline)
 
 
 <!-- optic = {\\"messageHash\\":\\"b1b86d581c9dd29b5ad67cbafb53dd81149a21d9\\"} -->",
@@ -214,26 +208,24 @@ _Last updated @ 2021-04-21 15:06:33 UTC_
     "Created body for comment",
   ],
   Array [
-    "# Optic PR Check
-_Last updated @ 2021-04-21 15:06:33 UTC_
+    "![changelog](https://user-images.githubusercontent.com/4368270/116313128-5bece580-a77b-11eb-9356-cee1ee1ee367.png)
 
-## Project name @ \`/.optic/api/specification.yml\`
-### Optic detected 6 added endpoint(s), 1 updated endpoint(s)
+[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/changes-since/b261e2d4-4a2a-43fd-9d95-bcd891519474)
 
-[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/documentation)
-
-### 🟢 added Endpoints
+##### Changelog for Name \`/.optic/api/specification.yml
+###### 🟢 added Endpoints (6)
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
 **GET**  | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/b261e2d4-4a2a-43fd-9d95-bcd891519474/paths/root/methods/GET) |,**GET** /healthcheck | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/b261e2d4-4a2a-43fd-9d95-bcd891519474/paths/path_to6GIY7tL3/methods/GET) |,**GET** /api/account/tokens | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/b261e2d4-4a2a-43fd-9d95-bcd891519474/paths/path_Zbx2qte52s/methods/GET) |,**POST** /api/account/tokens | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/b261e2d4-4a2a-43fd-9d95-bcd891519474/paths/path_Zbx2qte52s/methods/POST) |,**POST** /api/account/specs | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/b261e2d4-4a2a-43fd-9d95-bcd891519474/paths/path_jleYfnE1Ru/methods/POST) |,**GET** /api/specs/{specId} | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/b261e2d4-4a2a-43fd-9d95-bcd891519474/paths/path_td6dXtR2C5/methods/GET) |
-### 📝 updated Endpoints
+###### 📝 updated Endpoints (1)
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
 **GET** /api/account/specs | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/b261e2d4-4a2a-43fd-9d95-bcd891519474/paths/path_jleYfnE1Ru/methods/GET) |
 
-#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/using/baseline)
+
+> Powered by [Optic](https://www.useoptic.com). [Learn how it works!](https://www.useoptic.com/docs/using/baseline)
 
 
 <!-- optic = {\\"messageHash\\":\\"5c322aae54fd7fe1bf8f03a7bf51ff4f59be8cce\\"} -->",
@@ -268,21 +260,19 @@ Array [
     "Created body for comment",
   ],
   Array [
-    "# Optic PR Check
-_Last updated @ 2021-04-21 15:06:33 UTC_
+    "![changelog](https://user-images.githubusercontent.com/4368270/116313128-5bece580-a77b-11eb-9356-cee1ee1ee367.png)
 
-## Project name @ \`/.optic/api/specification.yml\`
-### Optic detected 1 added endpoint(s)
+[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e)
 
-[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/documentation)
-
-### 🟢 added Endpoints
+##### Changelog for Name \`/.optic/api/specification.yml
+###### 🟢 added Endpoints (1)
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
 **POST** /user | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e/paths/path_VyuFAjdBCO/methods/POST) |
 
-#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/using/baseline)
+
+> Powered by [Optic](https://www.useoptic.com). [Learn how it works!](https://www.useoptic.com/docs/using/baseline)
 
 
 <!-- optic = {\\"messageHash\\":\\"b1b86d581c9dd29b5ad67cbafb53dd81149a21d9\\"} -->",
@@ -317,21 +307,19 @@ Array [
     "Created body for comment",
   ],
   Array [
-    "# Optic PR Check
-_Last updated @ 2021-04-21 15:06:33 UTC_
+    "![changelog](https://user-images.githubusercontent.com/4368270/116313128-5bece580-a77b-11eb-9356-cee1ee1ee367.png)
 
-## Project name @ \`/.optic/api/specification.yml\`
-### Optic detected 1 added endpoint(s)
+[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e)
 
-[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/documentation)
-
-### 🟢 added Endpoints
+##### Changelog for Name \`/.optic/api/specification.yml
+###### 🟢 added Endpoints (1)
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
 **POST** /user | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e/paths/path_VyuFAjdBCO/methods/POST) |
 
-#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/using/baseline)
+
+> Powered by [Optic](https://www.useoptic.com). [Learn how it works!](https://www.useoptic.com/docs/using/baseline)
 
 
 <!-- optic = {\\"messageHash\\":\\"b1b86d581c9dd29b5ad67cbafb53dd81149a21d9\\"} -->",
@@ -399,21 +387,19 @@ Array [
     "Created body for comment",
   ],
   Array [
-    "# Optic PR Check
-_Last updated @ 2021-04-21 15:06:33 UTC_
-
-## Project name @ \`/.optic/api/specification.yml\`
-### Optic detected 2 added endpoint(s)
+    "![changelog](https://user-images.githubusercontent.com/4368270/116313128-5bece580-a77b-11eb-9356-cee1ee1ee367.png)
 
 [Click Here to See the Documentation](https://spec.useoptic.com/public-specs/spec-id/documentation)
 
-### 🟢 added Endpoints
+##### Changelog for Name \`/.optic/api/specification.yml
+###### 🟢 added Endpoints (2)
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
 **POST** /user | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/documentation/paths/path_VyuFAjdBCO/methods/POST) |,**GET** /user | not yet | [**Review**](https://spec.useoptic.com/public-specs/spec-id/documentation/paths/path_VyuFAjdBCO/methods/GET) |
 
-#### Powered by [Optic](https://www.useoptic.com). [Not seeing changes?](https://www.useoptic.com/docs/using/baseline)
+
+> Powered by [Optic](https://www.useoptic.com). [Learn how it works!](https://www.useoptic.com/docs/using/baseline)
 
 
 <!-- optic = {\\"messageHash\\":\\"f90049012c0b30e8291f52e2298f90bc31c1e232\\"} -->",
