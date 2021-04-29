@@ -217,7 +217,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.COMMENT_HEADER_IMG = exports.CLOUD_SPEC_VIEWER_BASE = exports.API_BASE = void 0;
 exports.API_BASE = 'https://api.useoptic.com';
 exports.CLOUD_SPEC_VIEWER_BASE = 'https://spec.useoptic.com/public-specs';
-exports.COMMENT_HEADER_IMG = 'https://user-images.githubusercontent.com/4368270/116313128-5bece580-a77b-11eb-9356-cee1ee1ee367.png';
+exports.COMMENT_HEADER_IMG = 'https://raw.github.com/opticdev/optic/develop/assets/changelog_header.png';
 
 
 /***/ }),
