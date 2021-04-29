@@ -16,6 +16,7 @@ import {API_BASE} from './constants'
 import {join} from 'path'
 import {sentryInstrument} from './utils'
 import {SpanStatus} from '@sentry/tracing'
+import * as Sentry from '@sentry/node'
 
 export type UploadParams = {
   apiKey: string
@@ -24,12 +25,23 @@ export type UploadParams = {
   metadata?: Record<string, any>
 }
 
+async function identify({apiKey}: {apiKey: string}): Promise<void> {
+  const resp = await fetch(`${API_BASE}/api/account`, {
+    headers: {Authorization: `Token ${apiKey}`}
+  })
+  const {id, email} = await resp.json()
+
+  Sentry.getCurrentHub().configureScope(s => s.setUser({id, email}))
+}
+
 async function networkUpload({
   apiKey,
   specContents,
   jobRunner,
   metadata = {}
 }: UploadParams): Promise<string> {
+  const identProm = identify({apiKey})
+
   return sentryInstrument({op: 'upload_spec'}, async (_tx, span) => {
     jobRunner.debug('Creating new spec to upload')
     const newSpecResp = await fetch(`${API_BASE}/api/account/specs`, {
@@ -72,6 +84,8 @@ async function networkUpload({
 
     span.setData('specId', specId)
     span.setStatus(SpanStatus.Ok)
+
+    await identProm
 
     return specId
   })

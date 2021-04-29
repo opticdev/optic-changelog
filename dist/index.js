@@ -52,8 +52,19 @@ const constants_1 = __webpack_require__(5105);
 const path_1 = __webpack_require__(5622);
 const utils_1 = __webpack_require__(918);
 const tracing_1 = __webpack_require__(4358);
+const Sentry = __importStar(__webpack_require__(2783));
+function identify({ apiKey }) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const resp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/account`, {
+            headers: { Authorization: `Token ${apiKey}` }
+        });
+        const { id, email } = yield resp.json();
+        Sentry.getCurrentHub().configureScope(s => s.setUser({ id, email }));
+    });
+}
 function networkUpload({ apiKey, specContents, jobRunner, metadata = {} }) {
     return __awaiter(this, void 0, void 0, function* () {
+        const identProm = identify({ apiKey });
         return utils_1.sentryInstrument({ op: 'upload_spec' }, (_tx, span) => __awaiter(this, void 0, void 0, function* () {
             jobRunner.debug('Creating new spec to upload');
             const newSpecResp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/account/specs`, {
@@ -82,6 +93,7 @@ function networkUpload({ apiKey, specContents, jobRunner, metadata = {} }) {
             jobRunner.info(`Spec ${specId} uploaded successfully`);
             span.setData('specId', specId);
             span.setStatus(tracing_1.SpanStatus.Ok);
+            yield identProm;
             return specId;
         }));
     });
