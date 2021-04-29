@@ -6,13 +6,12 @@ import {getJobInputs, getRepoInfo, GitHubRepository} from './github'
 import * as Sentry from '@sentry/node'
 import {SENTRY_DSN} from './constants'
 import {sentryInstrument} from './utils'
-// import * as Tracing from '@sentry/tracing'
 
 Sentry.init({dsn: SENTRY_DSN, tracesSampleRate: 1.0})
 
 async function run(): Promise<void> {
   try {
-    sentryInstrument(async transaction => {
+    sentryInstrument({op: 'main'}, async transaction => {
       const {
         repoToken,
         subscribers,

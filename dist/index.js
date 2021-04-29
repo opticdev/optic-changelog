@@ -50,34 +50,40 @@ const spectacle_1 = __webpack_require__(8714);
 const main_1 = __webpack_require__(1519);
 const constants_1 = __webpack_require__(5105);
 const path_1 = __webpack_require__(5622);
+const utils_1 = __webpack_require__(918);
+const tracing_1 = __webpack_require__(4358);
 function networkUpload({ apiKey, specContents, jobRunner, metadata = {} }) {
     return __awaiter(this, void 0, void 0, function* () {
-        jobRunner.debug('Creating new spec to upload');
-        const newSpecResp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/account/specs`, {
-            method: 'POST',
-            headers: {
-                Authorization: `Token ${apiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(metadata)
-        });
-        if (!newSpecResp.ok) {
-            throw new Error(`Error creating spec to upload: ${newSpecResp.statusText}: ${yield newSpecResp.text()}`);
-        }
-        const { id: specId, upload_url } = yield newSpecResp.json();
-        jobRunner.debug(`Spec created: ${specId}. Uploading...`);
-        const uploadResult = yield node_fetch_1.default(upload_url, {
-            method: 'PUT',
-            headers: {
-                'x-amz-server-side-encryption': 'AES256'
-            },
-            body: specContents
-        });
-        if (!uploadResult.ok) {
-            throw new Error(`Error uploading spec: ${uploadResult.statusText}: ${yield uploadResult.text()}`);
-        }
-        jobRunner.info(`Spec ${specId} uploaded successfully`);
-        return specId;
+        return utils_1.sentryInstrument({ op: 'upload_spec' }, (_tx, span) => __awaiter(this, void 0, void 0, function* () {
+            jobRunner.debug('Creating new spec to upload');
+            const newSpecResp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/account/specs`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Token ${apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(metadata)
+            });
+            if (!newSpecResp.ok) {
+                throw new Error(`Error creating spec to upload: ${newSpecResp.statusText}: ${yield newSpecResp.text()}`);
+            }
+            const { id: specId, upload_url } = yield newSpecResp.json();
+            jobRunner.debug(`Spec created: ${specId}. Uploading...`);
+            const uploadResult = yield node_fetch_1.default(upload_url, {
+                method: 'PUT',
+                headers: {
+                    'x-amz-server-side-encryption': 'AES256'
+                },
+                body: specContents
+            });
+            if (!uploadResult.ok) {
+                throw new Error(`Error uploading spec: ${uploadResult.statusText}: ${yield uploadResult.text()}`);
+            }
+            jobRunner.info(`Spec ${specId} uploaded successfully`);
+            span.setData('specId', specId);
+            span.setStatus(tracing_1.SpanStatus.Ok);
+            return specId;
+        }));
     });
 }
 function getLatestBatchCommit(events) {
@@ -106,101 +112,109 @@ function getLatestBatchCommit(events) {
 }
 function runOpticChangelog({ apiKey, subscribers, opticSpecPath, gitProvider, headSha, baseSha, baseBranch, prNumber, jobRunner, generateEndpointChanges, uploadSpec = networkUpload }) {
     return __awaiter(this, void 0, void 0, function* () {
-        let headContent, baseContent, baseBatchCommit;
-        // This may fail if the file was moved or it's a new Optic setup
-        try {
-            headContent = JSON.parse(yield gitProvider.getFileContent(headSha, opticSpecPath));
-        }
-        catch (error) {
-            // Failing silently here
-            jobRunner.info(`Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}.`);
-            return;
-        }
-        // This may fail if the file was moved or it's a new Optic setup
-        try {
-            baseContent = JSON.parse(yield gitProvider.getFileContent(baseSha, opticSpecPath));
-            baseBatchCommit = yield getLatestBatchCommit(baseContent);
-        }
-        catch (error) {
-            // Failing silently here
-            jobRunner.info(`Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`);
-            baseContent = [];
-            baseBatchCommit = null;
-        }
-        // TODO: use new changelog library here
-        const changes = yield generateEndpointChanges(baseContent, headContent);
-        jobRunner.debug(JSON.stringify(changes, null, 4));
-        let specId = undefined;
-        if (apiKey &&
-            apiKey.length > 0 &&
-            changes.data.endpointChanges.endpoints.length > 0) {
-            specId = yield uploadSpec({
-                apiKey,
-                specContents: JSON.stringify(headContent),
-                jobRunner,
-                metadata: Object.assign({ prNumber,
-                    baseBranch }, gitProvider.getRepoInfo())
-            });
-        }
-        if (changes.data.endpointChanges.endpoints.length === 0) {
-            jobRunner.info('No API changes in this PR.');
-            return;
-        }
-        let message;
-        if (apiKey && specId) {
-            // path.join("mydir/.optic/api/spec.json","../../..") => "mydir"
-            const opticYamlPath = path_1.join(opticSpecPath, '../../../optic.yml');
-            let projectName;
+        return utils_1.sentryInstrument({
+            op: 'run_changelog'
+        }, (tx, span) => __awaiter(this, void 0, void 0, function* () {
+            let headContent, baseContent, baseBatchCommit;
+            // This may fail if the file was moved or it's a new Optic setup
             try {
-                const opticYaml = js_yaml_1.default.load(yield gitProvider.getFileContent(headSha, opticYamlPath));
-                projectName = opticYaml.name;
+                headContent = JSON.parse(yield gitProvider.getFileContent(headSha, opticSpecPath));
             }
-            catch (e) {
-                projectName = null;
+            catch (error) {
+                // Failing silently here
+                jobRunner.info(`Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}.`);
+                return;
             }
-            message = main_1.mainCommentTemplate({
-                changes,
-                specPath: opticSpecPath,
-                subscribers,
-                specId,
-                baseBatchCommit,
-                projectName
-            });
-        }
-        else {
-            message = pr_1.generateBadApiKeyCommentBody();
-        }
-        const msgHash = object_hash_1.default({ changes, subscribers, opticSpecPath });
-        const body = pr_1.setMetadata(message, { messageHash: msgHash });
-        jobRunner.debug('Created body for comment');
-        jobRunner.debug(body);
-        try {
-            // TODO: probably should be simplified a bit
-            const existingBotComments = (yield gitProvider.getPrBotComments(prNumber)).filter(comment => pr_1.isOpticComment(comment.body));
-            // Bail because of existing comment with same hash
-            if (existingBotComments.length) {
-                const comment = existingBotComments[existingBotComments.length - 1];
-                const commentMeta = pr_1.getMetadata(comment.body);
-                if ((commentMeta === null || commentMeta === void 0 ? void 0 : commentMeta.messageHash) === msgHash) {
-                    if (comment.body === body) {
-                        jobRunner.debug(`Existing comment with same hash, and no comment differences found. No changes!`);
-                        return;
-                    }
-                    else {
-                        jobRunner.debug(`Existing comment with same hash, but some comment differences found. Updating that comment!`);
-                        yield gitProvider.updatePrComment(comment.id, body);
-                        return;
+            try {
+                baseContent = JSON.parse(yield gitProvider.getFileContent(baseSha, opticSpecPath));
+                baseBatchCommit = yield getLatestBatchCommit(baseContent);
+                span.setTag('baseBatchCommit', baseBatchCommit);
+            }
+            catch (error) {
+                jobRunner.info(`Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`);
+                span.setTag('baseBatchCommit', null);
+                span.setTag('newOptic', true);
+                baseContent = [];
+                baseBatchCommit = null;
+            }
+            // TODO: use new changelog library here
+            const changes = yield generateEndpointChanges(baseContent, headContent);
+            jobRunner.debug(JSON.stringify(changes, null, 4));
+            span.setData('changeCount', changes.data.endpointChanges.endpoints.length);
+            let specId = undefined;
+            if (apiKey &&
+                apiKey.length > 0 &&
+                changes.data.endpointChanges.endpoints.length > 0) {
+                specId = yield uploadSpec({
+                    apiKey,
+                    specContents: JSON.stringify(headContent),
+                    jobRunner,
+                    metadata: Object.assign({ prNumber,
+                        baseBranch }, gitProvider.getRepoInfo())
+                });
+                span.setData('cloudSpecId', specId);
+            }
+            if (changes.data.endpointChanges.endpoints.length === 0) {
+                jobRunner.info('No API changes in this PR.');
+                return;
+            }
+            let message;
+            if (apiKey && specId) {
+                // path.join("mydir/.optic/api/spec.json","../../..") => "mydir"
+                const opticYamlPath = path_1.join(opticSpecPath, '../../../optic.yml');
+                let projectName;
+                try {
+                    const opticYaml = js_yaml_1.default.load(yield gitProvider.getFileContent(headSha, opticYamlPath));
+                    projectName = opticYaml.name;
+                    tx.setData('projectName', projectName);
+                }
+                catch (e) {
+                    projectName = null;
+                }
+                message = main_1.mainCommentTemplate({
+                    changes,
+                    specPath: opticSpecPath,
+                    subscribers,
+                    specId,
+                    baseBatchCommit,
+                    projectName
+                });
+            }
+            else {
+                message = pr_1.generateBadApiKeyCommentBody();
+            }
+            const msgHash = object_hash_1.default({ changes, subscribers, opticSpecPath });
+            const body = pr_1.setMetadata(message, { messageHash: msgHash });
+            jobRunner.debug('Created body for comment');
+            jobRunner.debug(body);
+            try {
+                // TODO: probably should be simplified a bit
+                const existingBotComments = (yield gitProvider.getPrBotComments(prNumber)).filter(comment => pr_1.isOpticComment(comment.body));
+                // Bail because of existing comment with same hash
+                if (existingBotComments.length) {
+                    const comment = existingBotComments[existingBotComments.length - 1];
+                    const commentMeta = pr_1.getMetadata(comment.body);
+                    if ((commentMeta === null || commentMeta === void 0 ? void 0 : commentMeta.messageHash) === msgHash) {
+                        if (comment.body === body) {
+                            jobRunner.debug(`Existing comment with same hash, and no comment differences found. No changes!`);
+                            return;
+                        }
+                        else {
+                            jobRunner.debug(`Existing comment with same hash, but some comment differences found. Updating that comment!`);
+                            yield gitProvider.updatePrComment(comment.id, body);
+                            return;
+                        }
                     }
                 }
+                // Or make a new comment -- no updating
+                jobRunner.debug(`Creating comment for PR ${prNumber}`);
+                yield gitProvider.createPrComment(prNumber, body);
             }
-            // Or make a new comment -- no updating
-            jobRunner.debug(`Creating comment for PR ${prNumber}`);
-            yield gitProvider.createPrComment(prNumber, body);
-        }
-        catch (error) {
-            jobRunner.info(`There was an error creating a PR comment. Error message: ${error.message}`);
-            return;
-        }
+            catch (error) {
+                jobRunner.info(`There was an error creating a PR comment. Error message: ${error.message}`);
+                return;
+            }
+        }));
     });
 }
 exports.runOpticChangelog = runOpticChangelog;
@@ -260,6 +274,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GitHubRepository = exports.getRepoInfo = exports.getJobInputs = void 0;
 const core = __importStar(__webpack_require__(2186));
 const github = __importStar(__webpack_require__(5438));
+const utils_1 = __webpack_require__(918);
 function getJobInputs() {
     const repoToken = core.getInput('GITHUB_TOKEN') || process.env['GITHUB_TOKEN'];
     const subscribers = core
@@ -321,22 +336,26 @@ class GitHubRepository {
     }
     updatePrComment(commentId, body) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.octokit.issues.updateComment({
-                owner: this.owner,
-                repo: this.repo,
-                comment_id: commentId,
-                body
-            });
+            return utils_1.sentryInstrument({ op: 'updatePrComment', tags: { commentId } }, () => __awaiter(this, void 0, void 0, function* () {
+                yield this.octokit.issues.updateComment({
+                    owner: this.owner,
+                    repo: this.repo,
+                    comment_id: commentId,
+                    body
+                });
+            }));
         });
     }
     createPrComment(prNumber, body) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.octokit.issues.createComment({
-                owner: this.owner,
-                repo: this.repo,
-                issue_number: prNumber,
-                body
-            });
+            return utils_1.sentryInstrument({ op: 'createPrComment', tags: { prNumber } }, () => __awaiter(this, void 0, void 0, function* () {
+                yield this.octokit.issues.createComment({
+                    owner: this.owner,
+                    repo: this.repo,
+                    issue_number: prNumber,
+                    body
+                });
+            }));
         });
     }
     getPrBotComments(prNumber) {
@@ -401,12 +420,11 @@ const github_1 = __webpack_require__(5928);
 const Sentry = __importStar(__webpack_require__(2783));
 const constants_1 = __webpack_require__(5105);
 const utils_1 = __webpack_require__(918);
-// import * as Tracing from '@sentry/tracing'
 Sentry.init({ dsn: constants_1.SENTRY_DSN, tracesSampleRate: 1.0 });
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            utils_1.sentryInstrument((transaction) => __awaiter(this, void 0, void 0, function* () {
+            utils_1.sentryInstrument({ op: 'main' }, (transaction) => __awaiter(this, void 0, void 0, function* () {
                 const { repoToken, subscribers, opticSpecPath, opticApiKey } = github_1.getJobInputs();
                 if (!repoToken) {
                     throw new Error('Please provide a GitHub token. Set one with the repo-token input or GITHUB_TOKEN env variable.');
@@ -641,15 +659,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.sentryInstrument = void 0;
 const Sentry = __importStar(__webpack_require__(2783));
-function sentryInstrument(cb) {
-    var _a, _b, _c;
+function sentryInstrument(spanParams, cb) {
+    var _a, _b, _c, _d;
     return __awaiter(this, void 0, void 0, function* () {
         const existingTxn = !!((_a = Sentry.getCurrentHub().getScope()) === null || _a === void 0 ? void 0 : _a.getTransaction());
         const transaction = (_c = (_b = Sentry.getCurrentHub().getScope()) === null || _b === void 0 ? void 0 : _b.getTransaction()) !== null && _c !== void 0 ? _c : Sentry.startTransaction({
             op: 'gitbot_run',
             name: 'Gitbot Run'
         });
-        const span = transaction.startChild();
+        const existingSpan = (_d = Sentry.getCurrentHub().getScope()) === null || _d === void 0 ? void 0 : _d.getSpan();
+        const span = existingSpan
+            ? existingSpan.startChild(spanParams)
+            : transaction.startChild(spanParams);
+        Sentry.getCurrentHub().configureScope(s => s.setSpan(span));
         try {
             return yield cb(transaction, span);
         }
@@ -659,6 +681,12 @@ function sentryInstrument(cb) {
         }
         finally {
             span.finish();
+            if (existingSpan) {
+                Sentry.getCurrentHub().configureScope(s => s.setSpan(existingSpan));
+            }
+            else {
+                Sentry.getCurrentHub().configureScope(s => s.setSpan(transaction));
+            }
             if (!existingTxn) {
                 // We started the txn, so we need to finish it
                 transaction.finish();
