@@ -7,6 +7,7 @@ export async function sentryInstrument<T>(
     span: Span
   ) => Promise<T>
 ): Promise<T> {
+  const existingTxn = !!Sentry.getCurrentHub().getScope()?.getTransaction()
   const transaction =
     Sentry.getCurrentHub().getScope()?.getTransaction() ??
     Sentry.startTransaction({
@@ -22,5 +23,9 @@ export async function sentryInstrument<T>(
     throw e
   } finally {
     span.finish()
+    if (!existingTxn) {
+      // We started the txn, so we need to finish it
+      transaction.finish()
+    }
   }
 }

@@ -642,9 +642,10 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.sentryInstrument = void 0;
 const Sentry = __importStar(__webpack_require__(2783));
 function sentryInstrument(cb) {
-    var _a, _b;
+    var _a, _b, _c;
     return __awaiter(this, void 0, void 0, function* () {
-        const transaction = (_b = (_a = Sentry.getCurrentHub().getScope()) === null || _a === void 0 ? void 0 : _a.getTransaction()) !== null && _b !== void 0 ? _b : Sentry.startTransaction({
+        const existingTxn = !!((_a = Sentry.getCurrentHub().getScope()) === null || _a === void 0 ? void 0 : _a.getTransaction());
+        const transaction = (_c = (_b = Sentry.getCurrentHub().getScope()) === null || _b === void 0 ? void 0 : _b.getTransaction()) !== null && _c !== void 0 ? _c : Sentry.startTransaction({
             op: 'gitbot_run',
             name: 'Gitbot Run'
         });
@@ -658,6 +659,10 @@ function sentryInstrument(cb) {
         }
         finally {
             span.finish();
+            if (!existingTxn) {
+                // We started the txn, so we need to finish it
+                transaction.finish();
+            }
         }
     });
 }
