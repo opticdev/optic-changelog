@@ -83,6 +83,28 @@ describe('Changelog', () => {
     expect(mockJobRunner.debug.mock.calls).toMatchSnapshot()
   })
 
+  it('includes purpose on comment', async () => {
+    const gitProvider = {
+      ...baseGitProvider,
+      getFileContent: jest.fn().mockImplementation((sha, path) => {
+        if (sha === baseOpticChangelog.baseSha) throw Error()
+        return baseGitProvider.getFileContent(sha, path)
+      })
+    }
+
+    await runOpticChangelog({
+      ...baseOpticChangelog,
+      gitProvider,
+      baseSha: BASE_SHA,
+      headSha: NEXT_SHA
+    })
+
+    expect(baseGitProvider.createPrComment).toBeCalledTimes(1)
+    expect(baseGitProvider.updatePrComment).toBeCalledTimes(0)
+    expect(mockJobRunner.setFailed).toBeCalledTimes(0)
+    expect(mockJobRunner.debug.mock.calls).toMatchSnapshot()
+  })
+
   it("fails silently when there isn't a spec in the head branch", async () => {
     const gitProvider = {
       ...baseGitProvider,

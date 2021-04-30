@@ -5,6 +5,9 @@ export type Changelog = {
         change: {
           category: string
         }
+        contributions: {
+          purpose?: string
+        }
         pathId: string
         path: string
         method: string
