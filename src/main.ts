@@ -7,7 +7,9 @@ import * as Sentry from '@sentry/node'
 import {SENTRY_DSN} from './constants'
 import {sentryInstrument} from './utils'
 
-Sentry.init({dsn: SENTRY_DSN, tracesSampleRate: 1.0})
+//https://github.com/getsentry/sentry-javascript/blob/master/packages/node/src/sdk.ts#L95
+// Otherwise Sentry reports the release as the git commit sha of the user's repo, which is _not_ what we want
+Sentry.init({dsn: SENTRY_DSN, tracesSampleRate: 1.0, release: null as any})
 
 async function run(): Promise<void> {
   try {
@@ -35,7 +37,7 @@ async function run(): Promise<void> {
 
       const {prNumber, owner, repo, headSha} = getRepoInfo()
 
-      for (const [k, v] of Object.entries(getRepoInfo())) {
+      for (const [k, v] of Object.entries({prNumber, owner, repo, headSha})) {
         transaction.setTag(k, v)
       }
 

@@ -432,7 +432,9 @@ const github_1 = __webpack_require__(5928);
 const Sentry = __importStar(__webpack_require__(2783));
 const constants_1 = __webpack_require__(5105);
 const utils_1 = __webpack_require__(918);
-Sentry.init({ dsn: constants_1.SENTRY_DSN, tracesSampleRate: 1.0 });
+//https://github.com/getsentry/sentry-javascript/blob/master/packages/node/src/sdk.ts#L95
+// Otherwise Sentry reports the release as the git commit sha of the user's repo, which is _not_ what we want
+Sentry.init({ dsn: constants_1.SENTRY_DSN, tracesSampleRate: 1.0, release: null });
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -446,7 +448,7 @@ function run() {
                 }
                 const octokit = github.getOctokit(repoToken);
                 const { prNumber, owner, repo, headSha } = github_1.getRepoInfo();
-                for (const [k, v] of Object.entries(github_1.getRepoInfo())) {
+                for (const [k, v] of Object.entries({ prNumber, owner, repo, headSha })) {
                     transaction.setTag(k, v);
                 }
                 // We exit quietly when it's not a pull request
