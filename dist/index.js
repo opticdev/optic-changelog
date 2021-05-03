@@ -492,7 +492,7 @@ exports.generateBadApiKeyCommentBody = generateBadApiKeyCommentBody;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.endpointTable = exports.endpointRow = void 0;
 function endpointRow({ endpoint, description, endpointLink }) {
-    return `**${endpoint.method}** ${endpoint.path} | ${description} | [**Review**](${endpointLink}) |`;
+    return `| **${endpoint.method}** ${endpoint.path} | ${description} | [**Review**](${endpointLink}) |`;
 }
 exports.endpointRow = endpointRow;
 const iconMap = {
@@ -510,11 +510,16 @@ function endpointTable({ type, endpoints, endpointLinkGenerator }) {
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
-${endpoints.map(endpoint => endpointRow({
-        endpoint,
-        description: 'not yet',
-        endpointLink: endpointLinkGenerator(endpoint)
-    }))}`;
+${endpoints
+        .map(endpoint => {
+        var _a;
+        return endpointRow({
+            endpoint,
+            description: ((_a = endpoint.contributions) === null || _a === void 0 ? void 0 : _a.purpose) || '',
+            endpointLink: endpointLinkGenerator(endpoint)
+        });
+    })
+        .join('\n')}`;
 }
 exports.endpointTable = endpointTable;
 
@@ -9985,6 +9990,7 @@ async function generateEndpointChanges(initialEvents = [], currentEvents) {
           change {
             category
           }
+          contributions
           pathId
           path
           method
@@ -9999,6 +10005,7 @@ async function generateEndpointChanges(initialEvents = [], currentEvents) {
           change {
             category
           }
+          contributions
           pathId
           path
           method
@@ -10204,6 +10211,25 @@ module.exports.get_shape_viewer_projection = function(spec) {
         wasm.__wbindgen_export_2.value = retptr;
         _assertClass(spec, WasmSpecProjection);
         wasm.get_shape_viewer_projection(retptr, spec.ptr);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+    } finally {
+        wasm.__wbindgen_export_2.value += 16;
+        wasm.__wbindgen_free(r0, r1);
+    }
+};
+
+/**
+* @param {WasmSpecProjection} spec
+* @returns {string}
+*/
+module.exports.get_contributions_projection = function(spec) {
+    try {
+        const retptr = wasm.__wbindgen_export_2.value - 16;
+        wasm.__wbindgen_export_2.value = retptr;
+        _assertClass(spec, WasmSpecProjection);
+        wasm.get_contributions_projection(retptr, spec.ptr);
         var r0 = getInt32Memory0()[retptr / 4 + 0];
         var r1 = getInt32Memory0()[retptr / 4 + 1];
         return getStringFromWasm0(r0, r1);
@@ -11167,6 +11193,9 @@ class RequestNodeWrapper {
         }
         return neighbors.results[0];
     }
+    responses() {
+        return this.path().responses().results.filter((response) => response.value.httpMethod === this.value.httpMethod);
+    }
     bodies() {
         return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Body);
     }
@@ -11649,6 +11678,8 @@ type HttpRequest {
   bodies: [HttpBody]
   responses: [HttpResponse]
   changes(sinceBatchCommitId: String): ChangesResult
+  pathContributions: JSON
+  requestContributions: JSON
 }
 type PathComponent {
   id: ID
@@ -11660,6 +11691,7 @@ type HttpResponse {
   statusCode: Int
   bodies: [HttpBody]
   changes(sinceBatchCommitId: String): ChangesResult
+  contributions: JSON
 }
 type ObjectFieldMetadata {
   name: String
@@ -11667,6 +11699,7 @@ type ObjectFieldMetadata {
   # query shapeChoices(shapeId) to recurse
   changes(sinceBatchCommitId: String): ChangesResult
   shapeId: ID
+  contributions: JSON
 }
 type ObjectMetadata {
   fields: [ObjectFieldMetadata]
@@ -11697,6 +11730,7 @@ type EndpointChange {
   pathId: String
   path: String
   method: String
+  contributions: JSON
 }
 type EndpointChangeMetadata {
   category: String
@@ -11717,7 +11751,7 @@ type BatchCommit {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getArrayChanges = exports.getFieldChanges = exports.getShapeChanges = exports.buildEndpointChanges = exports.buildShapesGraph = exports.buildEndpointsGraph = void 0;
+exports.getContributionsProjection = exports.getArrayChanges = exports.getFieldChanges = exports.getShapeChanges = exports.buildEndpointChanges = exports.buildShapesGraph = exports.buildEndpointsGraph = void 0;
 const graph_lib_1 = __webpack_require__(3194);
 const shapes_graph_1 = __webpack_require__(912);
 function buildEndpointsGraph(spec, opticEngine) {
@@ -11966,6 +12000,10 @@ function getDeltaBatchCommits(shapeQueries, sinceBatchCommitId) {
     });
     return deltaBatchCommits;
 }
+function getContributionsProjection(spec, opticEngine) {
+    return JSON.parse(opticEngine.get_contributions_projection(spec));
+}
+exports.getContributionsProjection = getContributionsProjection;
 
 
 /***/ }),
@@ -12235,21 +12273,24 @@ async function buildProjections(opticContext) {
     const endpointsQueries = helpers_1.buildEndpointsGraph(spec, opticContext.opticEngine);
     const shapesQueries = helpers_1.buildShapesGraph(spec, opticContext.opticEngine);
     const shapeViewerProjection = JSON.parse(opticContext.opticEngine.get_shape_viewer_projection(spec));
+    const contributionsProjection = helpers_1.getContributionsProjection(spec, opticContext.opticEngine);
     return {
         events,
         spec,
         endpointsQueries,
         shapesQueries,
         shapeViewerProjection,
+        contributionsProjection,
     };
 }
 async function makeSpectacle(opticContext) {
-    let endpointsQueries, shapeQueries, shapeViewerProjection;
+    let endpointsQueries, shapeQueries, shapeViewerProjection, contributionsProjection;
     async function reload(opticContext) {
         const projections = await buildProjections(opticContext);
         endpointsQueries = projections.endpointsQueries;
         shapeQueries = projections.shapesQueries;
         shapeViewerProjection = projections.shapeViewerProjection;
+        contributionsProjection = projections.contributionsProjection;
     }
     await reload(opticContext);
     const resolvers = {
@@ -12324,7 +12365,14 @@ async function makeSpectacle(opticContext) {
             },
             pathComponents: (parent) => {
                 let path = parent.path();
-                return Promise.resolve(path.components());
+                let parentPath = path.parentPath();
+                const components = [path.value];
+                while (parentPath !== null) {
+                    components.push(parentPath.value);
+                    path = parentPath;
+                    parentPath = path.parentPath();
+                }
+                return Promise.resolve(components.reverse());
             },
             method: (parent) => {
                 return Promise.resolve(parent.value.httpMethod);
@@ -12333,7 +12381,15 @@ async function makeSpectacle(opticContext) {
                 return Promise.resolve(parent.bodies().results);
             },
             responses: (parent) => {
-                return Promise.resolve(parent.path().responses().results);
+                return Promise.resolve(parent.responses());
+            },
+            pathContributions: (parent, args, context) => {
+                const pathId = parent.path().value.pathId;
+                const method = parent.value.httpMethod;
+                return Promise.resolve(context.contributionsProjection[`${pathId}.${method}`] || {});
+            },
+            requestContributions: (parent, args, context) => {
+                return Promise.resolve(context.contributionsProjection[parent.value.requestId] || {});
             },
         },
         HttpResponse: {
@@ -12345,6 +12401,9 @@ async function makeSpectacle(opticContext) {
             },
             bodies: (parent) => {
                 return Promise.resolve(parent.bodies().results);
+            },
+            contributions: (parent, args, context) => {
+                return Promise.resolve(context.contributionsProjection[parent.result.data.responseId] || {});
             },
         },
         PathComponent: {
@@ -12390,6 +12449,9 @@ async function makeSpectacle(opticContext) {
             changes: (parent, args, context) => {
                 return Promise.resolve(helpers_1.getFieldChanges(context.shapeQueries, parent.fieldId, parent.shapeId, args.sinceBatchCommitId));
             },
+            contributions: (parent, args, context) => {
+                return Promise.resolve(context.contributionsProjection[parent.fieldId] || {});
+            },
         },
         EndpointChanges: {
             opticUrl: (parent) => {
@@ -12412,6 +12474,11 @@ async function makeSpectacle(opticContext) {
             },
             method: (parent) => {
                 return Promise.resolve(parent.method);
+            },
+            contributions: (parent, args, context) => {
+                const pathId = parent.pathId;
+                const method = parent.method;
+                return Promise.resolve(context.contributionsProjection[`${pathId}.${method}`] || {});
             },
         },
         EndpointChangeMetadata: {
@@ -12446,6 +12513,7 @@ async function makeSpectacle(opticContext) {
                 endpointsQueries,
                 shapeQueries,
                 shapeViewerProjection,
+                contributionsProjection,
             },
         });
     };

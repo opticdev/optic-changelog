@@ -19,7 +19,7 @@ export function endpointRow({
   description,
   endpointLink
 }: EndpointRowProps): string {
-  return `**${endpoint.method}** ${endpoint.path} | ${description} | [**Review**](${endpointLink}) |`
+  return `| **${endpoint.method}** ${endpoint.path} | ${description} | [**Review**](${endpointLink}) |`
 }
 
 const iconMap = {
@@ -51,11 +51,13 @@ export function endpointTable({
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
-${endpoints.map(endpoint =>
-  endpointRow({
-    endpoint,
-    description: 'not yet',
-    endpointLink: endpointLinkGenerator(endpoint)
-  })
-)}`
+${endpoints
+  .map(endpoint =>
+    endpointRow({
+      endpoint,
+      description: endpoint.contributions?.purpose || '',
+      endpointLink: endpointLinkGenerator(endpoint)
+    })
+  )
+  .join('\n')}`
 }
