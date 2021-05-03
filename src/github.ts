@@ -2,6 +2,7 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {GitHub} from '@actions/github/lib/utils'
 import {IGitProvider, JobInputs, RepoInfo, PrInfo, PrComment} from './types'
+import {sentryInstrument} from './utils'
 
 export function getJobInputs(): JobInputs {
   const repoToken = core.getInput('GITHUB_TOKEN') || process.env['GITHUB_TOKEN']
@@ -71,21 +72,31 @@ export class GitHubRepository implements IGitProvider {
   }
 
   async updatePrComment(commentId: number, body: string): Promise<void> {
-    await this.octokit.issues.updateComment({
-      owner: this.owner,
-      repo: this.repo,
-      comment_id: commentId,
-      body
-    })
+    return sentryInstrument(
+      {op: 'updatePrComment', tags: {commentId}},
+      async () => {
+        await this.octokit.issues.updateComment({
+          owner: this.owner,
+          repo: this.repo,
+          comment_id: commentId,
+          body
+        })
+      }
+    )
   }
 
   async createPrComment(prNumber: number, body: string): Promise<void> {
-    await this.octokit.issues.createComment({
-      owner: this.owner,
-      repo: this.repo,
-      issue_number: prNumber,
-      body
-    })
+    return sentryInstrument(
+      {op: 'createPrComment', tags: {prNumber}},
+      async () => {
+        await this.octokit.issues.createComment({
+          owner: this.owner,
+          repo: this.repo,
+          issue_number: prNumber,
+          body
+        })
+      }
+    )
   }
 
   async getPrBotComments(prNumber: number): Promise<PrComment[]> {
