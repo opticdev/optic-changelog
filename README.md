@@ -23,6 +23,7 @@ jobs:
       - uses: opticdev/optic-changelog
         with:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          OPTIC_API_KEY: ${{secrets.OPTIC_API_KEY}}
 ```
 
 ## Configure the GitHub Action
