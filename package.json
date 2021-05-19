@@ -11,7 +11,7 @@
     "lint": "eslint src/**/*.ts",
     "package": "ncc build --source-map --license licenses.txt",
     "test": "jest",
-    "all": "npm run build && npm run format && npm run lint && npm run package && npm test"
+    "all": "yarn build && yarn format && yarn lint && yarn package && yarn test"
   },
   "repository": {
     "type": "git",
@@ -28,7 +28,7 @@
     "@actions/core": "^1.2.6",
     "@actions/github": "^4.0.0",
     "@actions/http-client": "^1.0.9",
-    "@useoptic/changelog": "https://optic-side-channel-production.s3.amazonaws.com/10.0.1-alpha.b150/changelog-10.0.1-alpha.b150.tgz",
+    "@useoptic/changelog": "10.0.1-alpha.1",
     "@sentry/node": "^6.3.4",
     "@sentry/tracing": "^6.3.4",
     "node-fetch": "^2.6.1",
