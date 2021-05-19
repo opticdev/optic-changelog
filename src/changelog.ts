@@ -117,7 +117,7 @@ async function getLatestBatchCommit(events: any[]): Promise<string | null> {
   )
   const initialSpectacle = await makeSpectacle(initialOpticContext)
 
-  const batchCommitResults = await initialSpectacle({
+  const batchCommitResults: any = await initialSpectacle.queryWrapper({
     query: `{
       batchCommits {
         createdAt
@@ -198,7 +198,8 @@ export async function runOpticChangelog({
       if (
         apiKey &&
         apiKey.length > 0 &&
-        changes.data.endpointChanges.endpoints.length > 0
+        changes.data.endpointChanges.endpoints.length > 0 &&
+        uploadSpec
       ) {
         specId = await uploadSpec({
           apiKey,
@@ -220,7 +221,6 @@ export async function runOpticChangelog({
 
       let message: string
       if (apiKey && specId) {
-        // path.join("mydir/.optic/api/spec.json","../../..") => "mydir"
         const opticYamlPath = join(opticSpecPath, '../../../optic.yml')
         let projectName: string | null
         try {
