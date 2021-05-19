@@ -28,7 +28,8 @@ const baseGitProvider: IGitProvider = {
 const mockJobRunner = {
   info: jest.fn(),
   debug: jest.fn(),
-  setFailed: jest.fn()
+  setFailed: jest.fn(),
+  exportVariable: jest.fn()
 }
 
 const baseOpticChangelog: ChangelogParams = {
@@ -53,6 +54,7 @@ describe('Changelog', () => {
   it('creates a comment', async () => {
     await runOpticChangelog(baseOpticChangelog)
     expectCommentWasCreated()
+    expect(mockJobRunner.exportVariable).toBeCalledTimes(1)
   })
 
   it("doesn't create a comment when new commits don't change the spec", async () => {

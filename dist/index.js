@@ -140,6 +140,7 @@ function runOpticChangelog({ apiKey, subscribers, opticSpecPath, gitProvider, he
             try {
                 baseContent = JSON.parse(yield gitProvider.getFileContent(baseSha, opticSpecPath));
                 baseBatchCommit = yield getLatestBatchCommit(baseContent);
+                jobRunner.exportVariable('SINCE_BATCH_COMMIT_ID', baseBatchCommit);
                 span.setTag('baseBatchCommit', baseBatchCommit);
             }
             catch (error) {

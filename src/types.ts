@@ -55,4 +55,5 @@ export declare interface IJobRunner {
   debug(message: string): void
   info(message: string): void
   setFailed(message: string | Error): void
+  exportVariable(variableName: string, value: any): void
 }
