@@ -174,6 +174,7 @@ export async function runOpticChangelog({
           await gitProvider.getFileContent(baseSha, opticSpecPath)
         )
         baseBatchCommit = await getLatestBatchCommit(baseContent)
+        jobRunner.exportVariable('SINCE_BATCH_COMMIT_ID', baseBatchCommit)
         span.setTag('baseBatchCommit', baseBatchCommit)
       } catch (error) {
         jobRunner.info(
