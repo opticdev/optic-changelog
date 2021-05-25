@@ -41,7 +41,7 @@
     "@types/node": "^14.14.9",
     "@types/node-fetch": "^2.5.10",
     "@types/object-hash": "^2.1.0",
-    "@typescript-eslint/parser": "^4.19.0",
+    "@typescript-eslint/parser": "^4.25.0",
     "@vercel/ncc": "^0.25.1",
     "eslint": "^7.17.0",
     "eslint-plugin-github": "^4.1.1",
