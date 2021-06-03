@@ -30,7 +30,7 @@
     "@actions/github": "^4.0.0",
     "@actions/http-client": "^1.0.9",
     "@useoptic/changelog": "10.0.1-alpha.1",
-    "@sentry/node": "^6.3.4",
+    "@sentry/node": "^6.5.1",
     "@sentry/tracing": "^6.3.4",
     "node-fetch": "^2.6.1",
     "object-hash": "^2.1.1"
