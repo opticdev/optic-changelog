@@ -21078,15 +21078,14 @@ function getInt32Memory0() {
 */
 module.exports.get_endpoints_projection = function(spec) {
     try {
-        const retptr = wasm.__wbindgen_export_2.value - 16;
-        wasm.__wbindgen_export_2.value = retptr;
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         _assertClass(spec, WasmSpecProjection);
         wasm.get_endpoints_projection(retptr, spec.ptr);
         var r0 = getInt32Memory0()[retptr / 4 + 0];
         var r1 = getInt32Memory0()[retptr / 4 + 1];
         return getStringFromWasm0(r0, r1);
     } finally {
-        wasm.__wbindgen_export_2.value += 16;
+        wasm.__wbindgen_add_to_stack_pointer(16);
         wasm.__wbindgen_free(r0, r1);
     }
 };
@@ -21097,15 +21096,14 @@ module.exports.get_endpoints_projection = function(spec) {
 */
 module.exports.get_shapes_projection = function(spec) {
     try {
-        const retptr = wasm.__wbindgen_export_2.value - 16;
-        wasm.__wbindgen_export_2.value = retptr;
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         _assertClass(spec, WasmSpecProjection);
         wasm.get_shapes_projection(retptr, spec.ptr);
         var r0 = getInt32Memory0()[retptr / 4 + 0];
         var r1 = getInt32Memory0()[retptr / 4 + 1];
         return getStringFromWasm0(r0, r1);
     } finally {
-        wasm.__wbindgen_export_2.value += 16;
+        wasm.__wbindgen_add_to_stack_pointer(16);
         wasm.__wbindgen_free(r0, r1);
     }
 };
@@ -21116,15 +21114,14 @@ module.exports.get_shapes_projection = function(spec) {
 */
 module.exports.get_shape_viewer_projection = function(spec) {
     try {
-        const retptr = wasm.__wbindgen_export_2.value - 16;
-        wasm.__wbindgen_export_2.value = retptr;
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         _assertClass(spec, WasmSpecProjection);
         wasm.get_shape_viewer_projection(retptr, spec.ptr);
         var r0 = getInt32Memory0()[retptr / 4 + 0];
         var r1 = getInt32Memory0()[retptr / 4 + 1];
         return getStringFromWasm0(r0, r1);
     } finally {
-        wasm.__wbindgen_export_2.value += 16;
+        wasm.__wbindgen_add_to_stack_pointer(16);
         wasm.__wbindgen_free(r0, r1);
     }
 };
@@ -21135,15 +21132,14 @@ module.exports.get_shape_viewer_projection = function(spec) {
 */
 module.exports.get_contributions_projection = function(spec) {
     try {
-        const retptr = wasm.__wbindgen_export_2.value - 16;
-        wasm.__wbindgen_export_2.value = retptr;
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         _assertClass(spec, WasmSpecProjection);
         wasm.get_contributions_projection(retptr, spec.ptr);
         var r0 = getInt32Memory0()[retptr / 4 + 0];
         var r1 = getInt32Memory0()[retptr / 4 + 1];
         return getStringFromWasm0(r0, r1);
     } finally {
-        wasm.__wbindgen_export_2.value += 16;
+        wasm.__wbindgen_add_to_stack_pointer(16);
         wasm.__wbindgen_free(r0, r1);
     }
 };
@@ -21155,8 +21151,7 @@ module.exports.get_contributions_projection = function(spec) {
 */
 module.exports.diff_interaction = function(interaction_json, spec) {
     try {
-        const retptr = wasm.__wbindgen_export_2.value - 16;
-        wasm.__wbindgen_export_2.value = retptr;
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         var ptr0 = passStringToWasm0(interaction_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         var len0 = WASM_VECTOR_LEN;
         _assertClass(spec, WasmSpecProjection);
@@ -21165,7 +21160,7 @@ module.exports.diff_interaction = function(interaction_json, spec) {
         var r1 = getInt32Memory0()[retptr / 4 + 1];
         return getStringFromWasm0(r0, r1);
     } finally {
-        wasm.__wbindgen_export_2.value += 16;
+        wasm.__wbindgen_add_to_stack_pointer(16);
         wasm.__wbindgen_free(r0, r1);
     }
 };
@@ -21175,12 +21170,13 @@ module.exports.diff_interaction = function(interaction_json, spec) {
 * @param {string} events_json
 * @param {string} batch_id
 * @param {string} commit_message
+* @param {string} client_id
+* @param {string} client_session_id
 * @returns {string}
 */
-module.exports.try_apply_commands = function(commands_json, events_json, batch_id, commit_message) {
+module.exports.try_apply_commands = function(commands_json, events_json, batch_id, commit_message, client_id, client_session_id) {
     try {
-        const retptr = wasm.__wbindgen_export_2.value - 16;
-        wasm.__wbindgen_export_2.value = retptr;
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         var ptr0 = passStringToWasm0(commands_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         var len0 = WASM_VECTOR_LEN;
         var ptr1 = passStringToWasm0(events_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
@@ -21189,12 +21185,16 @@ module.exports.try_apply_commands = function(commands_json, events_json, batch_i
         var len2 = WASM_VECTOR_LEN;
         var ptr3 = passStringToWasm0(commit_message, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         var len3 = WASM_VECTOR_LEN;
-        wasm.try_apply_commands(retptr, ptr0, len0, ptr1, len1, ptr2, len2, ptr3, len3);
+        var ptr4 = passStringToWasm0(client_id, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len4 = WASM_VECTOR_LEN;
+        var ptr5 = passStringToWasm0(client_session_id, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len5 = WASM_VECTOR_LEN;
+        wasm.try_apply_commands(retptr, ptr0, len0, ptr1, len1, ptr2, len2, ptr3, len3, ptr4, len4, ptr5, len5);
         var r0 = getInt32Memory0()[retptr / 4 + 0];
         var r1 = getInt32Memory0()[retptr / 4 + 1];
         return getStringFromWasm0(r0, r1);
     } finally {
-        wasm.__wbindgen_export_2.value += 16;
+        wasm.__wbindgen_add_to_stack_pointer(16);
         wasm.__wbindgen_free(r0, r1);
     }
 };
@@ -21202,22 +21202,24 @@ module.exports.try_apply_commands = function(commands_json, events_json, batch_i
 /**
 * @param {string} json_affordances_json
 * @param {string} json_trail_json
+* @param {string} id_generator_strategy
 * @returns {string}
 */
-module.exports.affordances_to_commands = function(json_affordances_json, json_trail_json) {
+module.exports.affordances_to_commands = function(json_affordances_json, json_trail_json, id_generator_strategy) {
     try {
-        const retptr = wasm.__wbindgen_export_2.value - 16;
-        wasm.__wbindgen_export_2.value = retptr;
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         var ptr0 = passStringToWasm0(json_affordances_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         var len0 = WASM_VECTOR_LEN;
         var ptr1 = passStringToWasm0(json_trail_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         var len1 = WASM_VECTOR_LEN;
-        wasm.affordances_to_commands(retptr, ptr0, len0, ptr1, len1);
+        var ptr2 = passStringToWasm0(id_generator_strategy, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len2 = WASM_VECTOR_LEN;
+        wasm.affordances_to_commands(retptr, ptr0, len0, ptr1, len1, ptr2, len2);
         var r0 = getInt32Memory0()[retptr / 4 + 0];
         var r1 = getInt32Memory0()[retptr / 4 + 1];
         return getStringFromWasm0(r0, r1);
     } finally {
-        wasm.__wbindgen_export_2.value += 16;
+        wasm.__wbindgen_add_to_stack_pointer(16);
         wasm.__wbindgen_free(r0, r1);
     }
 };
@@ -21225,21 +21227,23 @@ module.exports.affordances_to_commands = function(json_affordances_json, json_tr
 /**
 * @param {WasmSpecProjection} spec
 * @param {string} interactions_json
+* @param {string} id_generator_strategy
 * @returns {string}
 */
-module.exports.learn_undocumented_bodies = function(spec, interactions_json) {
+module.exports.learn_undocumented_bodies = function(spec, interactions_json, id_generator_strategy) {
     try {
-        const retptr = wasm.__wbindgen_export_2.value - 16;
-        wasm.__wbindgen_export_2.value = retptr;
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         _assertClass(spec, WasmSpecProjection);
         var ptr0 = passStringToWasm0(interactions_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         var len0 = WASM_VECTOR_LEN;
-        wasm.learn_undocumented_bodies(retptr, spec.ptr, ptr0, len0);
+        var ptr1 = passStringToWasm0(id_generator_strategy, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len1 = WASM_VECTOR_LEN;
+        wasm.learn_undocumented_bodies(retptr, spec.ptr, ptr0, len0, ptr1, len1);
         var r0 = getInt32Memory0()[retptr / 4 + 0];
         var r1 = getInt32Memory0()[retptr / 4 + 1];
         return getStringFromWasm0(r0, r1);
     } finally {
-        wasm.__wbindgen_export_2.value += 16;
+        wasm.__wbindgen_add_to_stack_pointer(16);
         wasm.__wbindgen_free(r0, r1);
     }
 };
@@ -21252,8 +21256,7 @@ module.exports.learn_undocumented_bodies = function(spec, interactions_json) {
 */
 module.exports.learn_shape_diff_affordances = function(spec, diff_results_json, tagged_interactions_json) {
     try {
-        const retptr = wasm.__wbindgen_export_2.value - 16;
-        wasm.__wbindgen_export_2.value = retptr;
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         _assertClass(spec, WasmSpecProjection);
         var ptr0 = passStringToWasm0(diff_results_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         var len0 = WASM_VECTOR_LEN;
@@ -21264,7 +21267,7 @@ module.exports.learn_shape_diff_affordances = function(spec, diff_results_json, 
         var r1 = getInt32Memory0()[retptr / 4 + 1];
         return getStringFromWasm0(r0, r1);
     } finally {
-        wasm.__wbindgen_export_2.value += 16;
+        wasm.__wbindgen_add_to_stack_pointer(16);
         wasm.__wbindgen_free(r0, r1);
     }
 };
@@ -21277,8 +21280,7 @@ module.exports.learn_shape_diff_affordances = function(spec, diff_results_json, 
 */
 module.exports.append_batch_to_spec = function(spec, commands, commit_message) {
     try {
-        const retptr = wasm.__wbindgen_export_2.value - 16;
-        wasm.__wbindgen_export_2.value = retptr;
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         _assertClass(spec, WasmSpecProjection);
         var ptr0 = spec.ptr;
         spec.ptr = 0;
@@ -21291,7 +21293,7 @@ module.exports.append_batch_to_spec = function(spec, commands, commit_message) {
         var r1 = getInt32Memory0()[retptr / 4 + 1];
         return getStringFromWasm0(r0, r1);
     } finally {
-        wasm.__wbindgen_export_2.value += 16;
+        wasm.__wbindgen_add_to_stack_pointer(16);
         wasm.__wbindgen_free(r0, r1);
     }
 };
@@ -21303,8 +21305,7 @@ module.exports.append_batch_to_spec = function(spec, commands, commit_message) {
 */
 module.exports.spec_resolve_path_id = function(spec, path) {
     try {
-        const retptr = wasm.__wbindgen_export_2.value - 16;
-        wasm.__wbindgen_export_2.value = retptr;
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         _assertClass(spec, WasmSpecProjection);
         var ptr0 = passStringToWasm0(path, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         var len0 = WASM_VECTOR_LEN;
@@ -21318,19 +21319,142 @@ module.exports.spec_resolve_path_id = function(spec, path) {
         }
         return v1;
     } finally {
-        wasm.__wbindgen_export_2.value += 16;
+        wasm.__wbindgen_add_to_stack_pointer(16);
     }
 };
 
-function handleError(f) {
-    return function () {
-        try {
-            return f.apply(this, arguments);
+/**
+* @param {WasmSpecProjection} spec
+* @param {string} path_id
+* @param {string} method
+* @returns {string}
+*/
+module.exports.spec_resolve_requests = function(spec, path_id, method) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        _assertClass(spec, WasmSpecProjection);
+        var ptr0 = passStringToWasm0(path_id, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len0 = WASM_VECTOR_LEN;
+        var ptr1 = passStringToWasm0(method, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len1 = WASM_VECTOR_LEN;
+        wasm.spec_resolve_requests(retptr, spec.ptr, ptr0, len0, ptr1, len1);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+    }
+};
 
-        } catch (e) {
-            wasm.__wbindgen_exn_store(addHeapObject(e));
-        }
-    };
+function isLikeNone(x) {
+    return x === undefined || x === null;
+}
+/**
+* @param {WasmSpecProjection} spec
+* @param {string} path_id
+* @param {string} method
+* @param {string | undefined} content_type
+* @returns {string}
+*/
+module.exports.spec_resolve_request = function(spec, path_id, method, content_type) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        _assertClass(spec, WasmSpecProjection);
+        var ptr0 = passStringToWasm0(path_id, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len0 = WASM_VECTOR_LEN;
+        var ptr1 = passStringToWasm0(method, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len1 = WASM_VECTOR_LEN;
+        var ptr2 = isLikeNone(content_type) ? 0 : passStringToWasm0(content_type, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len2 = WASM_VECTOR_LEN;
+        wasm.spec_resolve_request(retptr, spec.ptr, ptr0, len0, ptr1, len1, ptr2, len2);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+    }
+};
+
+/**
+* @param {WasmSpecProjection} spec
+* @param {string} method
+* @param {number} status_code
+* @param {string} path_id
+* @returns {string}
+*/
+module.exports.spec_resolve_responses = function(spec, method, status_code, path_id) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        _assertClass(spec, WasmSpecProjection);
+        var ptr0 = passStringToWasm0(method, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len0 = WASM_VECTOR_LEN;
+        var ptr1 = passStringToWasm0(path_id, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len1 = WASM_VECTOR_LEN;
+        wasm.spec_resolve_responses(retptr, spec.ptr, ptr0, len0, status_code, ptr1, len1);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+    }
+};
+
+/**
+* @param {WasmSpecProjection} spec
+* @param {string} method
+* @param {number} status_code
+* @param {string} path_id
+* @param {string | undefined} content_type
+* @returns {string}
+*/
+module.exports.spec_resolve_response = function(spec, method, status_code, path_id, content_type) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        _assertClass(spec, WasmSpecProjection);
+        var ptr0 = passStringToWasm0(method, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len0 = WASM_VECTOR_LEN;
+        var ptr1 = passStringToWasm0(path_id, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len1 = WASM_VECTOR_LEN;
+        var ptr2 = isLikeNone(content_type) ? 0 : passStringToWasm0(content_type, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len2 = WASM_VECTOR_LEN;
+        wasm.spec_resolve_response(retptr, spec.ptr, ptr0, len0, status_code, ptr1, len1, ptr2, len2);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+    }
+};
+
+/**
+* @param {string} prefix
+* @returns {string}
+*/
+module.exports.next_nano_id = function(prefix) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        var ptr0 = passStringToWasm0(prefix, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len0 = WASM_VECTOR_LEN;
+        wasm.next_nano_id(retptr, ptr0, len0);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+    }
+};
+
+function handleError(f, args) {
+    try {
+        return f.apply(this, args);
+    } catch (e) {
+        wasm.__wbindgen_exn_store(addHeapObject(e));
+    }
 }
 
 function getArrayU8FromWasm0(ptr, len) {
@@ -21347,10 +21471,15 @@ class WasmSpecProjection {
         return obj;
     }
 
-    free() {
+    __destroy_into_raw() {
         const ptr = this.ptr;
         this.ptr = 0;
 
+        return ptr;
+    }
+
+    free() {
+        const ptr = this.__destroy_into_raw();
         wasm.__wbg_wasmspecprojection_free(ptr);
     }
 }
@@ -21410,28 +21539,28 @@ module.exports.__wbg_warn_6add4f04160cdbba = function(arg0, arg1, arg2, arg3) {
     console.warn(getObject(arg0), getObject(arg1), getObject(arg2), getObject(arg3));
 };
 
-module.exports.__wbg_getRandomValues_57e4008f45f0e105 = handleError(function(arg0, arg1) {
+module.exports.__wbg_getRandomValues_57e4008f45f0e105 = function() { return handleError(function (arg0, arg1) {
     getObject(arg0).getRandomValues(getObject(arg1));
-});
+}, arguments) };
 
-module.exports.__wbg_randomFillSync_d90848a552cbd666 = handleError(function(arg0, arg1, arg2) {
+module.exports.__wbg_randomFillSync_d90848a552cbd666 = function() { return handleError(function (arg0, arg1, arg2) {
     getObject(arg0).randomFillSync(getArrayU8FromWasm0(arg1, arg2));
-});
+}, arguments) };
 
-module.exports.__wbg_self_f865985e662246aa = handleError(function() {
+module.exports.__wbg_self_f865985e662246aa = function() { return handleError(function () {
     var ret = self.self;
     return addHeapObject(ret);
-});
+}, arguments) };
 
 module.exports.__wbg_static_accessor_MODULE_39947eb3fe77895f = function() {
     var ret = module;
     return addHeapObject(ret);
 };
 
-module.exports.__wbg_require_c59851dfa0dc7e78 = handleError(function(arg0, arg1, arg2) {
+module.exports.__wbg_require_c59851dfa0dc7e78 = function() { return handleError(function (arg0, arg1, arg2) {
     var ret = getObject(arg0).require(getStringFromWasm0(arg1, arg2));
     return addHeapObject(ret);
-});
+}, arguments) };
 
 module.exports.__wbg_crypto_bfb05100db79193b = function(arg0) {
     var ret = getObject(arg0).crypto;
@@ -22188,7 +22317,11 @@ class PathNodeWrapper {
     }
     get absolutePathPatternWithParameterNames() {
         let path = '';
-        for (const component of this.components()) {
+        const components = this.components();
+        if (components.length === 1 && components[0].value.pathId === 'root') {
+            return '/';
+        }
+        for (const component of components) {
             if (component.value.pathId === 'root')
                 continue;
             if (component.value.isParameterized) {
@@ -22560,6 +22693,129 @@ exports.GraphQueries = GraphQueries;
 
 /***/ }),
 
+/***/ 1349:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/*
+TODO Replace with Rust constructors eventually
+*/
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AddResponseByPathAndMethod = exports.SetRequestBodyShape = exports.SetResponseBodyShape = exports.ShapedBodyDescriptor = exports.AddContribution = exports.AddPathComponent = exports.AddPathParameter = exports.RemoveField = exports.AddShapeParameter = exports.SetFieldShape = exports.SetParameterShape = exports.ProviderInShape = exports.ShapeProvider = exports.AddField = exports.FieldShapeFromShape = exports.AddRequest = exports.AddShape = void 0;
+function AddShape(shapeId, baseShapeId, name = '') {
+    return { AddShape: { shapeId, baseShapeId, name } };
+}
+exports.AddShape = AddShape;
+function AddRequest(httpMethod, pathId, requestId) {
+    return { AddRequest: { httpMethod, pathId, requestId } };
+}
+exports.AddRequest = AddRequest;
+function FieldShapeFromShape(fieldId, shapeId) {
+    return { FieldShapeFromShape: { fieldId, shapeId } };
+}
+exports.FieldShapeFromShape = FieldShapeFromShape;
+function AddField(fieldId, shapeId, name, shapeDescriptor) {
+    return { AddField: { fieldId, shapeId, name, shapeDescriptor } };
+}
+exports.AddField = AddField;
+function ShapeProvider(shapeId) {
+    return { ShapeProvider: { shapeId } };
+}
+exports.ShapeProvider = ShapeProvider;
+function ProviderInShape(shapeId, providerDescriptor, consumingParameterId) {
+    return {
+        ProviderInShape: { shapeId, providerDescriptor, consumingParameterId },
+    };
+}
+exports.ProviderInShape = ProviderInShape;
+function SetParameterShape(shapeDescriptor) {
+    return { SetParameterShape: { shapeDescriptor } };
+}
+exports.SetParameterShape = SetParameterShape;
+function SetFieldShape(shapeDescriptor) {
+    return { SetFieldShape: { shapeDescriptor } };
+}
+exports.SetFieldShape = SetFieldShape;
+function AddShapeParameter(shapeParameterId, shapeId, name) {
+    return { AddShapeParameter: { shapeParameterId, shapeId, name } };
+}
+exports.AddShapeParameter = AddShapeParameter;
+function RemoveField(fieldId) {
+    return { RemoveField: { fieldId } };
+}
+exports.RemoveField = RemoveField;
+function AddPathParameter(pathId, parentPathId, name) {
+    return {
+        AddPathParameter: {
+            pathId,
+            parentPathId,
+            name,
+        },
+    };
+}
+exports.AddPathParameter = AddPathParameter;
+function AddPathComponent(pathId, parentPathId, name) {
+    return {
+        AddPathComponent: {
+            pathId,
+            parentPathId,
+            name,
+        },
+    };
+}
+exports.AddPathComponent = AddPathComponent;
+function AddContribution(id, key, value) {
+    return {
+        AddContribution: {
+            id,
+            key,
+            value,
+        },
+    };
+}
+exports.AddContribution = AddContribution;
+function ShapedBodyDescriptor(httpContentType, shapeId, isRemoved = false) {
+    return {
+        httpContentType,
+        shapeId,
+        isRemoved,
+    };
+}
+exports.ShapedBodyDescriptor = ShapedBodyDescriptor;
+function SetResponseBodyShape(responseId, bodyDescriptor) {
+    return {
+        SetResponseBodyShape: {
+            responseId,
+            bodyDescriptor,
+        },
+    };
+}
+exports.SetResponseBodyShape = SetResponseBodyShape;
+function SetRequestBodyShape(requestId, bodyDescriptor) {
+    return {
+        SetRequestBodyShape: {
+            requestId,
+            bodyDescriptor,
+        },
+    };
+}
+exports.SetRequestBodyShape = SetRequestBodyShape;
+function AddResponseByPathAndMethod(responseId, pathId, httpMethod, httpStatusCode) {
+    return {
+        AddResponseByPathAndMethod: {
+            responseId,
+            pathId,
+            httpMethod,
+            httpStatusCode,
+        },
+    };
+}
+exports.AddResponseByPathAndMethod = AddResponseByPathAndMethod;
+
+
+/***/ }),
+
 /***/ 8706:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -22576,6 +22832,10 @@ schema {
 type Mutation {
   applyCommands(commands: [JSON], batchCommitId: ID, commitMessage: String, clientId: ID, clientSessionId: ID): AppliedCommandsResult
   startDiff(diffId: ID, captureId: ID): StartDiffResult
+  invalidateCaches: InvalidateCachesResult
+}
+type InvalidateCachesResult {
+  batchCommitId: ID
 }
 type AppliedCommandsResult {
   batchCommitId: ID
@@ -22585,92 +22845,266 @@ type StartDiffResult {
   listDiffsQuery: String
   listUnrecognizedUrlsQuery: String
 }
-type Query {
+
+"""
+Queries for Spectacle
+"""
+type Query {  
+  # All HTTP requests defined in the spec
   requests: [HttpRequest]
+
+  # URI paths for endpoints
+  paths: [Path]
+  
+  # Shape choices based on shape ID
   shapeChoices(shapeId: ID): [OpticShape]
+  
+  # Endpoint changes since a given batch commit ID
   endpointChanges(sinceBatchCommitId: String): EndpointChanges
+  
+  # All batch commits defined in a spec
   batchCommits: [BatchCommit]
+  
+  # Diffs for existing endpoints and unrecognized URLs
   diff(diffId: ID): DiffState
+
+  # Metadata about the current spec
+  metadata: SpecMetadata
 }
+
+"""
+SpecMetadata - misc data about the spec
+"""
+type SpecMetadata {
+  id: String
+}
+
 type DiffState {
   diffs: JSON
   unrecognizedUrls: JSON
 }
+type Path {
+  # URL path pattern without parameter names
+  absolutePathPattern: String
+  
+  # URI path pattern with parameter names included 
+  absolutePathPatternWithParameterNames: String
+  
+  # Whether or not the path component is a parameter or not
+  isParameterized: Boolean
+  
+  # Parent path ID
+  parentPathId: String
+  
+  # Name of path or name of parameter if parameterized
+  name: String
+  
+  # Path ID
+  pathId: String
+}
+
+"""
+HTTP Body, which could be for a request or response
+"""
 type HttpBody {
+  # Content type of the given HTTP body
   contentType: String
+  
+  # Root shape ID for the HTTP body. Look at the shapeChoices query getting more information about the root shape
   rootShapeId: String
 }
+
+"""
+HTTP Request
+"""
 type HttpRequest {
   id: ID
+  
+  # Path components for the HTTP request
   pathComponents: [PathComponent]
+  
+  # URL path pattern without parameter names
   absolutePathPattern: String
+  
+  # URI path pattern with parameter names included 
   absolutePathPatternWithParameterNames: String
+  
+  # Path ID
   pathId: ID
+  
+  # HTTP method for the HTTP request
   method: String
+  
+  # Request bodies associated with this HTTP request
   bodies: [HttpBody]
+  
+  # Responses associated with this HTTP request
   responses: [HttpResponse]
+  
+  # Changes for the HTTP request based on the give batch commit ID
   changes(sinceBatchCommitId: String): ChangesResult
+  
+  # Path contributions which define descriptions
   pathContributions: JSON
+  
+  # Request contributions which define descriptions
   requestContributions: JSON
 }
+
+"""
+Path Component
+The URL /users/{id} would have three path components, one for the root, one for users and one for the parameter id.
+"""
 type PathComponent {
   id: ID
+  
+  # Name of the path component or path parameter
   name: String
+  
+  # Defines whether or not the path component is parameterized
   isParameterized: Boolean
+  
+  # Path component contributions which define descriptions
   contributions: JSON
 }
+
+"""
+HTTP Response
+"""
 type HttpResponse {
   id: ID
+  
+  # HTTP status code for the HTTP response
   statusCode: Int
+  
+  # Response bodies associated with this HTTP response
   bodies: [HttpBody]
+  
+  # Changes for the HTTP response based on the give batch commit ID
   changes(sinceBatchCommitId: String): ChangesResult
+  
+  # HTTP response contributions which define descriptions
   contributions: JSON
 }
+
+"""
+Object Field Metadata, which provides information about a field
+"""
 type ObjectFieldMetadata {
   name: String
+  
+  # Field ID for the given field
   fieldId: ID
-  # query shapeChoices(shapeId) to recurse
+  
+  # Changes for the field based on the give batch commit ID
   changes(sinceBatchCommitId: String): ChangesResult
+  
+  # Shape ID of field. Use the shapeChoice query to get shape information.
   shapeId: ID
+  
+  # Field contributions which define descriptions
   contributions: JSON
 }
+
+"""
+Object Metadata, which provides information about an object
+"""
 type ObjectMetadata {
+  # Fields for the given object
   fields: [ObjectFieldMetadata]
 }
+
+"""
+Array Metadata, which provides information about an array
+"""
 type ArrayMetadata {
-  # query shapeChoices(shapeId) to recurse
+  # Changes for the array based on the give batch commit ID
   changes(sinceBatchCommitId: String): ChangesResult
+  
+  # Shape ID of the array. Use the shapeChoice query to get shape information.
   shapeId: ID
 }
+
+"""
+Optic Shape
+"""
 type OpticShape {
   id: ID
+  
+  # JSON type of shape. Could be string, number, boolean, null, object, or array.
   jsonType: String
+  
+  # Metadata if jsonType is object
   asObject: ObjectMetadata
+  
+  # Metadata if jsonType is array
   asArray: ArrayMetadata
+  
   # changes(sinceBatchCommitId: String): ChangesResult
   # exampleValue: [JSON]
 }
+
+"""
+Change Result, which defines whether if something was added or updated
+"""
 type ChangesResult {
+  # Whether or not the change was one that was added
   added: Boolean
+  
+  # Whether or not the change was one that was updated
   changed: Boolean
 }
+
+"""
+Endpoint Changes
+"""
 type EndpointChanges {
+  # URL for Optic change documentation
   opticUrl: String
+  
+  # Changed endpoints for the batch commit ID provided to query
   endpoints: [EndpointChange]
 }
+
+"""
+Endpoint Change, which provides information about an endpoint change found since the given batch commit ID
+"""
 type EndpointChange {
+  # Metadata about the endpoint change
   change: EndpointChangeMetadata
+  
+  # Path ID related to the given change
   pathId: String
+  
+  # Absolute path pattern with parameters
   path: String
+  
+  # HTTP method for the given endpoint change
   method: String
+  
+  # Descriptions for the endpoint change
   contributions: JSON
 }
+
+"""
+Endpoint Change Metadata
+"""
 type EndpointChangeMetadata {
+  # Defines how the endpoint changed
   category: String
 }
+
+"""
+Batch Commit, which provides information about changes in the spec captured as batch commits
+"""
 type BatchCommit {
+  # When the batch commit was created
   createdAt: String
+  
+  # Batch commit ID
   batchId: String
+  
+  # Batch commit message
   commitMessage: String
 }
 `;
@@ -22946,17 +23380,6 @@ exports.getContributionsProjection = getContributionsProjection;
 
 "use strict";
 
-var __rest = (this && this.__rest) || function (s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
-};
 var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
 var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _arguments, generator) {
     if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
@@ -22968,6 +23391,17 @@ var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _ar
     function fulfill(value) { resume("next", value); }
     function reject(value) { resume("throw", value); }
     function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
+};
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.InMemorySpectacle = exports.InMemoryOpticContextBuilder = exports.InMemoryDiffRepository = exports.InMemoryDiff = exports.InMemoryDiffService = exports.InMemoryConfigRepository = exports.InMemoryCapturesService = exports.InMemorySpecRepository = void 0;
@@ -22981,6 +23415,11 @@ class InMemorySpecRepository {
         this.events = [];
         this.notifications = dependencies.notifications;
         this.events.push(...dependencies.initialState.events);
+        this.changes = (function () {
+            return __asyncGenerator(this, arguments, function* () {
+                // purely in-memory specs are not expected to change from any other source than ourselves
+            });
+        })();
     }
     async appendEvents(events) {
         this.events.push(...events);
@@ -22990,7 +23429,7 @@ class InMemorySpecRepository {
         return this.events;
     }
     async applyCommands(commands, batchCommitId, commitMessage, commandContext) {
-        const newEventsString = this.dependencies.opticEngine.try_apply_commands(JSON.stringify(commands), JSON.stringify(this.events), batchCommitId, commitMessage);
+        const newEventsString = this.dependencies.opticEngine.try_apply_commands(JSON.stringify(commands), JSON.stringify(this.events), batchCommitId, commitMessage, commandContext.clientId, commandContext.clientSessionId);
         const newEvents = JSON.parse(newEventsString);
         this.events.push(...newEvents);
         this.notifications.emit('change');
@@ -23054,13 +23493,18 @@ class InMemoryCapturesService {
     }
 }
 exports.InMemoryCapturesService = InMemoryCapturesService;
-////////////////////////////////////////////////////////////////////////////////
 class InMemoryConfigRepository {
+    constructor(dependencies) {
+        this.dependencies = dependencies;
+    }
     addIgnoreRule(rule) {
         return Promise.resolve(undefined);
     }
     listIgnoreRules() {
         return Promise.resolve(default_ignore_rules_1.defaultIgnoreRules);
+    }
+    getApiName() {
+        return Promise.resolve(this.dependencies.config.name);
     }
 }
 exports.InMemoryConfigRepository = InMemoryConfigRepository;
@@ -23085,17 +23529,17 @@ class InMemoryDiffService {
             acc[key] = value;
             return acc;
         }, {});
-        if (Object.keys(affordancesByFingerprint).length === 0) {
-            //@GOTCHA: this should only ever be empty if there are no Shape Diffs. use invariant?
-            debugger;
-        }
+        // if (Object.keys(affordancesByFingerprint).length === 0) {
+        //   //@GOTCHA: this should only ever be empty if there are no Shape Diffs. use invariant?
+        //   debugger;
+        // }
         //@jaap @TODO: use asynctools affordancesByFingerprint ?
         return affordancesByFingerprint;
     }
     async learnUndocumentedBodies(pathId, method, newPathCommands) {
         try {
             const events = await this.dependencies.specRepository.listEvents();
-            const newEventsString = this.dependencies.opticEngine.try_apply_commands(JSON.stringify(newPathCommands), JSON.stringify(events), 'simulated', 'simulated-batch');
+            const newEventsString = this.dependencies.opticEngine.try_apply_commands(JSON.stringify(newPathCommands), JSON.stringify(events), 'simulated-batch', 'simulated changes', 'simulated-client', 'simulated-session');
             //@aidan check if this returns all events or just the new events
             const spec = this.dependencies.opticEngine.spec_from_events(JSON.stringify([...events, ...JSON.parse(newEventsString)]));
             //@aidan if you need to filter by method*pathId you can do it here
@@ -23104,7 +23548,7 @@ class InMemoryDiffService {
                 return JSON.stringify(x);
             })
                 .join('\n');
-            const learnedBodies = JSON.parse(this.dependencies.opticEngine.learn_undocumented_bodies(spec, interactionsJsonl));
+            const learnedBodies = JSON.parse(this.dependencies.opticEngine.learn_undocumented_bodies(spec, interactionsJsonl, 'random'));
             const learnedBodiesForPathIdAndMethod = learnedBodies.find((x) => {
                 return x.pathId === pathId && x.method === method;
             });
@@ -23203,12 +23647,16 @@ class InMemoryDiffRepository {
 }
 exports.InMemoryDiffRepository = InMemoryDiffRepository;
 ////////////////////////////////////////////////////////////////////////////////
+const defaultConfig = {
+    name: 'optic',
+    tasks: {},
+};
 class InMemoryOpticContextBuilder {
-    static async fromEvents(opticEngine, events) {
+    static async fromEvents(opticEngine, events, config = defaultConfig) {
         const notifications = new events_1.EventEmitter();
         const diffRepository = new InMemoryDiffRepository();
         const interactionsRepository = new InMemoryInteractionsRepository();
-        const configRepository = new InMemoryConfigRepository();
+        const configRepository = new InMemoryConfigRepository({ config });
         const specRepository = new InMemorySpecRepository({
             notifications,
             initialState: {
@@ -23230,12 +23678,12 @@ class InMemoryOpticContextBuilder {
             specRepository,
         };
     }
-    static async fromEventsAndInteractions(opticEngine, events, interactions, captureId) {
+    static async fromEventsAndInteractions(opticEngine, events, interactions, captureId, config = defaultConfig) {
         const notifications = new events_1.EventEmitter();
         const diffRepository = new InMemoryDiffRepository();
         const interactionsRepository = new InMemoryInteractionsRepository();
         await interactionsRepository.set(captureId, interactions);
-        const configRepository = new InMemoryConfigRepository();
+        const configRepository = new InMemoryConfigRepository({ config });
         const specRepository = new InMemorySpecRepository({
             notifications,
             initialState: {
@@ -23298,6 +23746,13 @@ var __createBinding = (this && this.__createBinding) || (Object.create ? (functi
 var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
 };
+var __asyncValues = (this && this.__asyncValues) || function (o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator], i;
+    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -23306,10 +23761,12 @@ exports.makeSpectacle = void 0;
 const graphql_1 = __webpack_require__(6155);
 const schema_1 = __webpack_require__(8706);
 const schema_2 = __webpack_require__(3185);
+const uuid_1 = __webpack_require__(4552);
 const graphql_type_json_1 = __importDefault(__webpack_require__(7636));
 const helpers_1 = __webpack_require__(4342);
 const graph_lib_1 = __webpack_require__(3194);
 __exportStar(__webpack_require__(216), exports);
+__exportStar(__webpack_require__(1349), exports);
 ////////////////////////////////////////////////////////////////////////////////
 async function buildProjections(opticContext) {
     const events = await opticContext.specRepository.listEvents();
@@ -23329,6 +23786,7 @@ async function buildProjections(opticContext) {
 }
 async function makeSpectacle(opticContext) {
     let endpointsQueries, shapeQueries, shapeViewerProjection, contributionsProjection;
+    // TODO: consider debouncing reloads (head and tail?)
     async function reload(opticContext) {
         const projections = await buildProjections(opticContext);
         endpointsQueries = projections.endpointsQueries;
@@ -23337,7 +23795,26 @@ async function makeSpectacle(opticContext) {
         contributionsProjection = projections.contributionsProjection;
         return projections;
     }
+    async function reloadFromSpecChange(specChanges, opticContext) {
+        var e_1, _a;
+        try {
+            for (var specChanges_1 = __asyncValues(specChanges), specChanges_1_1; specChanges_1_1 = await specChanges_1.next(), !specChanges_1_1.done;) {
+                let generation = specChanges_1_1.value;
+                console.log('reloading because of specRepository change', generation);
+                await reload(opticContext);
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (specChanges_1_1 && !specChanges_1_1.done && (_a = specChanges_1.return)) await _a.call(specChanges_1);
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+    }
     await reload(opticContext);
+    // TODO: make sure this Promise is consumed somewhere so errors are handled. Return from makeSpectacle perhaps?
+    const reloadingSpecs = reloadFromSpecChange(opticContext.specRepository.changes, opticContext);
     const resolvers = {
         JSON: graphql_type_json_1.default,
         Mutation: {
@@ -23352,6 +23829,7 @@ async function makeSpectacle(opticContext) {
                 catch (e) {
                     console.error(e);
                     debugger;
+                    throw e;
                 }
                 await reload(context.spectacleContext().opticContext);
                 return {
@@ -23367,8 +23845,16 @@ async function makeSpectacle(opticContext) {
                     notificationsUrl: '',
                 };
             },
+            invalidateCaches: async (parent, args, context) => {
+                await reload(context.spectacleContext().opticContext);
+            },
         },
         Query: {
+            paths: (parent, args, context, info) => {
+                return Promise.resolve(context
+                    .spectacleContext()
+                    .endpointsQueries.listNodesByType(graph_lib_1.endpoints.NodeType.Path).results);
+            },
             requests: (parent, args, context, info) => {
                 return Promise.resolve(context
                     .spectacleContext()
@@ -23393,6 +23879,28 @@ async function makeSpectacle(opticContext) {
                 return context
                     .spectacleContext()
                     .opticContext.diffRepository.findById(diffId);
+            },
+            metadata: async (parent, args, context, info) => {
+                const metadataKey = 'metadata';
+                const specIdKey = 'id';
+                const metadata = context.spectacleContext().contributionsProjection[metadataKey] || {};
+                let specId = metadata[specIdKey];
+                if (!specId) {
+                    specId = uuid_1.v4();
+                    await context
+                        .spectacleContext()
+                        .opticContext.specRepository.applyCommands([
+                        {
+                            AddContribution: {
+                                id: metadataKey,
+                                key: specIdKey,
+                                value: specId,
+                            },
+                        },
+                    ], uuid_1.v4(), 'Initialize specification attributes', { clientId: '', clientSessionId: '' });
+                    await reload(context.spectacleContext().opticContext);
+                }
+                return { id: specId };
             },
         },
         DiffState: {
@@ -23445,6 +23953,30 @@ async function makeSpectacle(opticContext) {
                 return Promise.resolve(context.spectacleContext().contributionsProjection[parent.value.requestId] || {});
             },
         },
+        Path: {
+            absolutePathPattern: (parent) => {
+                return Promise.resolve(parent.result.data.absolutePathPattern);
+            },
+            isParameterized: (parent) => {
+                return Promise.resolve(parent.result.data.isParameterized);
+            },
+            name: (parent) => {
+                return Promise.resolve(parent.result.data.name);
+            },
+            pathId: (parent) => {
+                return Promise.resolve(parent.result.data.pathId);
+            },
+            parentPathId: (parent) => {
+                const parentPath = parent.parentPath();
+                if (parentPath) {
+                    return Promise.resolve(parentPath.result.id);
+                }
+                return Promise.resolve(null);
+            },
+            absolutePathPatternWithParameterNames: (parent) => {
+                return Promise.resolve(parent.absolutePathPatternWithParameterNames);
+            },
+        },
         HttpResponse: {
             id: (parent) => {
                 return Promise.resolve(parent.result.data.responseId);
@@ -23456,9 +23988,7 @@ async function makeSpectacle(opticContext) {
                 return Promise.resolve(parent.bodies().results);
             },
             contributions: (parent, args, context) => {
-                const pathId = parent.path().value.pathId;
-                const { httpMethod, httpStatusCode } = parent.value;
-                return Promise.resolve(context.spectacleContext().contributionsProjection[`${pathId}.${httpMethod}_${httpStatusCode}_response`] || {});
+                return Promise.resolve(context.spectacleContext().contributionsProjection[parent.result.data.responseId] || {});
             },
         },
         PathComponent: {
@@ -55551,6 +56081,370 @@ exports.getUserAgent = getUserAgent;
 
 /***/ }),
 
+/***/ 4552:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+// ESM COMPAT FLAG
+__webpack_require__.r(__webpack_exports__);
+
+// EXPORTS
+__webpack_require__.d(__webpack_exports__, {
+  "NIL": () => /* reexport */ nil,
+  "parse": () => /* reexport */ esm_node_parse,
+  "stringify": () => /* reexport */ esm_node_stringify,
+  "v1": () => /* reexport */ esm_node_v1,
+  "v3": () => /* reexport */ esm_node_v3,
+  "v4": () => /* reexport */ esm_node_v4,
+  "v5": () => /* reexport */ esm_node_v5,
+  "validate": () => /* reexport */ esm_node_validate,
+  "version": () => /* reexport */ esm_node_version
+});
+
+// EXTERNAL MODULE: external "crypto"
+var external_crypto_ = __webpack_require__(6417);
+var external_crypto_default = /*#__PURE__*/__webpack_require__.n(external_crypto_);
+
+// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-node/rng.js
+
+const rnds8Pool = new Uint8Array(256); // # of random values to pre-allocate
+
+let poolPtr = rnds8Pool.length;
+function rng() {
+  if (poolPtr > rnds8Pool.length - 16) {
+    external_crypto_default().randomFillSync(rnds8Pool);
+    poolPtr = 0;
+  }
+
+  return rnds8Pool.slice(poolPtr, poolPtr += 16);
+}
+// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-node/regex.js
+/* harmony default export */ const regex = (/^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000)$/i);
+// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-node/validate.js
+
+
+function validate(uuid) {
+  return typeof uuid === 'string' && regex.test(uuid);
+}
+
+/* harmony default export */ const esm_node_validate = (validate);
+// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-node/stringify.js
+
+/**
+ * Convert array of 16 byte values to UUID string format of the form:
+ * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+ */
+
+const byteToHex = [];
+
+for (let i = 0; i < 256; ++i) {
+  byteToHex.push((i + 0x100).toString(16).substr(1));
+}
+
+function stringify(arr, offset = 0) {
+  // Note: Be careful editing this code!  It's been tuned for performance
+  // and works in ways you may not expect. See https://github.com/uuidjs/uuid/pull/434
+  const uuid = (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + '-' + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + '-' + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + '-' + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + '-' + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase(); // Consistency check for valid UUID.  If this throws, it's likely due to one
+  // of the following:
+  // - One or more input array values don't map to a hex octet (leading to
+  // "undefined" in the uuid)
+  // - Invalid input values for the RFC `version` or `variant` fields
+
+  if (!esm_node_validate(uuid)) {
+    throw TypeError('Stringified UUID is invalid');
+  }
+
+  return uuid;
+}
+
+/* harmony default export */ const esm_node_stringify = (stringify);
+// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-node/v1.js
+
+ // **`v1()` - Generate time-based UUID**
+//
+// Inspired by https://github.com/LiosK/UUID.js
+// and http://docs.python.org/library/uuid.html
+
+let _nodeId;
+
+let _clockseq; // Previous uuid creation time
+
+
+let _lastMSecs = 0;
+let _lastNSecs = 0; // See https://github.com/uuidjs/uuid for API details
+
+function v1(options, buf, offset) {
+  let i = buf && offset || 0;
+  const b = buf || new Array(16);
+  options = options || {};
+  let node = options.node || _nodeId;
+  let clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq; // node and clockseq need to be initialized to random values if they're not
+  // specified.  We do this lazily to minimize issues related to insufficient
+  // system entropy.  See #189
+
+  if (node == null || clockseq == null) {
+    const seedBytes = options.random || (options.rng || rng)();
+
+    if (node == null) {
+      // Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
+      node = _nodeId = [seedBytes[0] | 0x01, seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]];
+    }
+
+    if (clockseq == null) {
+      // Per 4.2.2, randomize (14 bit) clockseq
+      clockseq = _clockseq = (seedBytes[6] << 8 | seedBytes[7]) & 0x3fff;
+    }
+  } // UUID timestamps are 100 nano-second units since the Gregorian epoch,
+  // (1582-10-15 00:00).  JSNumbers aren't precise enough for this, so
+  // time is handled internally as 'msecs' (integer milliseconds) and 'nsecs'
+  // (100-nanoseconds offset from msecs) since unix epoch, 1970-01-01 00:00.
+
+
+  let msecs = options.msecs !== undefined ? options.msecs : Date.now(); // Per 4.2.1.2, use count of uuid's generated during the current clock
+  // cycle to simulate higher resolution clock
+
+  let nsecs = options.nsecs !== undefined ? options.nsecs : _lastNSecs + 1; // Time since last uuid creation (in msecs)
+
+  const dt = msecs - _lastMSecs + (nsecs - _lastNSecs) / 10000; // Per 4.2.1.2, Bump clockseq on clock regression
+
+  if (dt < 0 && options.clockseq === undefined) {
+    clockseq = clockseq + 1 & 0x3fff;
+  } // Reset nsecs if clock regresses (new clockseq) or we've moved onto a new
+  // time interval
+
+
+  if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === undefined) {
+    nsecs = 0;
+  } // Per 4.2.1.2 Throw error if too many uuids are requested
+
+
+  if (nsecs >= 10000) {
+    throw new Error("uuid.v1(): Can't create more than 10M uuids/sec");
+  }
+
+  _lastMSecs = msecs;
+  _lastNSecs = nsecs;
+  _clockseq = clockseq; // Per 4.1.4 - Convert from unix epoch to Gregorian epoch
+
+  msecs += 12219292800000; // `time_low`
+
+  const tl = ((msecs & 0xfffffff) * 10000 + nsecs) % 0x100000000;
+  b[i++] = tl >>> 24 & 0xff;
+  b[i++] = tl >>> 16 & 0xff;
+  b[i++] = tl >>> 8 & 0xff;
+  b[i++] = tl & 0xff; // `time_mid`
+
+  const tmh = msecs / 0x100000000 * 10000 & 0xfffffff;
+  b[i++] = tmh >>> 8 & 0xff;
+  b[i++] = tmh & 0xff; // `time_high_and_version`
+
+  b[i++] = tmh >>> 24 & 0xf | 0x10; // include version
+
+  b[i++] = tmh >>> 16 & 0xff; // `clock_seq_hi_and_reserved` (Per 4.2.2 - include variant)
+
+  b[i++] = clockseq >>> 8 | 0x80; // `clock_seq_low`
+
+  b[i++] = clockseq & 0xff; // `node`
+
+  for (let n = 0; n < 6; ++n) {
+    b[i + n] = node[n];
+  }
+
+  return buf || esm_node_stringify(b);
+}
+
+/* harmony default export */ const esm_node_v1 = (v1);
+// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-node/parse.js
+
+
+function parse(uuid) {
+  if (!esm_node_validate(uuid)) {
+    throw TypeError('Invalid UUID');
+  }
+
+  let v;
+  const arr = new Uint8Array(16); // Parse ########-....-....-....-............
+
+  arr[0] = (v = parseInt(uuid.slice(0, 8), 16)) >>> 24;
+  arr[1] = v >>> 16 & 0xff;
+  arr[2] = v >>> 8 & 0xff;
+  arr[3] = v & 0xff; // Parse ........-####-....-....-............
+
+  arr[4] = (v = parseInt(uuid.slice(9, 13), 16)) >>> 8;
+  arr[5] = v & 0xff; // Parse ........-....-####-....-............
+
+  arr[6] = (v = parseInt(uuid.slice(14, 18), 16)) >>> 8;
+  arr[7] = v & 0xff; // Parse ........-....-....-####-............
+
+  arr[8] = (v = parseInt(uuid.slice(19, 23), 16)) >>> 8;
+  arr[9] = v & 0xff; // Parse ........-....-....-....-############
+  // (Use "/" to avoid 32-bit truncation when bit-shifting high-order bytes)
+
+  arr[10] = (v = parseInt(uuid.slice(24, 36), 16)) / 0x10000000000 & 0xff;
+  arr[11] = v / 0x100000000 & 0xff;
+  arr[12] = v >>> 24 & 0xff;
+  arr[13] = v >>> 16 & 0xff;
+  arr[14] = v >>> 8 & 0xff;
+  arr[15] = v & 0xff;
+  return arr;
+}
+
+/* harmony default export */ const esm_node_parse = (parse);
+// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-node/v35.js
+
+
+
+function stringToBytes(str) {
+  str = unescape(encodeURIComponent(str)); // UTF8 escape
+
+  const bytes = [];
+
+  for (let i = 0; i < str.length; ++i) {
+    bytes.push(str.charCodeAt(i));
+  }
+
+  return bytes;
+}
+
+const DNS = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+const URL = '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
+/* harmony default export */ function v35(name, version, hashfunc) {
+  function generateUUID(value, namespace, buf, offset) {
+    if (typeof value === 'string') {
+      value = stringToBytes(value);
+    }
+
+    if (typeof namespace === 'string') {
+      namespace = esm_node_parse(namespace);
+    }
+
+    if (namespace.length !== 16) {
+      throw TypeError('Namespace must be array-like (16 iterable integer values, 0-255)');
+    } // Compute hash of namespace and value, Per 4.3
+    // Future: Use spread syntax when supported on all platforms, e.g. `bytes =
+    // hashfunc([...namespace, ... value])`
+
+
+    let bytes = new Uint8Array(16 + value.length);
+    bytes.set(namespace);
+    bytes.set(value, namespace.length);
+    bytes = hashfunc(bytes);
+    bytes[6] = bytes[6] & 0x0f | version;
+    bytes[8] = bytes[8] & 0x3f | 0x80;
+
+    if (buf) {
+      offset = offset || 0;
+
+      for (let i = 0; i < 16; ++i) {
+        buf[offset + i] = bytes[i];
+      }
+
+      return buf;
+    }
+
+    return esm_node_stringify(bytes);
+  } // Function#name is not settable on some platforms (#270)
+
+
+  try {
+    generateUUID.name = name; // eslint-disable-next-line no-empty
+  } catch (err) {} // For CommonJS default export support
+
+
+  generateUUID.DNS = DNS;
+  generateUUID.URL = URL;
+  return generateUUID;
+}
+// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-node/md5.js
+
+
+function md5(bytes) {
+  if (Array.isArray(bytes)) {
+    bytes = Buffer.from(bytes);
+  } else if (typeof bytes === 'string') {
+    bytes = Buffer.from(bytes, 'utf8');
+  }
+
+  return external_crypto_default().createHash('md5').update(bytes).digest();
+}
+
+/* harmony default export */ const esm_node_md5 = (md5);
+// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-node/v3.js
+
+
+const v3 = v35('v3', 0x30, esm_node_md5);
+/* harmony default export */ const esm_node_v3 = (v3);
+// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-node/v4.js
+
+
+
+function v4(options, buf, offset) {
+  options = options || {};
+  const rnds = options.random || (options.rng || rng)(); // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+
+  rnds[6] = rnds[6] & 0x0f | 0x40;
+  rnds[8] = rnds[8] & 0x3f | 0x80; // Copy bytes to buffer, if provided
+
+  if (buf) {
+    offset = offset || 0;
+
+    for (let i = 0; i < 16; ++i) {
+      buf[offset + i] = rnds[i];
+    }
+
+    return buf;
+  }
+
+  return esm_node_stringify(rnds);
+}
+
+/* harmony default export */ const esm_node_v4 = (v4);
+// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-node/sha1.js
+
+
+function sha1(bytes) {
+  if (Array.isArray(bytes)) {
+    bytes = Buffer.from(bytes);
+  } else if (typeof bytes === 'string') {
+    bytes = Buffer.from(bytes, 'utf8');
+  }
+
+  return external_crypto_default().createHash('sha1').update(bytes).digest();
+}
+
+/* harmony default export */ const esm_node_sha1 = (sha1);
+// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-node/v5.js
+
+
+const v5 = v35('v5', 0x50, esm_node_sha1);
+/* harmony default export */ const esm_node_v5 = (v5);
+// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-node/nil.js
+/* harmony default export */ const nil = ('00000000-0000-0000-0000-000000000000');
+// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-node/version.js
+
+
+function version(uuid) {
+  if (!esm_node_validate(uuid)) {
+    throw TypeError('Invalid UUID');
+  }
+
+  return parseInt(uuid.substr(14, 1), 16);
+}
+
+/* harmony default export */ const esm_node_version = (version);
+// CONCATENATED MODULE: ./node_modules/uuid/dist/esm-node/index.js
+
+
+
+
+
+
+
+
+
+
+/***/ }),
+
 /***/ 2940:
 /***/ ((module) => {
 
@@ -55778,6 +56672,18 @@ module.exports = require("zlib");;
 /******/ 	}
 /******/ 	
 /************************************************************************/
+/******/ 	/* webpack/runtime/compat get default export */
+/******/ 	(() => {
+/******/ 		// getDefaultExport function for compatibility with non-harmony modules
+/******/ 		__webpack_require__.n = (module) => {
+/******/ 			var getter = module && module.__esModule ?
+/******/ 				() => module['default'] :
+/******/ 				() => module;
+/******/ 			__webpack_require__.d(getter, { a: getter });
+/******/ 			return getter;
+/******/ 		};
+/******/ 	})();
+/******/ 	
 /******/ 	/* webpack/runtime/define property getters */
 /******/ 	(() => {
 /******/ 		// define getter functions for harmony exports

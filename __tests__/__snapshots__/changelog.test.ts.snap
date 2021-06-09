@@ -378,7 +378,7 @@ Array [
                     },
                     \\"contributions\\": {},
                     \\"pathId\\": \\"root\\",
-                    \\"path\\": \\"\\",
+                    \\"path\\": \\"/\\",
                     \\"method\\": \\"GET\\"
                 },
                 {
@@ -465,7 +465,7 @@ Array [
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
-| **GET**  |  | [**Review**](https://spec.useoptic.com/public-specs/spec-id/documentation/paths/root/methods/GET) |
+| **GET** / |  | [**Review**](https://spec.useoptic.com/public-specs/spec-id/documentation/paths/root/methods/GET) |
 | **GET** /healthcheck |  | [**Review**](https://spec.useoptic.com/public-specs/spec-id/documentation/paths/path_to6GIY7tL3/methods/GET) |
 | **GET** /api/account/tokens | Get your tokens | [**Review**](https://spec.useoptic.com/public-specs/spec-id/documentation/paths/path_Zbx2qte52s/methods/GET) |
 | **POST** /api/account/tokens | Create a new token | [**Review**](https://spec.useoptic.com/public-specs/spec-id/documentation/paths/path_Zbx2qte52s/methods/POST) |
@@ -481,7 +481,7 @@ Array [
 > Powered by [Optic](https://www.useoptic.com). [Learn how it works!](https://www.useoptic.com/docs/using/baseline)
 
 
-<!-- optic = {\\"messageHash\\":\\"61b61884ce905334a4dd0b7eba166ad1795ec816\\"} -->",
+<!-- optic = {\\"messageHash\\":\\"87d2d03b6409d79481b569e5edaee9208190454d\\"} -->",
   ],
   Array [
     "Creating comment for PR 100",
