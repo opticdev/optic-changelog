@@ -27,6 +27,7 @@ const baseGitProvider: IGitProvider = {
 
 const mockJobRunner = {
   info: jest.fn(),
+  warning: jest.fn(),
   debug: jest.fn(),
   setFailed: jest.fn(),
   exportVariable: jest.fn()
@@ -43,7 +44,7 @@ const baseOpticChangelog: ChangelogParams = {
   prNumber: 100,
   jobRunner: mockJobRunner,
   generateEndpointChanges,
-  uploadSpec: jest.fn().mockResolvedValue('spec-id')
+  uploadSpec: jest.fn().mockResolvedValue({specId: 'spec-id', personId: 'person-id'})
 }
 
 describe('Changelog', () => {

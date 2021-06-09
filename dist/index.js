@@ -65,7 +65,21 @@ function identify({ apiKey }) {
 function networkUpload({ apiKey, specContents, jobRunner, metadata = {} }) {
     return __awaiter(this, void 0, void 0, function* () {
         const identProm = identify({ apiKey });
-        return utils_1.sentryInstrument({ op: 'upload_spec' }, (_tx, span) => __awaiter(this, void 0, void 0, function* () {
+        return utils_1.sentryInstrument({ op: 'upload_spec' }, (tx, span) => __awaiter(this, void 0, void 0, function* () {
+            const profilePromise = (() => __awaiter(this, void 0, void 0, function* () {
+                const response = yield node_fetch_1.default(`${constants_1.API_BASE}/api/account`, {
+                    method: 'GET',
+                    headers: {
+                        Authorization: `Token ${apiKey}`
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error(`Error creating spec to upload: ${response.statusText}: ${yield response.text()}`);
+                }
+                const profile = yield response.json();
+                jobRunner.debug(`Identified as ${JSON.stringify(profile, null, 4)}`);
+                return profile;
+            }))();
             jobRunner.debug('Creating new spec to upload');
             const newSpecResp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/account/specs`, {
                 method: 'POST',
@@ -80,21 +94,25 @@ function networkUpload({ apiKey, specContents, jobRunner, metadata = {} }) {
             }
             const { id: specId, upload_url } = yield newSpecResp.json();
             jobRunner.debug(`Spec created: ${specId}. Uploading...`);
-            const uploadResult = yield node_fetch_1.default(upload_url, {
-                method: 'PUT',
-                headers: {
-                    'x-amz-server-side-encryption': 'AES256'
-                },
-                body: specContents
-            });
+            const [uploadResult, profile] = yield Promise.all([
+                node_fetch_1.default(upload_url, {
+                    method: 'PUT',
+                    headers: {
+                        'x-amz-server-side-encryption': 'AES256'
+                    },
+                    body: specContents
+                }),
+                profilePromise
+            ]);
             if (!uploadResult.ok) {
                 throw new Error(`Error uploading spec: ${uploadResult.statusText}: ${yield uploadResult.text()}`);
             }
             jobRunner.info(`Spec ${specId} uploaded successfully`);
+            tx.setTag('user.emal', profile.email);
             span.setData('specId', specId);
             span.setStatus(tracing_1.SpanStatus.Ok);
             yield identProm;
-            return specId;
+            return { specId, personId: profile.id };
         }));
     });
 }
@@ -127,6 +145,7 @@ function runOpticChangelog({ apiKey, subscribers, opticSpecPath, gitProvider, he
         return utils_1.sentryInstrument({
             op: 'run_changelog'
         }, (tx, span) => __awaiter(this, void 0, void 0, function* () {
+            var _a, _b;
             let headContent, baseContent, baseBatchCommit;
             // This may fail if the file was moved or it's a new Optic setup
             try {
@@ -134,7 +153,7 @@ function runOpticChangelog({ apiKey, subscribers, opticSpecPath, gitProvider, he
             }
             catch (error) {
                 // Failing silently here
-                jobRunner.info(`Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}.`);
+                jobRunner.warning(`Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}.`);
                 return;
             }
             try {
@@ -144,28 +163,40 @@ function runOpticChangelog({ apiKey, subscribers, opticSpecPath, gitProvider, he
                 span.setTag('baseBatchCommit', baseBatchCommit);
             }
             catch (error) {
-                jobRunner.info(`Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`);
+                jobRunner.warning(`Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`);
                 span.setTag('baseBatchCommit', null);
                 span.setTag('newOptic', true);
                 baseContent = [];
                 baseBatchCommit = null;
             }
             // TODO: use new changelog library here
-            const changes = yield generateEndpointChanges(baseContent, headContent);
+            let changes = yield generateEndpointChanges(baseContent, headContent);
             jobRunner.debug(JSON.stringify(changes, null, 4));
+            if ((((_a = changes.errors) === null || _a === void 0 ? void 0 : _a.length) || 0) > 0) {
+                jobRunner.warning(`Errors found, potentially unrelated base specification:\n\n${changes.errors}`);
+                jobRunner.warning(`Assuming regenerated specification`);
+                changes = yield generateEndpointChanges([], headContent);
+                if ((((_b = changes.errors) === null || _b === void 0 ? void 0 : _b.length) || 0) > 0) {
+                    jobRunner.warning(`Errors found, unable to proceed: ${changes.errors}`);
+                    return;
+                }
+            }
             span.setData('changeCount', changes.data.endpointChanges.endpoints.length);
             let specId = undefined;
+            let personId = undefined;
             if (apiKey &&
                 apiKey.length > 0 &&
                 changes.data.endpointChanges.endpoints.length > 0 &&
                 uploadSpec) {
-                specId = yield uploadSpec({
+                const upload_result = yield uploadSpec({
                     apiKey,
                     specContents: JSON.stringify(headContent),
                     jobRunner,
                     metadata: Object.assign({ prNumber,
                         baseBranch }, gitProvider.getRepoInfo())
                 });
+                specId = upload_result.specId;
+                personId = upload_result.personId;
                 span.setData('cloudSpecId', specId);
             }
             if (changes.data.endpointChanges.endpoints.length === 0) {
@@ -173,7 +204,7 @@ function runOpticChangelog({ apiKey, subscribers, opticSpecPath, gitProvider, he
                 return;
             }
             let message;
-            if (apiKey && specId) {
+            if (apiKey && specId && personId) {
                 const opticYamlPath = path_1.join(opticSpecPath, '../../../optic.yml');
                 let projectName;
                 try {
@@ -189,6 +220,7 @@ function runOpticChangelog({ apiKey, subscribers, opticSpecPath, gitProvider, he
                     specPath: opticSpecPath,
                     subscribers,
                     specId,
+                    personId,
                     baseBatchCommit,
                     projectName
                 });
@@ -600,13 +632,13 @@ ${filteredSubs.map(sub => `* @${sub}`).join('\n')}
         return '';
     }
 }
-function mainCommentTemplate({ changes, specPath, projectName, baseBatchCommit, specId, subscribers = [] }) {
+function mainCommentTemplate({ changes, specPath, projectName, baseBatchCommit, personId, specId, subscribers = [] }) {
     const linkGen = (endpoint) => {
         if (baseBatchCommit) {
-            return `${constants_1.CLOUD_SPEC_VIEWER_BASE}/${specId}/changes-since/${baseBatchCommit}/paths/${endpoint.pathId}/methods/${endpoint.method}`;
+            return `${constants_1.CLOUD_SPEC_VIEWER_BASE}/${personId}/${specId}/changes-since/${baseBatchCommit}/paths/${endpoint.pathId}/methods/${endpoint.method}`;
         }
         else {
-            return `${constants_1.CLOUD_SPEC_VIEWER_BASE}/${specId}/documentation/paths/${endpoint.pathId}/methods/${endpoint.method}`;
+            return `${constants_1.CLOUD_SPEC_VIEWER_BASE}/${personId}/${specId}/documentation/paths/${endpoint.pathId}/methods/${endpoint.method}`;
         }
     };
     const changes_by_category = changes.data.endpointChanges.endpoints.reduce((accum, current) => {
@@ -620,7 +652,7 @@ function mainCommentTemplate({ changes, specPath, projectName, baseBatchCommit, 
         endpoints: category_changes,
         endpointLinkGenerator: linkGen
     }));
-    const specUrl = `${constants_1.CLOUD_SPEC_VIEWER_BASE}/${specId}/${baseBatchCommit ? `changes-since/${baseBatchCommit}` : `documentation`}`;
+    const specUrl = `${constants_1.CLOUD_SPEC_VIEWER_BASE}/${personId}/${specId}/${baseBatchCommit ? `changes-since/${baseBatchCommit}` : `documentation`}`;
     return `![changelog](${constants_1.COMMENT_HEADER_IMG})
 
 [Click Here to See the Documentation](${specUrl})

@@ -30,6 +30,7 @@ ${filteredSubs.map(sub => `* @${sub}`).join('\n')}
 export type MainProps = {
   changes: Changelog
   baseBatchCommit: string | null
+  personId: string
   specId: string
   specPath: string
   projectName: string | null
@@ -41,14 +42,15 @@ export function mainCommentTemplate({
   specPath,
   projectName,
   baseBatchCommit,
+  personId,
   specId,
   subscribers = []
 }: MainProps): string {
   const linkGen = (endpoint: Endpoint): string => {
     if (baseBatchCommit) {
-      return `${CLOUD_SPEC_VIEWER_BASE}/${specId}/changes-since/${baseBatchCommit}/paths/${endpoint.pathId}/methods/${endpoint.method}`
+      return `${CLOUD_SPEC_VIEWER_BASE}/${personId}/${specId}/changes-since/${baseBatchCommit}/paths/${endpoint.pathId}/methods/${endpoint.method}`
     } else {
-      return `${CLOUD_SPEC_VIEWER_BASE}/${specId}/documentation/paths/${endpoint.pathId}/methods/${endpoint.method}`
+      return `${CLOUD_SPEC_VIEWER_BASE}/${personId}/${specId}/documentation/paths/${endpoint.pathId}/methods/${endpoint.method}`
     }
   }
 
@@ -74,7 +76,7 @@ export function mainCommentTemplate({
       })
   )
 
-  const specUrl = `${CLOUD_SPEC_VIEWER_BASE}/${specId}/${
+  const specUrl = `${CLOUD_SPEC_VIEWER_BASE}/${personId}/${specId}/${
     baseBatchCommit ? `changes-since/${baseBatchCommit}` : `documentation`
   }`
 
