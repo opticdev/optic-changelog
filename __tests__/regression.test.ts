@@ -5,18 +5,18 @@ import {ChangelogParams, runOpticChangelog} from '../src/changelog'
 import {IGitProvider} from '../src/types'
 
 const BASE_SHA = 'base-sha'
-const UNRELATED_SHA = 'unrelated-sha';
+const UNRELATED_SHA = 'unrelated-sha'
 const REGRESSION_1 = 'regression-1'
 
 const pathMap = {
   [BASE_SHA]: null,
   [UNRELATED_SHA]: 'specs/add-method/next.json',
-  [REGRESSION_1]: 'specs/regression/regression_1.json',
+  [REGRESSION_1]: 'specs/regression/regression_1.json'
 }
 
 const baseGitProvider: IGitProvider = {
   getFileContent: async (sha: string) => {
-    if(!sha){
+    if (!sha) {
       return '[]'
     } else {
       return fs.readFileSync(path.join(__dirname, pathMap[sha])).toString()
@@ -48,7 +48,9 @@ const baseOpticChangelog: ChangelogParams = {
   prNumber: 100,
   jobRunner: mockJobRunner,
   generateEndpointChanges,
-  uploadSpec: jest.fn().mockResolvedValue({specId: 'spec-id', personId: 'person-id'})
+  uploadSpec: jest
+    .fn()
+    .mockResolvedValue({specId: 'spec-id', personId: 'person-id'})
 }
 
 describe('Regression', () => {
@@ -56,7 +58,7 @@ describe('Regression', () => {
     Date.prototype.toISOString = jest.fn(() => '2021-04-21T15:06:33.601Z')
   })
 
-  it("shouldnt error on unrelated history", async () => {
+  it('shouldnt error on unrelated history', async () => {
     await runOpticChangelog({
       ...baseOpticChangelog,
       baseSha: UNRELATED_SHA,
@@ -65,7 +67,6 @@ describe('Regression', () => {
     expectCommentWasCreated()
     expect(mockJobRunner.exportVariable).toBeCalledTimes(1)
   })
-
 })
 
 function expectCommentWasCreated() {
