@@ -148,6 +148,8 @@ function expectCommentWasCreated() {
   expect(baseGitProvider.updatePrComment).toBeCalledTimes(0)
   expect(mockJobRunner.setFailed).toBeCalledTimes(0)
   expect(mockJobRunner.debug.mock.calls).toMatchSnapshot()
+  expect(mockJobRunner.info.mock.calls).toMatchSnapshot()
+  expect(mockJobRunner.warning.mock.calls).toMatchSnapshot()
 }
 
 function expectToFailSilently() {

@@ -49,6 +49,10 @@ Array [
 ]
 `;
 
+exports[`Changelog creates a comment 2`] = `Array []`;
+
+exports[`Changelog creates a comment 3`] = `Array []`;
+
 exports[`Changelog creates a new comment when new commits change the spec 1`] = `
 Array [
   Array [
@@ -291,7 +295,11 @@ Array [
 ]
 `;
 
-exports[`Changelog doesn't create a comment when new commits don't change the spec 2`] = `
+exports[`Changelog doesn't create a comment when new commits don't change the spec 2`] = `Array []`;
+
+exports[`Changelog doesn't create a comment when new commits don't change the spec 3`] = `Array []`;
+
+exports[`Changelog doesn't create a comment when new commits don't change the spec 4`] = `
 Array [
   Array [
     "{
@@ -348,6 +356,16 @@ Array [
   ],
 ]
 `;
+
+exports[`Changelog doesn't create a comment when new commits don't change the spec 5`] = `
+Array [
+  Array [
+    "No API changes in this PR.",
+  ],
+]
+`;
+
+exports[`Changelog doesn't create a comment when new commits don't change the spec 6`] = `Array []`;
 
 exports[`Changelog fails silently when there isn't a spec in the head branch 1`] = `[MockFunction]`;
 
@@ -530,6 +548,16 @@ Array [
   ],
   Array [
     "Creating comment for PR 100",
+  ],
+]
+`;
+
+exports[`Changelog works correctly when there isn't a spec in the base branch 2`] = `Array []`;
+
+exports[`Changelog works correctly when there isn't a spec in the base branch 3`] = `
+Array [
+  Array [
+    "Could not find the Optic spec in the base branch main. Looking in .optic/api/specification.yml.",
   ],
 ]
 `;
