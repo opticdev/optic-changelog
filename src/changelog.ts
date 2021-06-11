@@ -26,7 +26,7 @@ export type UploadParams = {
 }
 
 async function identify({apiKey}: {apiKey: string}): Promise<void> {
-  const resp = await fetch(`${API_BASE}/api/account`, {
+  const resp = await fetch(`${API_BASE}/api/person`, {
     headers: {Authorization: `Token ${apiKey}`}
   })
   const {id, email} = await resp.json()
@@ -44,7 +44,7 @@ async function networkUpload({
 
   return sentryInstrument({op: 'upload_spec'}, async (tx, span) => {
     const profilePromise = (async () => {
-      const response = await fetch(`${API_BASE}/api/account`, {
+      const response = await fetch(`${API_BASE}/api/person`, {
         method: 'GET',
         headers: {
           Authorization: `Token ${apiKey}`
@@ -71,7 +71,7 @@ async function networkUpload({
     })()
 
     jobRunner.debug('Creating new spec to upload')
-    const newSpecResp = await fetch(`${API_BASE}/api/account/specs`, {
+    const newSpecResp = await fetch(`${API_BASE}/api/person/specs`, {
       method: 'POST',
       headers: {
         Authorization: `Token ${apiKey}`,

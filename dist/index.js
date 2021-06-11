@@ -55,7 +55,7 @@ const tracing_1 = __webpack_require__(4358);
 const Sentry = __importStar(__webpack_require__(2783));
 function identify({ apiKey }) {
     return __awaiter(this, void 0, void 0, function* () {
-        const resp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/account`, {
+        const resp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/person`, {
             headers: { Authorization: `Token ${apiKey}` }
         });
         const { id, email } = yield resp.json();
@@ -67,7 +67,7 @@ function networkUpload({ apiKey, specContents, jobRunner, metadata = {} }) {
         const identProm = identify({ apiKey });
         return utils_1.sentryInstrument({ op: 'upload_spec' }, (tx, span) => __awaiter(this, void 0, void 0, function* () {
             const profilePromise = (() => __awaiter(this, void 0, void 0, function* () {
-                const response = yield node_fetch_1.default(`${constants_1.API_BASE}/api/account`, {
+                const response = yield node_fetch_1.default(`${constants_1.API_BASE}/api/person`, {
                     method: 'GET',
                     headers: {
                         Authorization: `Token ${apiKey}`
@@ -81,7 +81,7 @@ function networkUpload({ apiKey, specContents, jobRunner, metadata = {} }) {
                 return profile;
             }))();
             jobRunner.debug('Creating new spec to upload');
-            const newSpecResp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/account/specs`, {
+            const newSpecResp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/person/specs`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Token ${apiKey}`,
@@ -275,7 +275,7 @@ exports.runOpticChangelog = runOpticChangelog;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SENTRY_DSN = exports.COMMENT_HEADER_IMG = exports.CLOUD_SPEC_VIEWER_BASE = exports.API_BASE = void 0;
 exports.API_BASE = 'https://api.useoptic.com';
-exports.CLOUD_SPEC_VIEWER_BASE = 'https://spec.useoptic.com/public-specs';
+exports.CLOUD_SPEC_VIEWER_BASE = 'https://spec.useoptic.com';
 exports.COMMENT_HEADER_IMG = 'https://raw.github.com/opticdev/optic/develop/assets/changelog_header.png';
 exports.SENTRY_DSN = 'https://b5d9462fe8e741c1a01c1f0ec8562241@o446328.ingest.sentry.io/5741686';
 
@@ -635,10 +635,10 @@ ${filteredSubs.map(sub => `* @${sub}`).join('\n')}
 function mainCommentTemplate({ changes, specPath, projectName, baseBatchCommit, personId, specId, subscribers = [] }) {
     const linkGen = (endpoint) => {
         if (baseBatchCommit) {
-            return `${constants_1.CLOUD_SPEC_VIEWER_BASE}/${personId}/${specId}/changes-since/${baseBatchCommit}/paths/${endpoint.pathId}/methods/${endpoint.method}`;
+            return `${constants_1.CLOUD_SPEC_VIEWER_BASE}/person/${personId}/public-specs/${specId}/changes-since/${baseBatchCommit}/paths/${endpoint.pathId}/methods/${endpoint.method}`;
         }
         else {
-            return `${constants_1.CLOUD_SPEC_VIEWER_BASE}/${personId}/${specId}/documentation/paths/${endpoint.pathId}/methods/${endpoint.method}`;
+            return `${constants_1.CLOUD_SPEC_VIEWER_BASE}/person/${personId}/public-specs/${specId}/documentation/paths/${endpoint.pathId}/methods/${endpoint.method}`;
         }
     };
     const changes_by_category = changes.data.endpointChanges.endpoints.reduce((accum, current) => {
@@ -652,7 +652,7 @@ function mainCommentTemplate({ changes, specPath, projectName, baseBatchCommit, 
         endpoints: category_changes,
         endpointLinkGenerator: linkGen
     }));
-    const specUrl = `${constants_1.CLOUD_SPEC_VIEWER_BASE}/${personId}/${specId}/${baseBatchCommit ? `changes-since/${baseBatchCommit}` : `documentation`}`;
+    const specUrl = `${constants_1.CLOUD_SPEC_VIEWER_BASE}/person/${personId}/public-specs/${specId}/${baseBatchCommit ? `changes-since/${baseBatchCommit}` : `documentation`}`;
     return `![changelog](${constants_1.COMMENT_HEADER_IMG})
 
 [Click Here to See the Documentation](${specUrl})

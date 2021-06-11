@@ -27,7 +27,7 @@ Array [
   Array [
     "![changelog](https://raw.github.com/opticdev/optic/develop/assets/changelog_header.png)
 
-[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/person-id/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e)
+[Click Here to See the Documentation](https://spec.useoptic.com/person/person-id/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e)
 
 ##### Changelog for  \`/.optic/api/specification.yml\`
 
@@ -35,7 +35,7 @@ Array [
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
-| **POST** /user |  | [**Review**](https://spec.useoptic.com/public-specs/person-id/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e/paths/path_VyuFAjdBCO/methods/POST) |
+| **POST** /user |  | [**Review**](https://spec.useoptic.com/person/person-id/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e/paths/path_VyuFAjdBCO/methods/POST) |
 
 
 > Powered by [Optic](https://www.useoptic.com). [Learn how it works!](https://www.useoptic.com/docs/using/baseline)
@@ -273,7 +273,7 @@ Array [
   Array [
     "![changelog](https://raw.github.com/opticdev/optic/develop/assets/changelog_header.png)
 
-[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/person-id/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e)
+[Click Here to See the Documentation](https://spec.useoptic.com/person/person-id/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e)
 
 ##### Changelog for  \`/.optic/api/specification.yml\`
 
@@ -281,7 +281,7 @@ Array [
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
-| **POST** /user |  | [**Review**](https://spec.useoptic.com/public-specs/person-id/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e/paths/path_VyuFAjdBCO/methods/POST) |
+| **POST** /user |  | [**Review**](https://spec.useoptic.com/person/person-id/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e/paths/path_VyuFAjdBCO/methods/POST) |
 
 
 > Powered by [Optic](https://www.useoptic.com). [Learn how it works!](https://www.useoptic.com/docs/using/baseline)
@@ -326,7 +326,7 @@ Array [
   Array [
     "![changelog](https://raw.github.com/opticdev/optic/develop/assets/changelog_header.png)
 
-[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/person-id/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e)
+[Click Here to See the Documentation](https://spec.useoptic.com/person/person-id/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e)
 
 ##### Changelog for  \`/.optic/api/specification.yml\`
 
@@ -334,7 +334,7 @@ Array [
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
-| **POST** /user |  | [**Review**](https://spec.useoptic.com/public-specs/person-id/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e/paths/path_VyuFAjdBCO/methods/POST) |
+| **POST** /user |  | [**Review**](https://spec.useoptic.com/person/person-id/public-specs/spec-id/changes-since/f83ec784-520b-426e-b686-52ba43db9c5e/paths/path_VyuFAjdBCO/methods/POST) |
 
 
 > Powered by [Optic](https://www.useoptic.com). [Learn how it works!](https://www.useoptic.com/docs/using/baseline)
@@ -461,7 +461,7 @@ Array [
   Array [
     "![changelog](https://raw.github.com/opticdev/optic/develop/assets/changelog_header.png)
 
-[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/person-id/spec-id/documentation)
+[Click Here to See the Documentation](https://spec.useoptic.com/person/person-id/public-specs/spec-id/documentation)
 
 ##### Changelog for  \`/.optic/api/specification.yml\`
 
@@ -469,17 +469,17 @@ Array [
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
-| **GET** / |  | [**Review**](https://spec.useoptic.com/public-specs/person-id/spec-id/documentation/paths/root/methods/GET) |
-| **GET** /healthcheck |  | [**Review**](https://spec.useoptic.com/public-specs/person-id/spec-id/documentation/paths/path_to6GIY7tL3/methods/GET) |
-| **GET** /api/account/tokens | Get your tokens | [**Review**](https://spec.useoptic.com/public-specs/person-id/spec-id/documentation/paths/path_Zbx2qte52s/methods/GET) |
-| **POST** /api/account/tokens | Create a new token | [**Review**](https://spec.useoptic.com/public-specs/person-id/spec-id/documentation/paths/path_Zbx2qte52s/methods/POST) |
-| **POST** /api/account/specs | Create a new spec to upload | [**Review**](https://spec.useoptic.com/public-specs/person-id/spec-id/documentation/paths/path_jleYfnE1Ru/methods/POST) |
-| **GET** /api/specs/{specId} | Get information about a specific spec | [**Review**](https://spec.useoptic.com/public-specs/person-id/spec-id/documentation/paths/path_td6dXtR2C5/methods/GET) |
+| **GET** / |  | [**Review**](https://spec.useoptic.com/person/person-id/public-specs/spec-id/documentation/paths/root/methods/GET) |
+| **GET** /healthcheck |  | [**Review**](https://spec.useoptic.com/person/person-id/public-specs/spec-id/documentation/paths/path_to6GIY7tL3/methods/GET) |
+| **GET** /api/account/tokens | Get your tokens | [**Review**](https://spec.useoptic.com/person/person-id/public-specs/spec-id/documentation/paths/path_Zbx2qte52s/methods/GET) |
+| **POST** /api/account/tokens | Create a new token | [**Review**](https://spec.useoptic.com/person/person-id/public-specs/spec-id/documentation/paths/path_Zbx2qte52s/methods/POST) |
+| **POST** /api/account/specs | Create a new spec to upload | [**Review**](https://spec.useoptic.com/person/person-id/public-specs/spec-id/documentation/paths/path_jleYfnE1Ru/methods/POST) |
+| **GET** /api/specs/{specId} | Get information about a specific spec | [**Review**](https://spec.useoptic.com/person/person-id/public-specs/spec-id/documentation/paths/path_td6dXtR2C5/methods/GET) |
 ###### 📝 Updated Endpoints (1)
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
-| **GET** /api/account/specs | List all of your specs | [**Review**](https://spec.useoptic.com/public-specs/person-id/spec-id/documentation/paths/path_jleYfnE1Ru/methods/GET) |
+| **GET** /api/account/specs | List all of your specs | [**Review**](https://spec.useoptic.com/person/person-id/public-specs/spec-id/documentation/paths/path_jleYfnE1Ru/methods/GET) |
 
 
 > Powered by [Optic](https://www.useoptic.com). [Learn how it works!](https://www.useoptic.com/docs/using/baseline)
@@ -529,7 +529,7 @@ Array [
   Array [
     "![changelog](https://raw.github.com/opticdev/optic/develop/assets/changelog_header.png)
 
-[Click Here to See the Documentation](https://spec.useoptic.com/public-specs/person-id/spec-id/documentation)
+[Click Here to See the Documentation](https://spec.useoptic.com/person/person-id/public-specs/spec-id/documentation)
 
 ##### Changelog for  \`/.optic/api/specification.yml\`
 
@@ -537,8 +537,8 @@ Array [
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
-| **POST** /user |  | [**Review**](https://spec.useoptic.com/public-specs/person-id/spec-id/documentation/paths/path_VyuFAjdBCO/methods/POST) |
-| **GET** /user |  | [**Review**](https://spec.useoptic.com/public-specs/person-id/spec-id/documentation/paths/path_VyuFAjdBCO/methods/GET) |
+| **POST** /user |  | [**Review**](https://spec.useoptic.com/person/person-id/public-specs/spec-id/documentation/paths/path_VyuFAjdBCO/methods/POST) |
+| **GET** /user |  | [**Review**](https://spec.useoptic.com/person/person-id/public-specs/spec-id/documentation/paths/path_VyuFAjdBCO/methods/GET) |
 
 
 > Powered by [Optic](https://www.useoptic.com). [Learn how it works!](https://www.useoptic.com/docs/using/baseline)

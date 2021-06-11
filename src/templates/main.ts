@@ -48,9 +48,9 @@ export function mainCommentTemplate({
 }: MainProps): string {
   const linkGen = (endpoint: Endpoint): string => {
     if (baseBatchCommit) {
-      return `${CLOUD_SPEC_VIEWER_BASE}/${personId}/${specId}/changes-since/${baseBatchCommit}/paths/${endpoint.pathId}/methods/${endpoint.method}`
+      return `${CLOUD_SPEC_VIEWER_BASE}/person/${personId}/public-specs/${specId}/changes-since/${baseBatchCommit}/paths/${endpoint.pathId}/methods/${endpoint.method}`
     } else {
-      return `${CLOUD_SPEC_VIEWER_BASE}/${personId}/${specId}/documentation/paths/${endpoint.pathId}/methods/${endpoint.method}`
+      return `${CLOUD_SPEC_VIEWER_BASE}/person/${personId}/public-specs/${specId}/documentation/paths/${endpoint.pathId}/methods/${endpoint.method}`
     }
   }
 
@@ -76,7 +76,7 @@ export function mainCommentTemplate({
       })
   )
 
-  const specUrl = `${CLOUD_SPEC_VIEWER_BASE}/${personId}/${specId}/${
+  const specUrl = `${CLOUD_SPEC_VIEWER_BASE}/person/${personId}/public-specs/${specId}/${
     baseBatchCommit ? `changes-since/${baseBatchCommit}` : `documentation`
   }`
 
