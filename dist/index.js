@@ -274,8 +274,8 @@ exports.runOpticChangelog = runOpticChangelog;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SENTRY_DSN = exports.COMMENT_HEADER_IMG = exports.CLOUD_SPEC_VIEWER_BASE = exports.API_BASE = void 0;
-exports.API_BASE = 'https://api.useoptic.com';
-exports.CLOUD_SPEC_VIEWER_BASE = 'https://spec.useoptic.com';
+exports.API_BASE = process.env.OPTIC_API_BASE || 'https://api.useoptic.com';
+exports.CLOUD_SPEC_VIEWER_BASE = process.env.CLOUD_SPEC_VIEWER_BASE || 'https://spec.useoptic.com';
 exports.COMMENT_HEADER_IMG = 'https://raw.github.com/opticdev/optic/develop/assets/changelog_header.png';
 exports.SENTRY_DSN = 'https://b5d9462fe8e741c1a01c1f0ec8562241@o446328.ingest.sentry.io/5741686';
 
