@@ -58,8 +58,12 @@ function identify({ apiKey }) {
         const resp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/person`, {
             headers: { Authorization: `Token ${apiKey}` }
         });
-        const { id, email } = yield resp.json();
+        if (!resp.ok) {
+            throw new Error(`Error creating spec to upload: ${resp.statusText}: ${yield resp.text()}`);
+        }
+        const { id, email, name } = yield resp.json();
         Sentry.getCurrentHub().configureScope(s => s.setUser({ id, email }));
+        return { id, email, name };
     });
 }
 function networkUpload({ apiKey, specContents, jobRunner, metadata = {} }) {
@@ -67,21 +71,12 @@ function networkUpload({ apiKey, specContents, jobRunner, metadata = {} }) {
         const identProm = identify({ apiKey });
         return utils_1.sentryInstrument({ op: 'upload_spec' }, (tx, span) => __awaiter(this, void 0, void 0, function* () {
             const profilePromise = (() => __awaiter(this, void 0, void 0, function* () {
-                const response = yield node_fetch_1.default(`${constants_1.API_BASE}/api/person`, {
-                    method: 'GET',
-                    headers: {
-                        Authorization: `Token ${apiKey}`
-                    }
-                });
-                if (!response.ok) {
-                    throw new Error(`Error creating spec to upload: ${response.statusText}: ${yield response.text()}`);
-                }
-                const profile = yield response.json();
+                const profile = yield identify({ apiKey });
                 jobRunner.debug(`Identified as ${JSON.stringify(profile, null, 4)}`);
                 return profile;
             }))();
             jobRunner.debug('Creating new spec to upload');
-            const newSpecResp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/person/specs`, {
+            const newSpecResp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/person/public-specs`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Token ${apiKey}`,

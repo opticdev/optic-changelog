@@ -25,13 +25,34 @@ export type UploadParams = {
   metadata?: Record<string, any>
 }
 
-async function identify({apiKey}: {apiKey: string}): Promise<void> {
+async function identify({
+  apiKey
+}: {
+  apiKey: string
+}): Promise<{
+  name: string
+  email: string
+  id: string
+}> {
   const resp = await fetch(`${API_BASE}/api/person`, {
     headers: {Authorization: `Token ${apiKey}`}
   })
-  const {id, email} = await resp.json()
+
+  if (!resp.ok) {
+    throw new Error(
+      `Error creating spec to upload: ${resp.statusText}: ${await resp.text()}`
+    )
+  }
+
+  const {
+    id,
+    email,
+    name
+  }: {id: string; email: string; name: string} = await resp.json()
 
   Sentry.getCurrentHub().configureScope(s => s.setUser({id, email}))
+
+  return {id, email, name}
 }
 
 async function networkUpload({
@@ -44,26 +65,7 @@ async function networkUpload({
 
   return sentryInstrument({op: 'upload_spec'}, async (tx, span) => {
     const profilePromise = (async () => {
-      const response = await fetch(`${API_BASE}/api/person`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Token ${apiKey}`
-        }
-      })
-
-      if (!response.ok) {
-        throw new Error(
-          `Error creating spec to upload: ${
-            response.statusText
-          }: ${await response.text()}`
-        )
-      }
-
-      const profile: {
-        name: string
-        email: string
-        id: string
-      } = await response.json()
+      const profile = await identify({apiKey})
 
       jobRunner.debug(`Identified as ${JSON.stringify(profile, null, 4)}`)
 
@@ -71,7 +73,7 @@ async function networkUpload({
     })()
 
     jobRunner.debug('Creating new spec to upload')
-    const newSpecResp = await fetch(`${API_BASE}/api/person/specs`, {
+    const newSpecResp = await fetch(`${API_BASE}/api/person/public-specs`, {
       method: 'POST',
       headers: {
         Authorization: `Token ${apiKey}`,
