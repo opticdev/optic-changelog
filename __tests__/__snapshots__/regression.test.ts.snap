@@ -29,7 +29,7 @@ Array [
   Array [
     "![changelog](https://raw.github.com/opticdev/optic/develop/assets/changelog_header.png)
 
-[Click Here to See the Documentation](https://spec.useoptic.com/person/person-id/public-specs/spec-id/changes-since/e037b8d5-3aca-4f6a-b01f-367b00a55c95)
+[Click Here to See the Documentation](https://spec.useoptic.com/people/person-id/public-specs/spec-id/changes-since/e037b8d5-3aca-4f6a-b01f-367b00a55c95)
 
 ##### Changelog for  \`/.optic/api/specification.yml\`
 
@@ -37,13 +37,13 @@ Array [
 
 | Endpoint | Description |     |
 | -------- | ----------- | --: |
-| **POST** /api/v2/person/{person-id}/commands/create_token | Create Token | [**Review**](https://spec.useoptic.com/person/person-id/public-specs/spec-id/changes-since/e037b8d5-3aca-4f6a-b01f-367b00a55c95/paths/path_J_IT0RdQice/methods/POST) |
-| **GET** /api/account/tokens/latest | DELETE ME | [**Review**](https://spec.useoptic.com/person/person-id/public-specs/spec-id/changes-since/e037b8d5-3aca-4f6a-b01f-367b00a55c95/paths/path_kGFkuE-VswW/methods/GET) |
-| **GET** /api/account/tokens | Get My Tokens | [**Review**](https://spec.useoptic.com/person/person-id/public-specs/spec-id/changes-since/e037b8d5-3aca-4f6a-b01f-367b00a55c95/paths/path_GuLaSKAmMZR/methods/GET) |
-| **POST** /api/account/specs | Create Spec Upload | [**Review**](https://spec.useoptic.com/person/person-id/public-specs/spec-id/changes-since/e037b8d5-3aca-4f6a-b01f-367b00a55c95/paths/path_I64-7H5OMNT/methods/POST) |
-| **GET** /api/account | Get My Account | [**Review**](https://spec.useoptic.com/person/person-id/public-specs/spec-id/changes-since/e037b8d5-3aca-4f6a-b01f-367b00a55c95/paths/path_ZOxIrE6uhcD/methods/GET) |
-| **GET** /api/specs/{spec-id} | Get Spec by ID | [**Review**](https://spec.useoptic.com/person/person-id/public-specs/spec-id/changes-since/e037b8d5-3aca-4f6a-b01f-367b00a55c95/paths/path_4zfSMEGP5g9/methods/GET) |
-| **GET** /api/specs/{person-id}/{spec-id} | Get Spec by Person and ID | [**Review**](https://spec.useoptic.com/person/person-id/public-specs/spec-id/changes-since/e037b8d5-3aca-4f6a-b01f-367b00a55c95/paths/path_Y1z6BRzyhv0/methods/GET) |
+| **POST** /api/v2/person/{person-id}/commands/create_token | Create Token | [**Review**](https://spec.useoptic.com/people/person-id/public-specs/spec-id/changes-since/e037b8d5-3aca-4f6a-b01f-367b00a55c95/paths/path_J_IT0RdQice/methods/POST) |
+| **GET** /api/account/tokens/latest | DELETE ME | [**Review**](https://spec.useoptic.com/people/person-id/public-specs/spec-id/changes-since/e037b8d5-3aca-4f6a-b01f-367b00a55c95/paths/path_kGFkuE-VswW/methods/GET) |
+| **GET** /api/account/tokens | Get My Tokens | [**Review**](https://spec.useoptic.com/people/person-id/public-specs/spec-id/changes-since/e037b8d5-3aca-4f6a-b01f-367b00a55c95/paths/path_GuLaSKAmMZR/methods/GET) |
+| **POST** /api/account/specs | Create Spec Upload | [**Review**](https://spec.useoptic.com/people/person-id/public-specs/spec-id/changes-since/e037b8d5-3aca-4f6a-b01f-367b00a55c95/paths/path_I64-7H5OMNT/methods/POST) |
+| **GET** /api/account | Get My Account | [**Review**](https://spec.useoptic.com/people/person-id/public-specs/spec-id/changes-since/e037b8d5-3aca-4f6a-b01f-367b00a55c95/paths/path_ZOxIrE6uhcD/methods/GET) |
+| **GET** /api/specs/{spec-id} | Get Spec by ID | [**Review**](https://spec.useoptic.com/people/person-id/public-specs/spec-id/changes-since/e037b8d5-3aca-4f6a-b01f-367b00a55c95/paths/path_4zfSMEGP5g9/methods/GET) |
+| **GET** /api/specs/{person-id}/{spec-id} | Get Spec by Person and ID | [**Review**](https://spec.useoptic.com/people/person-id/public-specs/spec-id/changes-since/e037b8d5-3aca-4f6a-b01f-367b00a55c95/paths/path_Y1z6BRzyhv0/methods/GET) |
 
 
 > Powered by [Optic](https://www.useoptic.com). [Learn how it works!](https://www.useoptic.com/docs/using/baseline)

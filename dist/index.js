@@ -630,10 +630,10 @@ ${filteredSubs.map(sub => `* @${sub}`).join('\n')}
 function mainCommentTemplate({ changes, specPath, projectName, baseBatchCommit, personId, specId, subscribers = [] }) {
     const linkGen = (endpoint) => {
         if (baseBatchCommit) {
-            return `${constants_1.CLOUD_SPEC_VIEWER_BASE}/person/${personId}/public-specs/${specId}/changes-since/${baseBatchCommit}/paths/${endpoint.pathId}/methods/${endpoint.method}`;
+            return `${constants_1.CLOUD_SPEC_VIEWER_BASE}/people/${personId}/public-specs/${specId}/changes-since/${baseBatchCommit}/paths/${endpoint.pathId}/methods/${endpoint.method}`;
         }
         else {
-            return `${constants_1.CLOUD_SPEC_VIEWER_BASE}/person/${personId}/public-specs/${specId}/documentation/paths/${endpoint.pathId}/methods/${endpoint.method}`;
+            return `${constants_1.CLOUD_SPEC_VIEWER_BASE}/people/${personId}/public-specs/${specId}/documentation/paths/${endpoint.pathId}/methods/${endpoint.method}`;
         }
     };
     const changes_by_category = changes.data.endpointChanges.endpoints.reduce((accum, current) => {
@@ -647,7 +647,7 @@ function mainCommentTemplate({ changes, specPath, projectName, baseBatchCommit, 
         endpoints: category_changes,
         endpointLinkGenerator: linkGen
     }));
-    const specUrl = `${constants_1.CLOUD_SPEC_VIEWER_BASE}/person/${personId}/public-specs/${specId}/${baseBatchCommit ? `changes-since/${baseBatchCommit}` : `documentation`}`;
+    const specUrl = `${constants_1.CLOUD_SPEC_VIEWER_BASE}/people/${personId}/public-specs/${specId}/${baseBatchCommit ? `changes-since/${baseBatchCommit}` : `documentation`}`;
     return `![changelog](${constants_1.COMMENT_HEADER_IMG})
 
 [Click Here to See the Documentation](${specUrl})
