@@ -14,6 +14,9 @@ export type Changelog = {
       }[]
     }
   }
+  errors?: {
+    message: string
+  }[]
 }
 
 export type Endpoint = Changelog['data']['endpointChanges']['endpoints'][0]
@@ -54,6 +57,7 @@ export declare interface IGitProvider {
 export declare interface IJobRunner {
   debug(message: string): void
   info(message: string): void
+  warning(message: string): void
   setFailed(message: string | Error): void
   exportVariable(variableName: string, value: any): void
 }

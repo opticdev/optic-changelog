@@ -25,13 +25,34 @@ export type UploadParams = {
   metadata?: Record<string, any>
 }
 
-async function identify({apiKey}: {apiKey: string}): Promise<void> {
-  const resp = await fetch(`${API_BASE}/api/account`, {
+async function identify({
+  apiKey
+}: {
+  apiKey: string
+}): Promise<{
+  name: string
+  email: string
+  id: string
+}> {
+  const resp = await fetch(`${API_BASE}/api/person`, {
     headers: {Authorization: `Token ${apiKey}`}
   })
-  const {id, email} = await resp.json()
+
+  if (!resp.ok) {
+    throw new Error(
+      `Error creating spec to upload: ${resp.statusText}: ${await resp.text()}`
+    )
+  }
+
+  const {
+    id,
+    email,
+    name
+  }: {id: string; email: string; name: string} = await resp.json()
 
   Sentry.getCurrentHub().configureScope(s => s.setUser({id, email}))
+
+  return {id, email, name}
 }
 
 async function networkUpload({
@@ -39,12 +60,20 @@ async function networkUpload({
   specContents,
   jobRunner,
   metadata = {}
-}: UploadParams): Promise<string> {
+}: UploadParams): Promise<{specId: string; personId: string}> {
   const identProm = identify({apiKey})
 
-  return sentryInstrument({op: 'upload_spec'}, async (_tx, span) => {
+  return sentryInstrument({op: 'upload_spec'}, async (tx, span) => {
+    const profilePromise = (async () => {
+      const profile = await identify({apiKey})
+
+      jobRunner.debug(`Identified as ${JSON.stringify(profile, null, 4)}`)
+
+      return profile
+    })()
+
     jobRunner.debug('Creating new spec to upload')
-    const newSpecResp = await fetch(`${API_BASE}/api/account/specs`, {
+    const newSpecResp = await fetch(`${API_BASE}/api/person/public-specs`, {
       method: 'POST',
       headers: {
         Authorization: `Token ${apiKey}`,
@@ -64,13 +93,16 @@ async function networkUpload({
     const {id: specId, upload_url} = await newSpecResp.json()
     jobRunner.debug(`Spec created: ${specId}. Uploading...`)
 
-    const uploadResult = await fetch(upload_url, {
-      method: 'PUT',
-      headers: {
-        'x-amz-server-side-encryption': 'AES256'
-      },
-      body: specContents
-    })
+    const [uploadResult, profile] = await Promise.all([
+      fetch(upload_url, {
+        method: 'PUT',
+        headers: {
+          'x-amz-server-side-encryption': 'AES256'
+        },
+        body: specContents
+      }),
+      profilePromise
+    ])
 
     if (!uploadResult.ok) {
       throw new Error(
@@ -82,12 +114,14 @@ async function networkUpload({
 
     jobRunner.info(`Spec ${specId} uploaded successfully`)
 
+    tx.setTag('user.emal', profile.email)
+
     span.setData('specId', specId)
     span.setStatus(SpanStatus.Ok)
 
     await identProm
 
-    return specId
+    return {specId, personId: profile.id}
   })
 }
 
@@ -102,7 +136,7 @@ export type ChangelogParams = {
   prNumber: number
   jobRunner: IJobRunner
   generateEndpointChanges: any // todo(jshearer): specify this type
-  uploadSpec?: (up: UploadParams) => Promise<string>
+  uploadSpec?: (up: UploadParams) => Promise<{specId: string; personId: string}>
 }
 
 async function getLatestBatchCommit(events: any[]): Promise<string | null> {
@@ -163,7 +197,7 @@ export async function runOpticChangelog({
         )
       } catch (error) {
         // Failing silently here
-        jobRunner.info(
+        jobRunner.warning(
           `Could not find the Optic spec in the current branch. Looking in ${opticSpecPath}.`
         )
         return
@@ -177,7 +211,7 @@ export async function runOpticChangelog({
         jobRunner.exportVariable('SINCE_BATCH_COMMIT_ID', baseBatchCommit)
         span.setTag('baseBatchCommit', baseBatchCommit)
       } catch (error) {
-        jobRunner.info(
+        jobRunner.warning(
           `Could not find the Optic spec in the base branch ${baseBranch}. Looking in ${opticSpecPath}.`
         )
         span.setTag('baseBatchCommit', null)
@@ -187,22 +221,39 @@ export async function runOpticChangelog({
       }
 
       // TODO: use new changelog library here
-      const changes: Changelog = await generateEndpointChanges(
+      let changes: Changelog = await generateEndpointChanges(
         baseContent,
         headContent
       )
       jobRunner.debug(JSON.stringify(changes, null, 4))
 
+      if ((changes.errors?.length || 0) > 0) {
+        jobRunner.warning(
+          `Errors found, potentially unrelated base specification:\n\n${changes.errors}`
+        )
+        jobRunner.warning(`Assuming regenerated specification`)
+
+        changes = await generateEndpointChanges([], headContent)
+
+        if ((changes.errors?.length || 0) > 0) {
+          jobRunner.warning(
+            `Errors found, unable to proceed: ${changes.errors}`
+          )
+          return
+        }
+      }
+
       span.setData('changeCount', changes.data.endpointChanges.endpoints.length)
 
       let specId: string | undefined = undefined
+      let personId: string | undefined = undefined
       if (
         apiKey &&
         apiKey.length > 0 &&
         changes.data.endpointChanges.endpoints.length > 0 &&
         uploadSpec
       ) {
-        specId = await uploadSpec({
+        const upload_result = await uploadSpec({
           apiKey,
           specContents: JSON.stringify(headContent),
           jobRunner,
@@ -212,6 +263,8 @@ export async function runOpticChangelog({
             ...gitProvider.getRepoInfo()
           }
         })
+        specId = upload_result.specId
+        personId = upload_result.personId
         span.setData('cloudSpecId', specId)
       }
 
@@ -221,7 +274,7 @@ export async function runOpticChangelog({
       }
 
       let message: string
-      if (apiKey && specId) {
+      if (apiKey && specId && personId) {
         const opticYamlPath = join(opticSpecPath, '../../../optic.yml')
         let projectName: string | null
         try {
@@ -238,6 +291,7 @@ export async function runOpticChangelog({
           specPath: opticSpecPath,
           subscribers,
           specId,
+          personId,
           baseBatchCommit,
           projectName
         })

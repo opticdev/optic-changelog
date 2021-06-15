@@ -27,6 +27,7 @@ const baseGitProvider: IGitProvider = {
 
 const mockJobRunner = {
   info: jest.fn(),
+  warning: jest.fn(),
   debug: jest.fn(),
   setFailed: jest.fn(),
   exportVariable: jest.fn()
@@ -43,7 +44,9 @@ const baseOpticChangelog: ChangelogParams = {
   prNumber: 100,
   jobRunner: mockJobRunner,
   generateEndpointChanges,
-  uploadSpec: jest.fn().mockResolvedValue('spec-id')
+  uploadSpec: jest
+    .fn()
+    .mockResolvedValue({specId: 'spec-id', personId: 'person-id'})
 }
 
 describe('Changelog', () => {
@@ -145,6 +148,8 @@ function expectCommentWasCreated() {
   expect(baseGitProvider.updatePrComment).toBeCalledTimes(0)
   expect(mockJobRunner.setFailed).toBeCalledTimes(0)
   expect(mockJobRunner.debug.mock.calls).toMatchSnapshot()
+  expect(mockJobRunner.info.mock.calls).toMatchSnapshot()
+  expect(mockJobRunner.warning.mock.calls).toMatchSnapshot()
 }
 
 function expectToFailSilently() {
