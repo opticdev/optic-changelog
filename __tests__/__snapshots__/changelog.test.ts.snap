@@ -369,7 +369,7 @@ exports[`Changelog doesn't create a comment when new commits don't change the sp
 
 exports[`Changelog fails silently when there isn't a spec in the head branch 1`] = `[MockFunction]`;
 
-exports[`Changelog includes purpose on comment 1`] = `
+exports[`Changelog includes purpose on comment for "created" 1`] = `
 Array [
   Array [
     "{
@@ -486,6 +486,108 @@ Array [
 
 
 <!-- optic = {\\"messageHash\\":\\"87d2d03b6409d79481b569e5edaee9208190454d\\"} -->",
+  ],
+  Array [
+    "Creating comment for PR 100",
+  ],
+]
+`;
+
+exports[`Changelog includes purpose on comment for "removed" 1`] = `
+Array [
+  Array [
+    "{
+    \\"data\\": {
+        \\"endpointChanges\\": {
+            \\"endpoints\\": [
+                {
+                    \\"change\\": {
+                        \\"category\\": \\"removed\\"
+                    },
+                    \\"contributions\\": {
+                        \\"purpose\\": \\"get api todos\\"
+                    },
+                    \\"pathId\\": \\"path_UOIsxzICu5\\",
+                    \\"path\\": \\"/api/todos\\",
+                    \\"method\\": \\"GET\\"
+                }
+            ]
+        }
+    }
+}",
+  ],
+  Array [
+    "Created body for comment",
+  ],
+  Array [
+    "![changelog](https://raw.github.com/opticdev/optic/develop/assets/changelog_header.png)
+
+[Click Here to See the Documentation](https://spec.useoptic.com/people/person-id/public-specs/spec-id/documentation)
+
+##### Changelog for  \`/.optic/api/specification.yml\`
+
+###### ❌ Removed Endpoints (1)
+
+| Endpoint | Description |     |
+| -------- | ----------- | --: |
+| **GET** /api/todos | get api todos | [**Review**](https://spec.useoptic.com/people/person-id/public-specs/spec-id/documentation/paths/path_UOIsxzICu5/methods/GET) |
+
+
+> Powered by [Optic](https://www.useoptic.com). [Learn how it works!](https://www.useoptic.com/docs/using/baseline)
+
+
+<!-- optic = {\\"messageHash\\":\\"7e0ec767418a8aab664c61880f104233ec4e4d26\\"} -->",
+  ],
+  Array [
+    "Creating comment for PR 100",
+  ],
+]
+`;
+
+exports[`Changelog includes purpose on comment for "updated" 1`] = `
+Array [
+  Array [
+    "{
+    \\"data\\": {
+        \\"endpointChanges\\": {
+            \\"endpoints\\": [
+                {
+                    \\"change\\": {
+                        \\"category\\": \\"updated\\"
+                    },
+                    \\"contributions\\": {
+                        \\"purpose\\": \\"get api todos\\"
+                    },
+                    \\"pathId\\": \\"path_UOIsxzICu5\\",
+                    \\"path\\": \\"/api/todos\\",
+                    \\"method\\": \\"GET\\"
+                }
+            ]
+        }
+    }
+}",
+  ],
+  Array [
+    "Created body for comment",
+  ],
+  Array [
+    "![changelog](https://raw.github.com/opticdev/optic/develop/assets/changelog_header.png)
+
+[Click Here to See the Documentation](https://spec.useoptic.com/people/person-id/public-specs/spec-id/documentation)
+
+##### Changelog for  \`/.optic/api/specification.yml\`
+
+###### 📝 Updated Endpoints (1)
+
+| Endpoint | Description |     |
+| -------- | ----------- | --: |
+| **GET** /api/todos | get api todos | [**Review**](https://spec.useoptic.com/people/person-id/public-specs/spec-id/documentation/paths/path_UOIsxzICu5/methods/GET) |
+
+
+> Powered by [Optic](https://www.useoptic.com). [Learn how it works!](https://www.useoptic.com/docs/using/baseline)
+
+
+<!-- optic = {\\"messageHash\\":\\"1916dd6c0a5fccdc89da9480f381cb736db11eca\\"} -->",
   ],
   Array [
     "Creating comment for PR 100",

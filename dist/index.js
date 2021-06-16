@@ -45,7 +45,7 @@ const object_hash_1 = __importDefault(__webpack_require__(4856));
 const js_yaml_1 = __importDefault(__webpack_require__(1917));
 const pr_1 = __webpack_require__(515);
 const in_memory_1 = __webpack_require__(9834);
-const OpticEngine = __importStar(__webpack_require__(5535));
+const OpticEngine = __importStar(__webpack_require__(4014));
 const spectacle_1 = __webpack_require__(8714);
 const main_1 = __webpack_require__(1519);
 const constants_1 = __webpack_require__(5105);
@@ -20866,7 +20866,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.generateEndpointChanges = void 0;
-const OpticEngine = __importStar(__webpack_require__(5535));
+const OpticEngine = __importStar(__webpack_require__(4014));
 const spectacle_1 = __webpack_require__(8714);
 const in_memory_1 = __webpack_require__(9834);
 async function generateEndpointChanges(initialEvents = [], currentEvents) {
@@ -20961,7 +20961,1128 @@ ${exports.defaultIgnoreRules.join('\n')}
 
 /***/ }),
 
-/***/ 5535:
+/***/ 891:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.GraphQueries = exports.BatchCommitNodeWrapper = exports.PathNodeWrapper = exports.ResponseNodeWrapper = exports.RequestNodeWrapper = exports.BodyNodeWrapper = exports.GraphIndexer = exports.EdgeType = exports.NodeType = void 0;
+const index_1 = __webpack_require__(3194);
+var NodeType;
+(function (NodeType) {
+    NodeType["Path"] = "Path";
+    NodeType["Request"] = "Request";
+    NodeType["Response"] = "Response";
+    NodeType["Body"] = "Body";
+    NodeType["BatchCommit"] = "BatchCommit";
+})(NodeType = exports.NodeType || (exports.NodeType = {}));
+var EdgeType;
+(function (EdgeType) {
+    EdgeType["IsChildOf"] = "IsChildOf";
+    EdgeType["CreatedIn"] = "CreatedIn";
+    EdgeType["UpdatedIn"] = "UpdatedIn";
+    EdgeType["RemovedIn"] = "RemovedIn";
+})(EdgeType = exports.EdgeType || (exports.EdgeType = {}));
+////////////////////////////////////////////////////////////////////////////////
+// A batch commit node can never be removed
+const isNodeRemoved = (node) => node.type !== NodeType.BatchCommit && node.data.isRemoved;
+////////////////////////////////////////////////////////////////////////////////
+class GraphIndexer {
+    constructor() {
+        this.nodesByType = new Map();
+        this.nodesById = new Map();
+        this.outboundNeighbors = new Map();
+        this.inboundNeighbors = new Map();
+        this.outboundNeighborsByEdgeType = new Map();
+        this.inboundNeighborsByEdgeType = new Map();
+    }
+    addNode(node) {
+        if (this.nodesById.has(node.id)) {
+            throw new Error(`could not add a node with an id that already exists in the graph`);
+        }
+        this.unsafeAddNode(node);
+    }
+    addEdge(edge, sourceNodeId, targetNodeId) {
+        const sourceNode = this.nodesById.get(sourceNodeId);
+        if (!sourceNode) {
+            throw new Error(`expected ${sourceNodeId} to exist`);
+        }
+        const targetNode = this.nodesById.get(targetNodeId);
+        if (!targetNode) {
+            throw new Error(`expected ${targetNodeId} to exist`);
+        }
+        const outboundNeighbors = this.outboundNeighbors.get(sourceNodeId) || new Map();
+        index_1.mapAppend(outboundNeighbors, targetNode.type, targetNode);
+        this.outboundNeighbors.set(sourceNodeId, outboundNeighbors);
+        const outboundNeighborsByEdgeType = this.outboundNeighborsByEdgeType.get(sourceNodeId) || new Map();
+        index_1.mapAppend(outboundNeighborsByEdgeType, edge.type, targetNode);
+        this.outboundNeighborsByEdgeType.set(sourceNodeId, outboundNeighborsByEdgeType);
+        const inboundNeighbors = this.inboundNeighbors.get(targetNodeId) || new Map();
+        index_1.mapAppend(inboundNeighbors, sourceNode.type, sourceNode);
+        this.inboundNeighbors.set(targetNodeId, inboundNeighbors);
+        const inboundNeighborsByEdgeType = this.inboundNeighborsByEdgeType.get(targetNodeId) || new Map();
+        index_1.mapAppend(inboundNeighborsByEdgeType, edge.type, sourceNode);
+        this.inboundNeighborsByEdgeType.set(targetNodeId, inboundNeighborsByEdgeType);
+    }
+    unsafeAddNode(node) {
+        this.nodesById.set(node.id, node);
+        index_1.mapAppend(this.nodesByType, node.type, node);
+    }
+}
+exports.GraphIndexer = GraphIndexer;
+////////////////////////////////////////////////////////////////////////////////
+class BodyNodeWrapper {
+    constructor(result, queries) {
+        this.result = result;
+        this.queries = queries;
+    }
+    get value() {
+        return this.result.data;
+    }
+    response() {
+        const neighbors = this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.Response);
+        if (neighbors.results.length === 0) {
+            return null;
+        }
+        return neighbors.results[0];
+    }
+    request() {
+        const neighbors = this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.Request);
+        if (neighbors.results.length === 0) {
+            return null;
+        }
+        return neighbors.results[0];
+    }
+}
+exports.BodyNodeWrapper = BodyNodeWrapper;
+class RequestNodeWrapper {
+    constructor(result, queries) {
+        this.result = result;
+        this.queries = queries;
+    }
+    get value() {
+        return this.result.data;
+    }
+    path() {
+        const neighbors = this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.Path);
+        if (neighbors.results.length === 0) {
+            throw new Error(`expected Request to have a parent Path`);
+        }
+        return neighbors.results[0];
+    }
+    responses() {
+        return this.path().responses().results.filter((response) => response.value.httpMethod === this.value.httpMethod);
+    }
+    bodies() {
+        return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Body);
+    }
+}
+exports.RequestNodeWrapper = RequestNodeWrapper;
+class ResponseNodeWrapper {
+    constructor(result, queries) {
+        this.result = result;
+        this.queries = queries;
+    }
+    get value() {
+        return this.result.data;
+    }
+    path() {
+        const neighbors = this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.Path);
+        if (neighbors.results.length === 0) {
+            throw new Error(`expected Response to have a parent Path`);
+        }
+        return neighbors.results[0];
+    }
+    bodies() {
+        return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Body);
+    }
+}
+exports.ResponseNodeWrapper = ResponseNodeWrapper;
+class PathNodeWrapper {
+    constructor(result, queries) {
+        this.result = result;
+        this.queries = queries;
+    }
+    get value() {
+        return this.result.data;
+    }
+    parentPath() {
+        const parentPaths = this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.Path);
+        if (parentPaths.results.length === 0) {
+            return null;
+        }
+        const [parentPath] = parentPaths.results;
+        return parentPath;
+    }
+    requests() {
+        return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Request);
+    }
+    responses() {
+        return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Response);
+    }
+    components() {
+        let pathNode = this;
+        let parentPath = pathNode.parentPath();
+        const components = [pathNode];
+        while (parentPath !== null) {
+            components.push(parentPath);
+            pathNode = parentPath;
+            parentPath = pathNode.parentPath();
+        }
+        return components.reverse();
+    }
+    get absolutePathPatternWithParameterNames() {
+        let path = '';
+        const components = this.components();
+        if (components.length === 1 && components[0].value.pathId === 'root') {
+            return '/';
+        }
+        for (const component of components) {
+            if (component.value.pathId === 'root')
+                continue;
+            if (component.value.isParameterized) {
+                path = `${path}/{${component.value.name}}`;
+            }
+            else {
+                path = `${path}/${component.value.name}`;
+            }
+        }
+        return path;
+    }
+}
+exports.PathNodeWrapper = PathNodeWrapper;
+class BatchCommitNodeWrapper {
+    constructor(result, queries) {
+        this.result = result;
+        this.queries = queries;
+    }
+    requests() {
+        return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Request);
+    }
+    responses() {
+        return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Response);
+    }
+    createdInEdgeNodes() {
+        return this.queries.listIncomingNeighborsByEdgeType(this.result.id, EdgeType.CreatedIn);
+    }
+    updatedInEdgeNodes() {
+        return this.queries.listIncomingNeighborsByEdgeType(this.result.id, EdgeType.UpdatedIn);
+    }
+    removedInEdgeNodes() {
+        return this.queries.listIncomingNeighborsByEdgeType(this.result.id, EdgeType.RemovedIn);
+    }
+}
+exports.BatchCommitNodeWrapper = BatchCommitNodeWrapper;
+////////////////////////////////////////////////////////////////////////////////
+class GraphQueries {
+    constructor(index) {
+        this.index = index;
+    }
+    findNodeById(id) {
+        const node = this.index.nodesById.get(id);
+        if (!node) {
+            return null;
+        }
+        return this.wrap(node);
+    }
+    listNodesByType(type, { includeRemoved = true, } = {}) {
+        const nodesByType = this.index.nodesByType.get(type) || [];
+        const filteredNodesByType = includeRemoved
+            ? nodesByType
+            : nodesByType.filter((node) => !isNodeRemoved(node));
+        return this.wrapList(type, filteredNodesByType);
+    }
+    //@TODO add singular find* variant
+    listIncomingNeighborsByType(id, incomingNeighborType, { includeRemoved = true, } = {}) {
+        const neighbors = this.index.inboundNeighbors.get(id);
+        if (!neighbors) {
+            return this.wrapList(incomingNeighborType, []);
+        }
+        const neighborsOfType = neighbors.get(incomingNeighborType) || [];
+        const filteredNeighborsOfType = includeRemoved
+            ? neighborsOfType
+            : neighborsOfType.filter((node) => !isNodeRemoved(node));
+        return this.wrapList(incomingNeighborType, filteredNeighborsOfType);
+    }
+    //@TODO add singular find* variant
+    listOutgoingNeighborsByType(id, outgoingNeighborType, { includeRemoved = true, } = {}) {
+        const neighbors = this.index.outboundNeighbors.get(id);
+        if (!neighbors) {
+            return this.wrapList(outgoingNeighborType, []);
+        }
+        const neighborsOfType = neighbors.get(outgoingNeighborType) || [];
+        const filteredNeighborsOfType = includeRemoved
+            ? neighborsOfType
+            : neighborsOfType.filter((node) => !isNodeRemoved(node));
+        return this.wrapList(outgoingNeighborType, filteredNeighborsOfType);
+    }
+    listIncomingNeighborsByEdgeType(id, edgeType) {
+        const neighbors = this.index.inboundNeighborsByEdgeType.get(id);
+        if (!neighbors) {
+            return this.wrapList(null, []);
+        }
+        const neighborsOfType = neighbors.get(edgeType);
+        return this.wrapList(null, neighborsOfType || []);
+    }
+    listOutgoingNeighborsByEdgeType(id, edgeType) {
+        const neighbors = this.index.outboundNeighborsByEdgeType.get(id);
+        if (!neighbors) {
+            return this.wrapList(null, []);
+        }
+        const neighborsOfType = neighbors.get(edgeType);
+        return this.wrapList(null, neighborsOfType || []);
+    }
+    *descendantsIterator(nodeId, seenSet = new Set(), { includeRemoved = true, } = {}) {
+        const inboundNeighbors = this.index.inboundNeighbors.get(nodeId);
+        if (!inboundNeighbors) {
+            return;
+        }
+        if (seenSet.has(nodeId)) {
+            return;
+        }
+        seenSet.add(nodeId);
+        for (const neighborsByNodeType of inboundNeighbors.values()) {
+            for (const neighborNode of neighborsByNodeType) {
+                if (includeRemoved || !isNodeRemoved(neighborNode)) {
+                    yield neighborNode;
+                    yield* this.descendantsIterator(neighborNode.id, seenSet);
+                }
+            }
+        }
+    }
+    //@TODO wrap() and wrapList() should be injected?
+    wrap(node) {
+        if (node.type === NodeType.Request) {
+            return new RequestNodeWrapper(node, this);
+        }
+        else if (node.type === NodeType.Response) {
+            return new ResponseNodeWrapper(node, this);
+        }
+        else if (node.type === NodeType.Path) {
+            return new PathNodeWrapper(node, this);
+        }
+        else if (node.type === NodeType.Body) {
+            return new BodyNodeWrapper(node, this);
+        }
+        else if (node.type === NodeType.BatchCommit) {
+            return new BatchCommitNodeWrapper(node, this);
+        }
+        throw new Error(`unexpected node.type`);
+    }
+    //@TODO move away from null here
+    wrapList(type, nodes) {
+        //@TODO add list helpers (map, etc.)
+        return {
+            results: nodes.map((node) => this.wrap(node)),
+        };
+    }
+}
+exports.GraphQueries = GraphQueries;
+
+
+/***/ }),
+
+/***/ 3194:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.mapAppend = exports.shapes = exports.endpoints = void 0;
+const endpoints = __importStar(__webpack_require__(891));
+exports.endpoints = endpoints;
+const shapes = __importStar(__webpack_require__(912));
+exports.shapes = shapes;
+////////////////////////////////////////////////////////////////////////////////
+function mapAppend(map, key, value) {
+    const values = map.get(key) || [];
+    values.push(value);
+    map.set(key, values);
+}
+exports.mapAppend = mapAppend;
+////////////////////////////////////////////////////////////////////////////////
+
+
+/***/ }),
+
+/***/ 912:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.GraphQueries = exports.BatchCommitNodeWrapper = exports.GraphIndexer = exports.EdgeType = exports.NodeType = void 0;
+const index_1 = __webpack_require__(3194);
+var NodeType;
+(function (NodeType) {
+    NodeType["CoreShape"] = "CoreShape";
+    NodeType["Shape"] = "Shape";
+    NodeType["ShapeParameter"] = "ShapeParameter";
+    NodeType["Field"] = "Field";
+    NodeType["BatchCommit"] = "BatchCommit";
+})(NodeType = exports.NodeType || (exports.NodeType = {}));
+var EdgeType;
+(function (EdgeType) {
+    EdgeType["IsParameterOf"] = "IsParameterOf";
+    EdgeType["BelongsTo"] = "BelongsTo";
+    EdgeType["IsDescendantOf"] = "IsDescendantOf";
+    EdgeType["HasBinding"] = "HasBinding";
+    EdgeType["CreatedIn"] = "CreatedIn";
+    EdgeType["UpdatedIn"] = "UpdatedIn";
+})(EdgeType = exports.EdgeType || (exports.EdgeType = {}));
+////////////////////////////////////////////////////////////////////////////////
+class GraphIndexer {
+    constructor() {
+        this.nodesByType = new Map();
+        this.nodesById = new Map();
+        this.outboundNeighbors = new Map();
+        this.inboundNeighbors = new Map();
+        this.outboundNeighborsByEdgeType = new Map();
+        this.inboundNeighborsByEdgeType = new Map();
+    }
+    addNode(node) {
+        if (this.nodesById.has(node.id)) {
+            throw new Error(`could not add a node with an id that already exists in the graph`);
+        }
+        this.unsafeAddNode(node);
+    }
+    addEdge(edge, sourceNodeId, targetNodeId) {
+        const sourceNode = this.nodesById.get(sourceNodeId);
+        if (!sourceNode) {
+            throw new Error(`expected ${sourceNodeId} to exist`);
+        }
+        const targetNode = this.nodesById.get(targetNodeId);
+        if (!targetNode) {
+            throw new Error(`expected ${targetNodeId} to exist`);
+        }
+        const outboundNeighbors = this.outboundNeighbors.get(sourceNodeId) || new Map();
+        index_1.mapAppend(outboundNeighbors, targetNode.type, targetNode);
+        this.outboundNeighbors.set(sourceNodeId, outboundNeighbors);
+        const outboundNeighborsByEdgeType = this.outboundNeighborsByEdgeType.get(sourceNodeId) || new Map();
+        index_1.mapAppend(outboundNeighborsByEdgeType, edge.type, targetNode);
+        this.outboundNeighborsByEdgeType.set(sourceNodeId, outboundNeighborsByEdgeType);
+        const inboundNeighbors = this.inboundNeighbors.get(targetNodeId) || new Map();
+        index_1.mapAppend(inboundNeighbors, sourceNode.type, sourceNode);
+        this.inboundNeighbors.set(targetNodeId, inboundNeighbors);
+        const inboundNeighborsByEdgeType = this.inboundNeighborsByEdgeType.get(targetNodeId) || new Map();
+        index_1.mapAppend(inboundNeighborsByEdgeType, edge.type, sourceNode);
+        this.inboundNeighborsByEdgeType.set(targetNodeId, inboundNeighborsByEdgeType);
+    }
+    unsafeAddNode(node) {
+        this.nodesById.set(node.id, node);
+        index_1.mapAppend(this.nodesByType, node.type, node);
+    }
+}
+exports.GraphIndexer = GraphIndexer;
+////////////////////////////////////////////////////////////////////////////////
+class CoreShapeNodeWrapper {
+    constructor(result, queries) {
+        this.result = result;
+        this.queries = queries;
+    }
+}
+class ShapeNodeWrapper {
+    constructor(result, queries) {
+        this.result = result;
+        this.queries = queries;
+    }
+    coreShape() {
+        const coreShapeNode = this.queries.findOutgoingNeighborByEdgeType(this.result.id, EdgeType.IsDescendantOf);
+        if (!coreShapeNode) {
+            throw new Error(`expected node to have a core shape node`);
+        }
+        return coreShapeNode;
+    }
+    batchCommits() {
+        return this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.BatchCommit);
+    }
+}
+class ShapeParameterNodeWrapper {
+    constructor(result, queries) {
+        this.result = result;
+        this.queries = queries;
+    }
+}
+class FieldNodeWrapper {
+    constructor(result, queries) {
+        this.result = result;
+        this.queries = queries;
+    }
+    batchCommits() {
+        return this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.BatchCommit);
+    }
+}
+class BatchCommitNodeWrapper {
+    constructor(result, queries) {
+        this.result = result;
+        this.queries = queries;
+    }
+}
+exports.BatchCommitNodeWrapper = BatchCommitNodeWrapper;
+////////////////////////////////////////////////////////////////////////////////
+class GraphQueries {
+    constructor(index) {
+        this.index = index;
+    }
+    findNodeById(id) {
+        const node = this.index.nodesById.get(id);
+        if (!node) {
+            return null;
+        }
+        return this.wrap(node);
+    }
+    listNodesByType(type) {
+        return this.wrapList(type, this.index.nodesByType.get(type) || []);
+    }
+    *descendantsIterator(nodeId, seenSet = new Set()) {
+        const inboundNeighbors = this.index.inboundNeighbors.get(nodeId);
+        if (!inboundNeighbors) {
+            return;
+        }
+        if (seenSet.has(nodeId)) {
+            return;
+        }
+        seenSet.add(nodeId);
+        for (const neighborsByNodeType of inboundNeighbors.values()) {
+            for (const neighborNode of neighborsByNodeType) {
+                yield neighborNode;
+                yield* this.descendantsIterator(neighborNode.id, seenSet);
+            }
+        }
+    }
+    //@TODO add singular find* variant
+    listIncomingNeighborsByType(id, incomingNeighborType) {
+        const neighbors = this.index.inboundNeighbors.get(id);
+        if (!neighbors) {
+            return this.wrapList(incomingNeighborType, []);
+        }
+        const neighborsOfType = neighbors.get(incomingNeighborType);
+        return this.wrapList(incomingNeighborType, neighborsOfType || []);
+    }
+    //@TODO add singular find* variant
+    listOutgoingNeighborsByType(id, outgoingNeighborType) {
+        debugger;
+        const neighbors = this.index.outboundNeighbors.get(id);
+        if (!neighbors) {
+            return this.wrapList(outgoingNeighborType, []);
+        }
+        const neighborsOfType = neighbors.get(outgoingNeighborType);
+        return this.wrapList(outgoingNeighborType, neighborsOfType || []);
+    }
+    findOutgoingNeighborByEdgeType(id, edgeType) {
+        const neighbors = this.index.outboundNeighborsByEdgeType.get(id);
+        if (!neighbors) {
+            return null;
+        }
+        const neighborsOfType = neighbors.get(edgeType);
+        if (!neighborsOfType) {
+            return null;
+        }
+        return this.wrap(neighborsOfType[0]);
+    }
+    listIncomingNeighborsByEdgeType(id, edgeType) {
+        const neighbors = this.index.inboundNeighborsByEdgeType.get(id);
+        if (!neighbors) {
+            return this.wrapList(null, []);
+        }
+        const neighborsOfType = neighbors.get(edgeType);
+        return this.wrapList(null, neighborsOfType || []);
+    }
+    listOutgoingNeighborsByEdgeType(id, edgeType) {
+        const neighbors = this.index.outboundNeighborsByEdgeType.get(id);
+        if (!neighbors) {
+            return this.wrapList(null, []);
+        }
+        const neighborsOfType = neighbors.get(edgeType);
+        return this.wrapList(null, neighborsOfType || []);
+    }
+    //@TODO wrap() and wrapList() should be injected?
+    wrap(node) {
+        if (node.type === NodeType.CoreShape) {
+            return new CoreShapeNodeWrapper(node, this);
+        }
+        else if (node.type === NodeType.Shape) {
+            return new ShapeNodeWrapper(node, this);
+        }
+        else if (node.type === NodeType.ShapeParameter) {
+            return new ShapeParameterNodeWrapper(node, this);
+        }
+        else if (node.type === NodeType.Field) {
+            return new FieldNodeWrapper(node, this);
+        }
+        else if (node.type === NodeType.BatchCommit) {
+            return new BatchCommitNodeWrapper(node, this);
+        }
+        throw new Error(`unexpected node.type`);
+    }
+    //@TODO move away from null here
+    wrapList(type, nodes) {
+        //@TODO add list helpers (map, etc.)
+        return {
+            results: nodes.map((node) => this.wrap(node)),
+        };
+    }
+}
+exports.GraphQueries = GraphQueries;
+
+
+/***/ }),
+
+/***/ 2993:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+};
+var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
+var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _arguments, generator) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var g = generator.apply(thisArg, _arguments || []), i, q = [];
+    return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
+    function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
+    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
+    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
+    function fulfill(value) { resume("next", value); }
+    function reject(value) { resume("throw", value); }
+    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
+};
+var __asyncValues = (this && this.__asyncValues) || function (o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator], i;
+    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.tap = exports.fromJSONMap = exports.fromReadableJSONL = exports.fromReadable = exports.lastBy = exports.reduce = void 0;
+__exportStar(__webpack_require__(3698), exports);
+//@ts-ignore
+const Parser_1 = __webpack_require__(5771);
+const StreamObject_1 = __importDefault(__webpack_require__(5790));
+const reduce_1 = __webpack_require__(1394);
+Object.defineProperty(exports, "reduce", ({ enumerable: true, get: function () { return reduce_1.reduce; } }));
+function lastBy(predicate) {
+    return function (source) {
+        return __asyncGenerator(this, arguments, function* () {
+            const findLastKey = reduce_1.reduce(({ lastByKey, keys }, subject) => {
+                const key = predicate(subject);
+                // rely on insertion order guarantee from Set to yield final results by
+                // last key occurence
+                keys.delete(key);
+                keys.add(key);
+                lastByKey.set(key, subject);
+                return { lastByKey, keys };
+            }, { lastByKey: new Map(), keys: new Set() });
+            const { lastByKey, keys } = yield __await(findLastKey(source));
+            for (let key of keys) {
+                const lastSubject = lastByKey.get(key);
+                if (!lastSubject)
+                    throw new Error('unreachable');
+                yield yield __await(lastSubject);
+            }
+        });
+    };
+}
+exports.lastBy = lastBy;
+function fromReadable(stream) {
+    return function () {
+        return __asyncGenerator(this, arguments, function* () {
+            var e_1, _a;
+            try {
+                for (var stream_1 = __asyncValues(stream), stream_1_1; stream_1_1 = yield __await(stream_1.next()), !stream_1_1.done;) {
+                    const chunk = stream_1_1.value;
+                    yield yield __await(chunk);
+                }
+            }
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (stream_1_1 && !stream_1_1.done && (_a = stream_1.return)) yield __await(_a.call(stream_1));
+                }
+                finally { if (e_1) throw e_1.error; }
+            }
+        });
+    };
+}
+exports.fromReadable = fromReadable;
+function fromReadableJSONL() {
+    return function (source) {
+        return __asyncGenerator(this, arguments, function* () {
+            var e_2, _a;
+            let parseResults = source.pipe(Parser_1.parser());
+            try {
+                for (var parseResults_1 = __asyncValues(parseResults), parseResults_1_1; parseResults_1_1 = yield __await(parseResults_1.next()), !parseResults_1_1.done;) {
+                    let parseResult = parseResults_1_1.value;
+                    yield yield __await(parseResult.value);
+                }
+            }
+            catch (e_2_1) { e_2 = { error: e_2_1 }; }
+            finally {
+                try {
+                    if (parseResults_1_1 && !parseResults_1_1.done && (_a = parseResults_1.return)) yield __await(_a.call(parseResults_1));
+                }
+                finally { if (e_2) throw e_2.error; }
+            }
+        });
+    };
+}
+exports.fromReadableJSONL = fromReadableJSONL;
+function fromJSONMap() {
+    return function (source) {
+        return __asyncGenerator(this, arguments, function* () {
+            var e_3, _a;
+            let parseResults = source.pipe(StreamObject_1.default.withParser());
+            try {
+                for (var parseResults_2 = __asyncValues(parseResults), parseResults_2_1; parseResults_2_1 = yield __await(parseResults_2.next()), !parseResults_2_1.done;) {
+                    let parseResult = parseResults_2_1.value;
+                    yield yield __await(parseResult);
+                }
+            }
+            catch (e_3_1) { e_3 = { error: e_3_1 }; }
+            finally {
+                try {
+                    if (parseResults_2_1 && !parseResults_2_1.done && (_a = parseResults_2.return)) yield __await(_a.call(parseResults_2));
+                }
+                finally { if (e_3) throw e_3.error; }
+            }
+        });
+    };
+}
+exports.fromJSONMap = fromJSONMap;
+function tap(predicate) {
+    return function (source) {
+        return __asyncGenerator(this, arguments, function* () {
+            var e_4, _a;
+            try {
+                for (var source_1 = __asyncValues(source), source_1_1; source_1_1 = yield __await(source_1.next()), !source_1_1.done;) {
+                    let chunk = source_1_1.value;
+                    predicate(chunk);
+                    yield yield __await(chunk);
+                }
+            }
+            catch (e_4_1) { e_4 = { error: e_4_1 }; }
+            finally {
+                try {
+                    if (source_1_1 && !source_1_1.done && (_a = source_1.return)) yield __await(_a.call(source_1));
+                }
+                finally { if (e_4) throw e_4.error; }
+            }
+        });
+    };
+}
+exports.tap = tap;
+
+
+/***/ }),
+
+/***/ 7534:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.AsyncTools = __importStar(__webpack_require__(2993));
+exports.Streams = __importStar(__webpack_require__(7000));
+exports.Types = __importStar(__webpack_require__(2657));
+__exportStar(__webpack_require__(7000), exports);
+__exportStar(__webpack_require__(2657), exports);
+
+
+/***/ }),
+
+/***/ 6081:
+/***/ (function(__unused_webpack_module, exports) {
+
+"use strict";
+
+var __asyncValues = (this && this.__asyncValues) || function (o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator], i;
+    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+};
+var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
+var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _arguments, generator) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var g = generator.apply(thisArg, _arguments || []), i, q = [];
+    return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
+    function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
+    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
+    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
+    function fulfill(value) { resume("next", value); }
+    function reject(value) { resume("throw", value); }
+    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.intoJSONL = void 0;
+function intoJSONL(commands) {
+    return __asyncGenerator(this, arguments, function* intoJSONL_1() {
+        var e_1, _a;
+        try {
+            for (var commands_1 = __asyncValues(commands), commands_1_1; commands_1_1 = yield __await(commands_1.next()), !commands_1_1.done;) {
+                let command = commands_1_1.value;
+                yield yield __await(`${JSON.stringify(command)}\n`);
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (commands_1_1 && !commands_1_1.done && (_a = commands_1.return)) yield __await(_a.call(commands_1));
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+    });
+}
+exports.intoJSONL = intoJSONL;
+
+
+/***/ }),
+
+/***/ 631:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __asyncValues = (this && this.__asyncValues) || function (o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator], i;
+    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+};
+var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
+var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _arguments, generator) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var g = generator.apply(thisArg, _arguments || []), i, q = [];
+    return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
+    function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
+    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
+    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
+    function fulfill(value) { resume("next", value); }
+    function reject(value) { resume("throw", value); }
+    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.lastUnique = exports.normalize = exports.fromJSONL = void 0;
+const async_tools_1 = __webpack_require__(2993);
+const async_tools_2 = __webpack_require__(2993);
+function fromJSONL() {
+    return async_tools_2.fromReadableJSONL();
+}
+exports.fromJSONL = fromJSONL;
+function normalize(diffResults) {
+    return __asyncGenerator(this, arguments, function* normalize_1() {
+        var e_1, _a;
+        let pointersByFingerprint = new Map();
+        try {
+            for (var diffResults_1 = __asyncValues(diffResults), diffResults_1_1; diffResults_1_1 = yield __await(diffResults_1.next()), !diffResults_1_1.done;) {
+                let [diff, pointers, fingerprint] = diffResults_1_1.value;
+                let existingPointers = pointersByFingerprint.get(fingerprint) || [];
+                let newPointers = [...existingPointers, ...pointers];
+                pointersByFingerprint.set(fingerprint, newPointers);
+                yield yield __await([diff, [...newPointers], fingerprint]);
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (diffResults_1_1 && !diffResults_1_1.done && (_a = diffResults_1.return)) yield __await(_a.call(diffResults_1));
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+    });
+}
+exports.normalize = normalize;
+var undocumented_urls_1 = __webpack_require__(4165);
+Object.defineProperty(exports, "intoUndocumentedUrls", ({ enumerable: true, get: function () { return undocumented_urls_1.fromDiffResults; } }));
+// yield each last unique diff result (using fingerprint as identity)
+exports.lastUnique = async_tools_1.lastBy(([_diff, _tags, fingerprint]) => fingerprint);
+
+
+/***/ }),
+
+/***/ 1051:
+/***/ (function(__unused_webpack_module, exports) {
+
+"use strict";
+
+var __asyncValues = (this && this.__asyncValues) || function (o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator], i;
+    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+};
+var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
+var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _arguments, generator) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var g = generator.apply(thisArg, _arguments || []), i, q = [];
+    return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
+    function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
+    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
+    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
+    function fulfill(value) { resume("next", value); }
+    function reject(value) { resume("throw", value); }
+    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.intoJSONL = void 0;
+function intoJSONL(interactions) {
+    return __asyncGenerator(this, arguments, function* intoJSONL_1() {
+        var e_1, _a;
+        try {
+            for (var interactions_1 = __asyncValues(interactions), interactions_1_1; interactions_1_1 = yield __await(interactions_1.next()), !interactions_1_1.done;) {
+                let interaction = interactions_1_1.value;
+                yield yield __await(`${JSON.stringify(interaction)}\n`);
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (interactions_1_1 && !interactions_1_1.done && (_a = interactions_1.return)) yield __await(_a.call(interactions_1));
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+    });
+}
+exports.intoJSONL = intoJSONL;
+
+
+/***/ }),
+
+/***/ 7000:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Commands = __importStar(__webpack_require__(6081));
+exports.DiffResults = __importStar(__webpack_require__(631));
+exports.HttpInteractions = __importStar(__webpack_require__(1051));
+exports.LearningResults = __importStar(__webpack_require__(7595));
+exports.UndocumentedUrls = __importStar(__webpack_require__(4165));
+
+
+/***/ }),
+
+/***/ 7595:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.UndocumentedEndpointBodies = __importStar(__webpack_require__(7357));
+exports.ShapeDiffAffordances = __importStar(__webpack_require__(5794));
+
+
+/***/ }),
+
+/***/ 5794:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.affordancesByFingerprint = exports.lastUnique = exports.fromJSONL = void 0;
+const async_tools_1 = __webpack_require__(2993);
+function fromJSONL() {
+    return async_tools_1.fromReadableJSONL();
+}
+exports.fromJSONL = fromJSONL;
+// yield each last unique diff result (using fingerprint as identity)
+exports.lastUnique = async_tools_1.lastBy(([_affordances, fingerprint]) => fingerprint);
+function affordancesByFingerprint() {
+    return async_tools_1.reduce((affordancesByFingerprint, [affordance, fingerprint]) => {
+        affordancesByFingerprint[fingerprint] = affordance;
+        return affordancesByFingerprint;
+    }, {});
+}
+exports.affordancesByFingerprint = affordancesByFingerprint;
+
+
+/***/ }),
+
+/***/ 7357:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.fromJSONL = void 0;
+const async_tools_1 = __webpack_require__(2993);
+function fromJSONL() {
+    return async_tools_1.fromReadableJSONL();
+}
+exports.fromJSONL = fromJSONL;
+
+
+/***/ }),
+
+/***/ 4165:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __asyncValues = (this && this.__asyncValues) || function (o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator], i;
+    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+};
+var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
+var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _arguments, generator) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var g = generator.apply(thisArg, _arguments || []), i, q = [];
+    return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
+    function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
+    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
+    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
+    function fulfill(value) { resume("next", value); }
+    function reject(value) { resume("throw", value); }
+    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.lastUnique = exports.fromDiffResults = void 0;
+const async_tools_1 = __webpack_require__(2993);
+function fromDiffResults(diffResults) {
+    return __asyncGenerator(this, arguments, function* fromDiffResults_1() {
+        var e_1, _a;
+        let countsByFingerprint = new Map();
+        try {
+            for (var diffResults_1 = __asyncValues(diffResults), diffResults_1_1; diffResults_1_1 = yield __await(diffResults_1.next()), !diffResults_1_1.done;) {
+                let [diff, _pointers, fingerprint] = diffResults_1_1.value;
+                let urlDiff = diff['UnmatchedRequestUrl'];
+                if (!urlDiff || !fingerprint)
+                    continue;
+                let existingCount = countsByFingerprint.get(fingerprint) || 0;
+                let path = urlDiff.interactionTrail.path.find((interactionComponent) => interactionComponent.Url && interactionComponent.Url.path).Url.path;
+                let method = urlDiff.interactionTrail.path.find((interactionComponent) => interactionComponent.Method && interactionComponent.Method.method).Method.method;
+                let newCount = existingCount + 1;
+                countsByFingerprint.set(fingerprint, newCount);
+                yield yield __await({ path, method, fingerprint, count: newCount });
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (diffResults_1_1 && !diffResults_1_1.done && (_a = diffResults_1.return)) yield __await(_a.call(diffResults_1));
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+    });
+}
+exports.fromDiffResults = fromDiffResults;
+// yield each last unique undocumented url (using fingerprint as identity)
+exports.lastUnique = async_tools_1.lastBy(({ fingerprint }) => fingerprint);
+
+
+/***/ }),
+
+/***/ 2657:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+
+/***/ }),
+
+/***/ 4014:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
 /* module decorator */ module = __webpack_require__.nmd(module);
@@ -21458,6 +22579,30 @@ module.exports.spec_resolve_response = function(spec, method, status_code, path_
 };
 
 /**
+* @param {WasmSpecProjection} spec
+* @param {string} path_id
+* @param {string} method
+* @returns {string}
+*/
+module.exports.spec_endpoint_delete_commands = function(spec, path_id, method) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        _assertClass(spec, WasmSpecProjection);
+        var ptr0 = passStringToWasm0(path_id, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len0 = WASM_VECTOR_LEN;
+        var ptr1 = passStringToWasm0(method, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        var len1 = WASM_VECTOR_LEN;
+        wasm.spec_endpoint_delete_commands(retptr, spec.ptr, ptr0, len0, ptr1, len1);
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        return getStringFromWasm0(r0, r1);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(r0, r1);
+    }
+};
+
+/**
 * @param {string} prefix
 * @returns {string}
 */
@@ -21675,1051 +22820,6 @@ wasm.__wbindgen_start();
 
 /***/ }),
 
-/***/ 7396:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
-};
-var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
-var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _arguments, generator) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var g = generator.apply(thisArg, _arguments || []), i, q = [];
-    return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
-    function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
-    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
-    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
-    function fulfill(value) { resume("next", value); }
-    function reject(value) { resume("throw", value); }
-    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
-};
-var __asyncValues = (this && this.__asyncValues) || function (o) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var m = o[Symbol.asyncIterator], i;
-    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.tap = exports.fromJSONMap = exports.fromReadableJSONL = exports.fromReadable = exports.lastBy = exports.reduce = void 0;
-__exportStar(__webpack_require__(3698), exports);
-const Parser_1 = __webpack_require__(5771);
-const StreamObject_1 = __importDefault(__webpack_require__(5790));
-const reduce_1 = __webpack_require__(1394);
-Object.defineProperty(exports, "reduce", ({ enumerable: true, get: function () { return reduce_1.reduce; } }));
-function lastBy(predicate) {
-    return function (source) {
-        return __asyncGenerator(this, arguments, function* () {
-            const findLastKey = reduce_1.reduce(({ lastByKey, keys }, subject) => {
-                const key = predicate(subject);
-                // rely on insertion order guarantee from Set to yield final results by
-                // last key occurence
-                keys.delete(key);
-                keys.add(key);
-                lastByKey.set(key, subject);
-                return { lastByKey, keys };
-            }, { lastByKey: new Map(), keys: new Set() });
-            const { lastByKey, keys } = yield __await(findLastKey(source));
-            for (let key of keys) {
-                const lastSubject = lastByKey.get(key);
-                if (!lastSubject)
-                    throw new Error('unreachable');
-                yield yield __await(lastSubject);
-            }
-        });
-    };
-}
-exports.lastBy = lastBy;
-function fromReadable(stream) {
-    return function () {
-        return __asyncGenerator(this, arguments, function* () {
-            var e_1, _a;
-            try {
-                for (var stream_1 = __asyncValues(stream), stream_1_1; stream_1_1 = yield __await(stream_1.next()), !stream_1_1.done;) {
-                    const chunk = stream_1_1.value;
-                    yield yield __await(chunk);
-                }
-            }
-            catch (e_1_1) { e_1 = { error: e_1_1 }; }
-            finally {
-                try {
-                    if (stream_1_1 && !stream_1_1.done && (_a = stream_1.return)) yield __await(_a.call(stream_1));
-                }
-                finally { if (e_1) throw e_1.error; }
-            }
-        });
-    };
-}
-exports.fromReadable = fromReadable;
-function fromReadableJSONL() {
-    return function (source) {
-        return __asyncGenerator(this, arguments, function* () {
-            var e_2, _a;
-            let parseResults = source.pipe(Parser_1.parser());
-            try {
-                for (var parseResults_1 = __asyncValues(parseResults), parseResults_1_1; parseResults_1_1 = yield __await(parseResults_1.next()), !parseResults_1_1.done;) {
-                    let parseResult = parseResults_1_1.value;
-                    yield yield __await(parseResult.value);
-                }
-            }
-            catch (e_2_1) { e_2 = { error: e_2_1 }; }
-            finally {
-                try {
-                    if (parseResults_1_1 && !parseResults_1_1.done && (_a = parseResults_1.return)) yield __await(_a.call(parseResults_1));
-                }
-                finally { if (e_2) throw e_2.error; }
-            }
-        });
-    };
-}
-exports.fromReadableJSONL = fromReadableJSONL;
-function fromJSONMap() {
-    return function (source) {
-        return __asyncGenerator(this, arguments, function* () {
-            var e_3, _a;
-            let parseResults = source.pipe(StreamObject_1.default.withParser());
-            try {
-                for (var parseResults_2 = __asyncValues(parseResults), parseResults_2_1; parseResults_2_1 = yield __await(parseResults_2.next()), !parseResults_2_1.done;) {
-                    let parseResult = parseResults_2_1.value;
-                    yield yield __await(parseResult);
-                }
-            }
-            catch (e_3_1) { e_3 = { error: e_3_1 }; }
-            finally {
-                try {
-                    if (parseResults_2_1 && !parseResults_2_1.done && (_a = parseResults_2.return)) yield __await(_a.call(parseResults_2));
-                }
-                finally { if (e_3) throw e_3.error; }
-            }
-        });
-    };
-}
-exports.fromJSONMap = fromJSONMap;
-function tap(predicate) {
-    return function (source) {
-        return __asyncGenerator(this, arguments, function* () {
-            var e_4, _a;
-            try {
-                for (var source_1 = __asyncValues(source), source_1_1; source_1_1 = yield __await(source_1.next()), !source_1_1.done;) {
-                    let chunk = source_1_1.value;
-                    predicate(chunk);
-                    yield yield __await(chunk);
-                }
-            }
-            catch (e_4_1) { e_4 = { error: e_4_1 }; }
-            finally {
-                try {
-                    if (source_1_1 && !source_1_1.done && (_a = source_1.return)) yield __await(_a.call(source_1));
-                }
-                finally { if (e_4) throw e_4.error; }
-            }
-        });
-    };
-}
-exports.tap = tap;
-
-
-/***/ }),
-
-/***/ 5182:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.AsyncTools = __importStar(__webpack_require__(7396));
-exports.Streams = __importStar(__webpack_require__(7308));
-
-
-/***/ }),
-
-/***/ 8996:
-/***/ (function(__unused_webpack_module, exports) {
-
-"use strict";
-
-var __asyncValues = (this && this.__asyncValues) || function (o) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var m = o[Symbol.asyncIterator], i;
-    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-};
-var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
-var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _arguments, generator) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var g = generator.apply(thisArg, _arguments || []), i, q = [];
-    return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
-    function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
-    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
-    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
-    function fulfill(value) { resume("next", value); }
-    function reject(value) { resume("throw", value); }
-    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.intoJSONL = void 0;
-function intoJSONL(commands) {
-    return __asyncGenerator(this, arguments, function* intoJSONL_1() {
-        var e_1, _a;
-        try {
-            for (var commands_1 = __asyncValues(commands), commands_1_1; commands_1_1 = yield __await(commands_1.next()), !commands_1_1.done;) {
-                let command = commands_1_1.value;
-                yield yield __await(`${JSON.stringify(command)}\n`);
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (commands_1_1 && !commands_1_1.done && (_a = commands_1.return)) yield __await(_a.call(commands_1));
-            }
-            finally { if (e_1) throw e_1.error; }
-        }
-    });
-}
-exports.intoJSONL = intoJSONL;
-
-
-/***/ }),
-
-/***/ 8224:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-"use strict";
-
-var __asyncValues = (this && this.__asyncValues) || function (o) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var m = o[Symbol.asyncIterator], i;
-    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-};
-var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
-var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _arguments, generator) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var g = generator.apply(thisArg, _arguments || []), i, q = [];
-    return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
-    function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
-    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
-    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
-    function fulfill(value) { resume("next", value); }
-    function reject(value) { resume("throw", value); }
-    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.lastUnique = exports.normalize = exports.fromJSONL = void 0;
-const async_tools_1 = __webpack_require__(7396);
-const async_tools_2 = __webpack_require__(7396);
-function fromJSONL() {
-    return async_tools_2.fromReadableJSONL();
-}
-exports.fromJSONL = fromJSONL;
-function normalize(diffResults) {
-    return __asyncGenerator(this, arguments, function* normalize_1() {
-        var e_1, _a;
-        let pointersByFingerprint = new Map();
-        try {
-            for (var diffResults_1 = __asyncValues(diffResults), diffResults_1_1; diffResults_1_1 = yield __await(diffResults_1.next()), !diffResults_1_1.done;) {
-                let [diff, pointers, fingerprint] = diffResults_1_1.value;
-                let existingPointers = pointersByFingerprint.get(fingerprint) || [];
-                let newPointers = [...existingPointers, ...pointers];
-                pointersByFingerprint.set(fingerprint, newPointers);
-                yield yield __await([diff, [...newPointers], fingerprint]);
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (diffResults_1_1 && !diffResults_1_1.done && (_a = diffResults_1.return)) yield __await(_a.call(diffResults_1));
-            }
-            finally { if (e_1) throw e_1.error; }
-        }
-    });
-}
-exports.normalize = normalize;
-var undocumented_urls_1 = __webpack_require__(7508);
-Object.defineProperty(exports, "intoUndocumentedUrls", ({ enumerable: true, get: function () { return undocumented_urls_1.fromDiffResults; } }));
-// yield each last unique diff result (using fingerprint as identity)
-exports.lastUnique = async_tools_1.lastBy(([_diff, _tags, fingerprint]) => fingerprint);
-
-
-/***/ }),
-
-/***/ 5409:
-/***/ (function(__unused_webpack_module, exports) {
-
-"use strict";
-
-var __asyncValues = (this && this.__asyncValues) || function (o) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var m = o[Symbol.asyncIterator], i;
-    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-};
-var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
-var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _arguments, generator) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var g = generator.apply(thisArg, _arguments || []), i, q = [];
-    return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
-    function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
-    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
-    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
-    function fulfill(value) { resume("next", value); }
-    function reject(value) { resume("throw", value); }
-    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.intoJSONL = void 0;
-function intoJSONL(interactions) {
-    return __asyncGenerator(this, arguments, function* intoJSONL_1() {
-        var e_1, _a;
-        try {
-            for (var interactions_1 = __asyncValues(interactions), interactions_1_1; interactions_1_1 = yield __await(interactions_1.next()), !interactions_1_1.done;) {
-                let interaction = interactions_1_1.value;
-                yield yield __await(`${JSON.stringify(interaction)}\n`);
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (interactions_1_1 && !interactions_1_1.done && (_a = interactions_1.return)) yield __await(_a.call(interactions_1));
-            }
-            finally { if (e_1) throw e_1.error; }
-        }
-    });
-}
-exports.intoJSONL = intoJSONL;
-
-
-/***/ }),
-
-/***/ 7308:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Commands = __importStar(__webpack_require__(8996));
-exports.DiffResults = __importStar(__webpack_require__(8224));
-exports.HttpInteractions = __importStar(__webpack_require__(5409));
-exports.LearningResults = __importStar(__webpack_require__(6672));
-exports.UndocumentedUrls = __importStar(__webpack_require__(7508));
-
-
-/***/ }),
-
-/***/ 6672:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.UndocumentedEndpointBodies = __importStar(__webpack_require__(504));
-exports.ShapeDiffAffordances = __importStar(__webpack_require__(5575));
-
-
-/***/ }),
-
-/***/ 5575:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.affordancesByFingerprint = exports.lastUnique = exports.fromJSONL = void 0;
-const async_tools_1 = __webpack_require__(7396);
-function fromJSONL() {
-    return async_tools_1.fromReadableJSONL();
-}
-exports.fromJSONL = fromJSONL;
-// yield each last unique diff result (using fingerprint as identity)
-exports.lastUnique = async_tools_1.lastBy(([_affordances, fingerprint]) => fingerprint);
-function affordancesByFingerprint() {
-    return async_tools_1.reduce((affordancesByFingerprint, [affordance, fingerprint]) => {
-        affordancesByFingerprint[fingerprint] = affordance;
-        return affordancesByFingerprint;
-    }, {});
-}
-exports.affordancesByFingerprint = affordancesByFingerprint;
-
-
-/***/ }),
-
-/***/ 504:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.fromJSONL = void 0;
-const async_tools_1 = __webpack_require__(7396);
-function fromJSONL() {
-    return async_tools_1.fromReadableJSONL();
-}
-exports.fromJSONL = fromJSONL;
-
-
-/***/ }),
-
-/***/ 7508:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-"use strict";
-
-var __asyncValues = (this && this.__asyncValues) || function (o) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var m = o[Symbol.asyncIterator], i;
-    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-};
-var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
-var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _arguments, generator) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var g = generator.apply(thisArg, _arguments || []), i, q = [];
-    return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
-    function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
-    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
-    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
-    function fulfill(value) { resume("next", value); }
-    function reject(value) { resume("throw", value); }
-    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.lastUnique = exports.fromDiffResults = void 0;
-const async_tools_1 = __webpack_require__(7396);
-function fromDiffResults(diffResults) {
-    return __asyncGenerator(this, arguments, function* fromDiffResults_1() {
-        var e_1, _a;
-        let countsByFingerprint = new Map();
-        try {
-            for (var diffResults_1 = __asyncValues(diffResults), diffResults_1_1; diffResults_1_1 = yield __await(diffResults_1.next()), !diffResults_1_1.done;) {
-                let [diff, _pointers, fingerprint] = diffResults_1_1.value;
-                let urlDiff = diff['UnmatchedRequestUrl'];
-                if (!urlDiff || !fingerprint)
-                    continue;
-                let existingCount = countsByFingerprint.get(fingerprint) || 0;
-                let path = urlDiff.interactionTrail.path.find((interactionComponent) => interactionComponent.Url && interactionComponent.Url.path).Url.path;
-                let method = urlDiff.interactionTrail.path.find((interactionComponent) => interactionComponent.Method && interactionComponent.Method.method).Method.method;
-                let newCount = existingCount + 1;
-                countsByFingerprint.set(fingerprint, newCount);
-                yield yield __await({ path, method, fingerprint, count: newCount });
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (diffResults_1_1 && !diffResults_1_1.done && (_a = diffResults_1.return)) yield __await(_a.call(diffResults_1));
-            }
-            finally { if (e_1) throw e_1.error; }
-        }
-    });
-}
-exports.fromDiffResults = fromDiffResults;
-// yield each last unique undocumented url (using fingerprint as identity)
-exports.lastUnique = async_tools_1.lastBy(({ fingerprint }) => fingerprint);
-
-
-/***/ }),
-
-/***/ 891:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.GraphQueries = exports.BatchCommitNodeWrapper = exports.PathNodeWrapper = exports.ResponseNodeWrapper = exports.RequestNodeWrapper = exports.BodyNodeWrapper = exports.GraphIndexer = exports.NodeType = void 0;
-const index_1 = __webpack_require__(3194);
-var NodeType;
-(function (NodeType) {
-    NodeType["Path"] = "Path";
-    NodeType["Request"] = "Request";
-    NodeType["Response"] = "Response";
-    NodeType["Body"] = "Body";
-    NodeType["BatchCommit"] = "BatchCommit";
-})(NodeType = exports.NodeType || (exports.NodeType = {}));
-////////////////////////////////////////////////////////////////////////////////
-class GraphIndexer {
-    constructor() {
-        this.nodesByType = new Map();
-        this.nodesById = new Map();
-        this.outboundNeighbors = new Map();
-        this.inboundNeighbors = new Map();
-    }
-    addNode(node) {
-        if (this.nodesById.has(node.id)) {
-            throw new Error(`could not add a node with an id that already exists in the graph`);
-        }
-        this.unsafeAddNode(node);
-    }
-    addEdge(edge, sourceNodeId, targetNodeId) {
-        const sourceNode = this.nodesById.get(sourceNodeId);
-        if (!sourceNode) {
-            throw new Error(`expected ${sourceNodeId} to exist`);
-        }
-        const targetNode = this.nodesById.get(targetNodeId);
-        if (!targetNode) {
-            throw new Error(`expected ${targetNodeId} to exist`);
-        }
-        const outboundNeighbors = this.outboundNeighbors.get(sourceNodeId) || new Map();
-        index_1.mapAppend(outboundNeighbors, targetNode.type, targetNode);
-        this.outboundNeighbors.set(sourceNodeId, outboundNeighbors);
-        const inboundNeighbors = this.inboundNeighbors.get(targetNodeId) || new Map();
-        index_1.mapAppend(inboundNeighbors, sourceNode.type, sourceNode);
-        this.inboundNeighbors.set(targetNodeId, inboundNeighbors);
-    }
-    unsafeAddNode(node) {
-        this.nodesById.set(node.id, node);
-        index_1.mapAppend(this.nodesByType, node.type, node);
-    }
-}
-exports.GraphIndexer = GraphIndexer;
-////////////////////////////////////////////////////////////////////////////////
-class BodyNodeWrapper {
-    constructor(result, queries) {
-        this.result = result;
-        this.queries = queries;
-    }
-    response() {
-        const neighbors = this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.Response);
-        if (neighbors.results.length === 0) {
-            return null;
-        }
-        return neighbors.results[0];
-    }
-    request() {
-        const neighbors = this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.Request);
-        if (neighbors.results.length === 0) {
-            return null;
-        }
-        return neighbors.results[0];
-    }
-}
-exports.BodyNodeWrapper = BodyNodeWrapper;
-class RequestNodeWrapper {
-    constructor(result, queries) {
-        this.result = result;
-        this.queries = queries;
-    }
-    get value() {
-        return this.result.data;
-    }
-    path() {
-        const neighbors = this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.Path);
-        if (neighbors.results.length === 0) {
-            throw new Error(`expected Request to have a parent Path`);
-        }
-        return neighbors.results[0];
-    }
-    responses() {
-        return this.path().responses().results.filter((response) => response.value.httpMethod === this.value.httpMethod);
-    }
-    bodies() {
-        return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Body);
-    }
-}
-exports.RequestNodeWrapper = RequestNodeWrapper;
-class ResponseNodeWrapper {
-    constructor(result, queries) {
-        this.result = result;
-        this.queries = queries;
-    }
-    get value() {
-        return this.result.data;
-    }
-    path() {
-        const neighbors = this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.Path);
-        if (neighbors.results.length === 0) {
-            throw new Error(`expected Response to have a parent Path`);
-        }
-        return neighbors.results[0];
-    }
-    bodies() {
-        return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Body);
-    }
-}
-exports.ResponseNodeWrapper = ResponseNodeWrapper;
-class PathNodeWrapper {
-    constructor(result, queries) {
-        this.result = result;
-        this.queries = queries;
-    }
-    get value() {
-        return this.result.data;
-    }
-    parentPath() {
-        const parentPaths = this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.Path);
-        if (parentPaths.results.length === 0) {
-            return null;
-        }
-        const [parentPath] = parentPaths.results;
-        return parentPath;
-    }
-    requests() {
-        return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Request);
-    }
-    responses() {
-        return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Response);
-    }
-    components() {
-        let pathNode = this;
-        let parentPath = pathNode.parentPath();
-        const components = [pathNode];
-        while (parentPath !== null) {
-            components.push(parentPath);
-            pathNode = parentPath;
-            parentPath = pathNode.parentPath();
-        }
-        return components.reverse();
-    }
-    get absolutePathPatternWithParameterNames() {
-        let path = '';
-        const components = this.components();
-        if (components.length === 1 && components[0].value.pathId === 'root') {
-            return '/';
-        }
-        for (const component of components) {
-            if (component.value.pathId === 'root')
-                continue;
-            if (component.value.isParameterized) {
-                path = `${path}/{${component.value.name}}`;
-            }
-            else {
-                path = `${path}/${component.value.name}`;
-            }
-        }
-        return path;
-    }
-}
-exports.PathNodeWrapper = PathNodeWrapper;
-class BatchCommitNodeWrapper {
-    constructor(result, queries) {
-        this.result = result;
-        this.queries = queries;
-    }
-    requests() {
-        return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Request);
-    }
-    responses() {
-        return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Response);
-    }
-}
-exports.BatchCommitNodeWrapper = BatchCommitNodeWrapper;
-////////////////////////////////////////////////////////////////////////////////
-class GraphQueries {
-    constructor(index) {
-        this.index = index;
-    }
-    findNodeById(id) {
-        const node = this.index.nodesById.get(id);
-        if (!node) {
-            return null;
-        }
-        return this.wrap(node);
-    }
-    listNodesByType(type) {
-        return this.wrapList(type, this.index.nodesByType.get(type) || []);
-    }
-    //@TODO add singular find* variant
-    listIncomingNeighborsByType(id, incomingNeighborType) {
-        const neighbors = this.index.inboundNeighbors.get(id);
-        if (!neighbors) {
-            return this.wrapList(incomingNeighborType, []);
-        }
-        const neighborsOfType = neighbors.get(incomingNeighborType);
-        return this.wrapList(incomingNeighborType, neighborsOfType || []);
-    }
-    //@TODO add singular find* variant
-    listOutgoingNeighborsByType(id, outgoingNeighborType) {
-        const neighbors = this.index.outboundNeighbors.get(id);
-        if (!neighbors) {
-            return this.wrapList(outgoingNeighborType, []);
-        }
-        const neighborsOfType = neighbors.get(outgoingNeighborType);
-        return this.wrapList(outgoingNeighborType, neighborsOfType || []);
-    }
-    *descendantsIterator(nodeId, seenSet = new Set()) {
-        const inboundNeighbors = this.index.inboundNeighbors.get(nodeId);
-        if (!inboundNeighbors) {
-            return;
-        }
-        if (seenSet.has(nodeId)) {
-            return;
-        }
-        seenSet.add(nodeId);
-        for (const neighborsByNodeType of inboundNeighbors.values()) {
-            for (const neighborNode of neighborsByNodeType) {
-                yield neighborNode;
-                yield* this.descendantsIterator(neighborNode.id, seenSet);
-            }
-        }
-    }
-    //@TODO wrap() and wrapList() should be injected?
-    wrap(node) {
-        if (node.type === NodeType.Request) {
-            return new RequestNodeWrapper(node, this);
-        }
-        else if (node.type === NodeType.Response) {
-            return new ResponseNodeWrapper(node, this);
-        }
-        else if (node.type === NodeType.Path) {
-            return new PathNodeWrapper(node, this);
-        }
-        else if (node.type === NodeType.Body) {
-            return new BodyNodeWrapper(node, this);
-        }
-        else if (node.type === NodeType.BatchCommit) {
-            return new BatchCommitNodeWrapper(node, this);
-        }
-        throw new Error(`unexpected node.type`);
-    }
-    wrapList(type, nodes) {
-        //@TODO add list helpers (map, etc.)
-        return {
-            results: nodes.map((node) => this.wrap(node)),
-        };
-    }
-}
-exports.GraphQueries = GraphQueries;
-
-
-/***/ }),
-
-/***/ 3194:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.mapAppend = exports.shapes = exports.endpoints = void 0;
-const endpoints = __importStar(__webpack_require__(891));
-exports.endpoints = endpoints;
-const shapes = __importStar(__webpack_require__(912));
-exports.shapes = shapes;
-////////////////////////////////////////////////////////////////////////////////
-function mapAppend(map, key, value) {
-    const values = map.get(key) || [];
-    values.push(value);
-    map.set(key, values);
-}
-exports.mapAppend = mapAppend;
-////////////////////////////////////////////////////////////////////////////////
-
-
-/***/ }),
-
-/***/ 912:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.GraphQueries = exports.BatchCommitNodeWrapper = exports.GraphIndexer = exports.EdgeType = exports.NodeType = void 0;
-const index_1 = __webpack_require__(3194);
-var NodeType;
-(function (NodeType) {
-    NodeType["CoreShape"] = "CoreShape";
-    NodeType["Shape"] = "Shape";
-    NodeType["ShapeParameter"] = "ShapeParameter";
-    NodeType["Field"] = "Field";
-    NodeType["BatchCommit"] = "BatchCommit";
-})(NodeType = exports.NodeType || (exports.NodeType = {}));
-var EdgeType;
-(function (EdgeType) {
-    EdgeType["IsParameterOf"] = "IsParameterOf";
-    EdgeType["BelongsTo"] = "BelongsTo";
-    EdgeType["IsDescendantOf"] = "IsDescendantOf";
-    EdgeType["HasBinding"] = "HasBinding";
-    EdgeType["CreatedIn"] = "CreatedIn";
-    EdgeType["UpdatedIn"] = "UpdatedIn";
-})(EdgeType = exports.EdgeType || (exports.EdgeType = {}));
-////////////////////////////////////////////////////////////////////////////////
-class GraphIndexer {
-    constructor() {
-        this.nodesByType = new Map();
-        this.nodesById = new Map();
-        this.outboundNeighbors = new Map();
-        this.inboundNeighbors = new Map();
-        this.outboundNeighborsByEdgeType = new Map();
-        this.inboundNeighborsByEdgeType = new Map();
-    }
-    addNode(node) {
-        if (this.nodesById.has(node.id)) {
-            throw new Error(`could not add a node with an id that already exists in the graph`);
-        }
-        this.unsafeAddNode(node);
-    }
-    addEdge(edge, sourceNodeId, targetNodeId) {
-        const sourceNode = this.nodesById.get(sourceNodeId);
-        if (!sourceNode) {
-            throw new Error(`expected ${sourceNodeId} to exist`);
-        }
-        const targetNode = this.nodesById.get(targetNodeId);
-        if (!targetNode) {
-            throw new Error(`expected ${targetNodeId} to exist`);
-        }
-        const outboundNeighbors = this.outboundNeighbors.get(sourceNodeId) || new Map();
-        index_1.mapAppend(outboundNeighbors, targetNode.type, targetNode);
-        this.outboundNeighbors.set(sourceNodeId, outboundNeighbors);
-        const outboundNeighborsByEdgeType = this.outboundNeighborsByEdgeType.get(sourceNodeId) || new Map();
-        index_1.mapAppend(outboundNeighborsByEdgeType, edge.type, targetNode);
-        this.outboundNeighborsByEdgeType.set(sourceNodeId, outboundNeighborsByEdgeType);
-        const inboundNeighbors = this.inboundNeighbors.get(targetNodeId) || new Map();
-        index_1.mapAppend(inboundNeighbors, sourceNode.type, sourceNode);
-        this.inboundNeighbors.set(targetNodeId, inboundNeighbors);
-        const inboundNeighborsByEdgeType = this.inboundNeighborsByEdgeType.get(targetNodeId) || new Map();
-        index_1.mapAppend(inboundNeighborsByEdgeType, edge.type, sourceNode);
-        this.inboundNeighborsByEdgeType.set(targetNodeId, inboundNeighborsByEdgeType);
-    }
-    unsafeAddNode(node) {
-        this.nodesById.set(node.id, node);
-        index_1.mapAppend(this.nodesByType, node.type, node);
-    }
-}
-exports.GraphIndexer = GraphIndexer;
-////////////////////////////////////////////////////////////////////////////////
-class CoreShapeNodeWrapper {
-    constructor(result, queries) {
-        this.result = result;
-        this.queries = queries;
-    }
-}
-class ShapeNodeWrapper {
-    constructor(result, queries) {
-        this.result = result;
-        this.queries = queries;
-    }
-    coreShape() {
-        const coreShapeNode = this.queries.findOutgoingNeighborByEdgeType(this.result.id, EdgeType.IsDescendantOf);
-        if (!coreShapeNode) {
-            throw new Error(`expected node to have a core shape node`);
-        }
-        return coreShapeNode;
-    }
-    batchCommits() {
-        return this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.BatchCommit);
-    }
-}
-class ShapeParameterNodeWrapper {
-    constructor(result, queries) {
-        this.result = result;
-        this.queries = queries;
-    }
-}
-class FieldNodeWrapper {
-    constructor(result, queries) {
-        this.result = result;
-        this.queries = queries;
-    }
-    batchCommits() {
-        return this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.BatchCommit);
-    }
-}
-class BatchCommitNodeWrapper {
-    constructor(result, queries) {
-        this.result = result;
-        this.queries = queries;
-    }
-}
-exports.BatchCommitNodeWrapper = BatchCommitNodeWrapper;
-////////////////////////////////////////////////////////////////////////////////
-class GraphQueries {
-    constructor(index) {
-        this.index = index;
-    }
-    findNodeById(id) {
-        const node = this.index.nodesById.get(id);
-        if (!node) {
-            return null;
-        }
-        return this.wrap(node);
-    }
-    listNodesByType(type) {
-        return this.wrapList(type, this.index.nodesByType.get(type) || []);
-    }
-    *descendantsIterator(nodeId, seenSet = new Set()) {
-        const inboundNeighbors = this.index.inboundNeighbors.get(nodeId);
-        if (!inboundNeighbors) {
-            return;
-        }
-        if (seenSet.has(nodeId)) {
-            return;
-        }
-        seenSet.add(nodeId);
-        for (const neighborsByNodeType of inboundNeighbors.values()) {
-            for (const neighborNode of neighborsByNodeType) {
-                yield neighborNode;
-                yield* this.descendantsIterator(neighborNode.id, seenSet);
-            }
-        }
-    }
-    //@TODO add singular find* variant
-    listIncomingNeighborsByType(id, incomingNeighborType) {
-        const neighbors = this.index.inboundNeighbors.get(id);
-        if (!neighbors) {
-            return this.wrapList(incomingNeighborType, []);
-        }
-        const neighborsOfType = neighbors.get(incomingNeighborType);
-        return this.wrapList(incomingNeighborType, neighborsOfType || []);
-    }
-    //@TODO add singular find* variant
-    listOutgoingNeighborsByType(id, outgoingNeighborType) {
-        debugger;
-        const neighbors = this.index.outboundNeighbors.get(id);
-        if (!neighbors) {
-            return this.wrapList(outgoingNeighborType, []);
-        }
-        const neighborsOfType = neighbors.get(outgoingNeighborType);
-        return this.wrapList(outgoingNeighborType, neighborsOfType || []);
-    }
-    findOutgoingNeighborByEdgeType(id, edgeType) {
-        const neighbors = this.index.outboundNeighborsByEdgeType.get(id);
-        if (!neighbors) {
-            return null;
-        }
-        const neighborsOfType = neighbors.get(edgeType);
-        if (!neighborsOfType) {
-            return null;
-        }
-        return this.wrap(neighborsOfType[0]);
-    }
-    listIncomingNeighborsByEdgeType(id, edgeType) {
-        const neighbors = this.index.inboundNeighborsByEdgeType.get(id);
-        if (!neighbors) {
-            return this.wrapList(null, []);
-        }
-        const neighborsOfType = neighbors.get(edgeType);
-        return this.wrapList(null, neighborsOfType || []);
-    }
-    listOutgoingNeighborsByEdgeType(id, edgeType) {
-        const neighbors = this.index.outboundNeighborsByEdgeType.get(id);
-        if (!neighbors) {
-            return this.wrapList(null, []);
-        }
-        const neighborsOfType = neighbors.get(edgeType);
-        return this.wrapList(null, neighborsOfType || []);
-    }
-    //@TODO wrap() and wrapList() should be injected?
-    wrap(node) {
-        if (node.type === NodeType.CoreShape) {
-            return new CoreShapeNodeWrapper(node, this);
-        }
-        else if (node.type === NodeType.Shape) {
-            return new ShapeNodeWrapper(node, this);
-        }
-        else if (node.type === NodeType.ShapeParameter) {
-            return new ShapeParameterNodeWrapper(node, this);
-        }
-        else if (node.type === NodeType.Field) {
-            return new FieldNodeWrapper(node, this);
-        }
-        else if (node.type === NodeType.BatchCommit) {
-            return new BatchCommitNodeWrapper(node, this);
-        }
-        throw new Error(`unexpected node.type`);
-    }
-    //@TODO move away from null here
-    wrapList(type, nodes) {
-        //@TODO add list helpers (map, etc.)
-        return {
-            results: nodes.map((node) => this.wrap(node)),
-        };
-    }
-}
-exports.GraphQueries = GraphQueries;
-
-
-/***/ }),
-
 /***/ 1349:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -22729,7 +22829,7 @@ exports.GraphQueries = GraphQueries;
 TODO Replace with Rust constructors eventually
 */
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.AddResponseByPathAndMethod = exports.SetRequestBodyShape = exports.SetResponseBodyShape = exports.ShapedBodyDescriptor = exports.AddContribution = exports.AddPathComponent = exports.AddPathParameter = exports.RemoveField = exports.AddShapeParameter = exports.SetFieldShape = exports.SetParameterShape = exports.ProviderInShape = exports.ShapeProvider = exports.AddField = exports.FieldShapeFromShape = exports.AddRequest = exports.AddShape = void 0;
+exports.PrunePathComponents = exports.AddResponseByPathAndMethod = exports.SetRequestBodyShape = exports.SetResponseBodyShape = exports.ShapedBodyDescriptor = exports.AddContribution = exports.AddPathComponent = exports.AddPathParameter = exports.RemoveField = exports.AddShapeParameter = exports.SetFieldShape = exports.SetParameterShape = exports.ProviderInShape = exports.ShapeProvider = exports.AddField = exports.FieldShapeFromShape = exports.AddRequest = exports.AddShape = void 0;
 function AddShape(shapeId, baseShapeId, name = '') {
     return { AddShape: { shapeId, baseShapeId, name } };
 }
@@ -22839,6 +22939,12 @@ function AddResponseByPathAndMethod(responseId, pathId, httpMethod, httpStatusCo
     };
 }
 exports.AddResponseByPathAndMethod = AddResponseByPathAndMethod;
+function PrunePathComponents() {
+    return {
+        PrunePathComponents: {},
+    };
+}
+exports.PrunePathComponents = PrunePathComponents;
 
 
 /***/ }),
@@ -22895,6 +23001,8 @@ type Query {
   # Diffs for existing endpoints and unrecognized URLs
   diff(diffId: ID): DiffState
 
+  endpoint(pathId: ID, method: String): Endpoint
+
   # Metadata about the current spec
   metadata: SpecMetadata
 }
@@ -22928,6 +23036,17 @@ type Path {
   
   # Path ID
   pathId: String
+
+  # Is the path removed
+  isRemoved: Boolean
+}
+
+type Endpoint {
+  commands: EndpointCommands
+}
+
+type EndpointCommands {
+  remove: [JSON]
 }
 
 """
@@ -22939,6 +23058,9 @@ type HttpBody {
   
   # Root shape ID for the HTTP body. Look at the shapeChoices query getting more information about the root shape
   rootShapeId: String
+
+  # Is the body removed
+  isRemoved: Boolean
 }
 
 """
@@ -22976,6 +23098,9 @@ type HttpRequest {
   
   # Request contributions which define descriptions
   requestContributions: JSON
+
+  # Is the request removed
+  isRemoved: Boolean
 }
 
 """
@@ -22993,6 +23118,9 @@ type PathComponent {
   
   # Path component contributions which define descriptions
   contributions: JSON
+
+  # Is the path component removed
+  isRemoved: Boolean
 }
 
 """
@@ -23012,6 +23140,9 @@ type HttpResponse {
   
   # HTTP response contributions which define descriptions
   contributions: JSON
+
+  # Is the response removed
+  isRemoved: Boolean
 }
 
 """
@@ -23147,7 +23278,6 @@ type BatchCommit {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getContributionsProjection = exports.getArrayChanges = exports.getFieldChanges = exports.getShapeChanges = exports.buildEndpointChanges = exports.buildShapesGraph = exports.buildEndpointsGraph = void 0;
 const graph_lib_1 = __webpack_require__(3194);
-const shapes_graph_1 = __webpack_require__(912);
 function buildEndpointsGraph(spec, opticEngine) {
     const serializedGraph = JSON.parse(opticEngine.get_endpoints_projection(spec));
     const { nodes, edges, nodeIndexToId } = serializedGraph;
@@ -23198,6 +23328,7 @@ function buildShapesGraph(spec, opticEngine) {
 }
 exports.buildShapesGraph = buildShapesGraph;
 function buildEndpointChanges(endpointQueries, shapeQueries, sinceBatchCommitId) {
+    // Sorted in reverse order - the latest change takes precedence
     const sortedBatchCommits = endpointQueries
         .listNodesByType(graph_lib_1.endpoints.NodeType.BatchCommit)
         .results.sort((a, b) => {
@@ -23214,11 +23345,38 @@ function buildEndpointChanges(endpointQueries, shapeQueries, sinceBatchCommitId)
     }
     const changes = new Changes();
     deltaBatchCommits.forEach((batchCommit) => {
-        batchCommit.requests().results.forEach((request) => {
-            changes.captureChange('added', endpointFromRequest(request));
+        // Only createdIn and removedIn edges pointing to a request is treated as
+        // an added or removed change, everything else is updated.
+        // Bodies, and shape changes are handled below
+        batchCommit
+            .createdInEdgeNodes()
+            .results.forEach((node) => {
+            if (node.result.type === graph_lib_1.endpoints.NodeType.Request) {
+                changes.captureChange('added', endpointFromRequest(node));
+            }
+            else if (node.result.type === graph_lib_1.endpoints.NodeType.Response) {
+                changes.captureChange('updated', endpointFromResponse(node));
+            }
         });
-        batchCommit.responses().results.forEach((response) => {
-            changes.captureChange('updated', endpointFromResponse(response));
+        batchCommit
+            .removedInEdgeNodes()
+            .results.forEach((node) => {
+            if (node.result.type === graph_lib_1.endpoints.NodeType.Request) {
+                changes.captureChange('removed', endpointFromRequest(node));
+            }
+            else if (node.result.type === graph_lib_1.endpoints.NodeType.Response) {
+                changes.captureChange('updated', endpointFromResponse(node));
+            }
+        });
+        batchCommit
+            .updatedInEdgeNodes()
+            .results.forEach((node) => {
+            if (node.result.type === graph_lib_1.endpoints.NodeType.Request) {
+                changes.captureChange('updated', endpointFromRequest(node));
+            }
+            else if (node.result.type === graph_lib_1.endpoints.NodeType.Response) {
+                changes.captureChange('updated', endpointFromResponse(node));
+            }
         });
     });
     // Gather batch commit neighbors
@@ -23227,12 +23385,12 @@ function buildEndpointChanges(endpointQueries, shapeQueries, sinceBatchCommitId)
         const batchCommitId = batchCommit.result.id;
         // TODO: create query for neighbors of all types
         shapeQueries
-            .listIncomingNeighborsByType(batchCommitId, shapes_graph_1.NodeType.Shape)
+            .listIncomingNeighborsByType(batchCommitId, graph_lib_1.shapes.NodeType.Shape)
             .results.forEach((shape) => {
             batchCommitNeighborIds.set(shape.result.id, batchCommitId);
         });
         shapeQueries
-            .listIncomingNeighborsByType(batchCommitId, shapes_graph_1.NodeType.Field)
+            .listIncomingNeighborsByType(batchCommitId, graph_lib_1.shapes.NodeType.Field)
             .results.forEach((field) => {
             batchCommitNeighborIds.set(field.result.id, batchCommitId);
         });
@@ -23294,17 +23452,17 @@ class Changes {
 }
 function endpointFromRequest(request) {
     let pathNode = request.path();
-    const pathId = pathNode.result.data.pathId;
+    const pathId = pathNode.value.pathId;
     const path = pathNode.absolutePathPatternWithParameterNames;
-    const method = request.result.data.httpMethod;
+    const method = request.value.httpMethod;
     const endpointId = JSON.stringify({ path, method });
     return { endpointId, pathId, path, method };
 }
 function endpointFromResponse(response) {
     let pathNode = response.path();
-    const pathId = pathNode.result.data.pathId;
+    const pathId = pathNode.value.pathId;
     const path = pathNode.absolutePathPatternWithParameterNames;
-    const method = response.result.data.httpMethod;
+    const method = response.value.httpMethod;
     const endpointId = JSON.stringify({ path, method });
     return { endpointId, pathId, path, method };
 }
@@ -23434,7 +23592,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.InMemorySpectacle = exports.InMemoryOpticContextBuilder = exports.InMemoryDiffRepository = exports.InMemoryDiff = exports.InMemoryDiffService = exports.InMemoryConfigRepository = exports.InMemoryCapturesService = exports.InMemorySpecRepository = void 0;
 const events_1 = __webpack_require__(8614);
 const index_1 = __webpack_require__(8714);
-const diff_engine_wasm_1 = __webpack_require__(5182);
+const optic_domain_1 = __webpack_require__(7534);
 const default_ignore_rules_1 = __webpack_require__(548);
 class InMemorySpecRepository {
     constructor(dependencies) {
@@ -23634,7 +23792,7 @@ class InMemoryDiff {
             });
         })(this.dependencies.opticEngine);
         // Consume stream instantly for now, resulting in a Promise that resolves once exhausted
-        this.diffing = diff_engine_wasm_1.AsyncTools.toArray(diffingStream);
+        this.diffing = optic_domain_1.AsyncTools.toArray(diffingStream);
         this.diffing.then(() => {
             this.dependencies.notifications.emit('complete');
         });
@@ -23642,18 +23800,18 @@ class InMemoryDiff {
     async getNormalizedDiffs() {
         // Q: Why not consume diff stream straight up? A: we don't have a way to fork streams yet
         // allowing only a single consumer, and we need multiple (results themselves + urls)!
-        const diffResults = diff_engine_wasm_1.AsyncTools.from(await this.diffing);
-        const normalizedDiffs = diff_engine_wasm_1.Streams.DiffResults.normalize(diffResults);
-        const lastUniqueResults = diff_engine_wasm_1.Streams.DiffResults.lastUnique(normalizedDiffs);
-        return diff_engine_wasm_1.AsyncTools.toArray(lastUniqueResults);
+        const diffResults = optic_domain_1.AsyncTools.from(await this.diffing);
+        const normalizedDiffs = optic_domain_1.Streams.DiffResults.normalize(diffResults);
+        const lastUniqueResults = optic_domain_1.Streams.DiffResults.lastUnique(normalizedDiffs);
+        return optic_domain_1.AsyncTools.toArray(lastUniqueResults);
     }
     async getUnrecognizedUrls() {
         // Q: Why not consume diff stream straight up? A: we don't have a way to fork streams yet
         // allowing only a single consumer, and we need multiple (results themselves + urls)!
-        const diffResults = diff_engine_wasm_1.AsyncTools.from(await this.diffing);
-        const undocumentedUrls = diff_engine_wasm_1.Streams.UndocumentedUrls.fromDiffResults(diffResults);
-        const lastUnique = diff_engine_wasm_1.Streams.UndocumentedUrls.lastUnique(undocumentedUrls);
-        return diff_engine_wasm_1.AsyncTools.toArray(lastUnique);
+        const diffResults = optic_domain_1.AsyncTools.from(await this.diffing);
+        const undocumentedUrls = optic_domain_1.Streams.UndocumentedUrls.fromDiffResults(diffResults);
+        const lastUnique = optic_domain_1.Streams.UndocumentedUrls.lastUnique(undocumentedUrls);
+        return optic_domain_1.AsyncTools.toArray(lastUnique);
     }
 }
 exports.InMemoryDiff = InMemoryDiff;
@@ -23809,10 +23967,18 @@ async function buildProjections(opticContext) {
         shapesQueries,
         shapeViewerProjection,
         contributionsProjection,
+        getEndpointProjection: (pathId, method) => {
+            const endpointProjection = opticContext.opticEngine.spec_endpoint_delete_commands(spec, pathId, method);
+            return {
+                commands: {
+                    remove: JSON.parse(endpointProjection).commands,
+                },
+            };
+        },
     };
 }
 async function makeSpectacle(opticContext) {
-    let endpointsQueries, shapeQueries, shapeViewerProjection, contributionsProjection;
+    let endpointsQueries, shapeQueries, shapeViewerProjection, contributionsProjection, getEndpointProjection;
     // TODO: consider debouncing reloads (head and tail?)
     async function reload(opticContext) {
         const projections = await buildProjections(opticContext);
@@ -23820,6 +23986,7 @@ async function makeSpectacle(opticContext) {
         shapeQueries = projections.shapesQueries;
         shapeViewerProjection = projections.shapeViewerProjection;
         contributionsProjection = projections.contributionsProjection;
+        getEndpointProjection = projections.getEndpointProjection;
         return projections;
     }
     async function reloadFromSpecChange(specChanges, opticContext) {
@@ -23890,6 +24057,10 @@ async function makeSpectacle(opticContext) {
             },
             shapeChoices: async (parent, args, context, info) => {
                 return context.spectacleContext().shapeViewerProjection[args.shapeId];
+            },
+            endpoint: async (parent, args, context, info) => {
+                const { pathId, method } = args;
+                return context.spectacleContext().getEndpointProjection(pathId, method);
             },
             endpointChanges: (parent, { sinceBatchCommitId }, context, info) => {
                 const endpointChanges = helpers_1.buildEndpointChanges(endpointsQueries, shapeQueries, sinceBatchCommitId);
@@ -23979,19 +24150,22 @@ async function makeSpectacle(opticContext) {
             requestContributions: (parent, args, context) => {
                 return Promise.resolve(context.spectacleContext().contributionsProjection[parent.value.requestId] || {});
             },
+            isRemoved: (parent, args, context) => {
+                return Promise.resolve(parent.value.isRemoved);
+            },
         },
         Path: {
             absolutePathPattern: (parent) => {
-                return Promise.resolve(parent.result.data.absolutePathPattern);
+                return Promise.resolve(parent.value.absolutePathPattern);
             },
             isParameterized: (parent) => {
-                return Promise.resolve(parent.result.data.isParameterized);
+                return Promise.resolve(parent.value.isParameterized);
             },
             name: (parent) => {
-                return Promise.resolve(parent.result.data.name);
+                return Promise.resolve(parent.value.name);
             },
             pathId: (parent) => {
-                return Promise.resolve(parent.result.data.pathId);
+                return Promise.resolve(parent.value.pathId);
             },
             parentPathId: (parent) => {
                 const parentPath = parent.parentPath();
@@ -24003,19 +24177,25 @@ async function makeSpectacle(opticContext) {
             absolutePathPatternWithParameterNames: (parent) => {
                 return Promise.resolve(parent.absolutePathPatternWithParameterNames);
             },
+            isRemoved: (parent, args, context) => {
+                return Promise.resolve(parent.value.isRemoved);
+            },
         },
         HttpResponse: {
             id: (parent) => {
-                return Promise.resolve(parent.result.data.responseId);
+                return Promise.resolve(parent.value.responseId);
             },
             statusCode: (parent) => {
-                return Promise.resolve(parent.result.data.httpStatusCode);
+                return Promise.resolve(parent.value.httpStatusCode);
             },
             bodies: (parent) => {
                 return Promise.resolve(parent.bodies().results);
             },
             contributions: (parent, args, context) => {
-                return Promise.resolve(context.spectacleContext().contributionsProjection[parent.result.data.responseId] || {});
+                return Promise.resolve(context.spectacleContext().contributionsProjection[parent.value.responseId] || {});
+            },
+            isRemoved: (parent, args, context) => {
+                return Promise.resolve(parent.value.isRemoved);
             },
         },
         PathComponent: {
@@ -24026,13 +24206,19 @@ async function makeSpectacle(opticContext) {
                 return Promise.resolve(context.spectacleContext().contributionsProjection[parent.pathId] ||
                     {});
             },
+            isRemoved: (parent, args, context) => {
+                return Promise.resolve(parent.isRemoved);
+            },
         },
         HttpBody: {
             contentType: (parent) => {
-                return Promise.resolve(parent.result.data.httpContentType);
+                return Promise.resolve(parent.value.httpContentType);
             },
             rootShapeId: (parent) => {
-                return Promise.resolve(parent.result.data.rootShapeId);
+                return Promise.resolve(parent.value.rootShapeId);
+            },
+            isRemoved: (parent, args, context) => {
+                return Promise.resolve(parent.value.isRemoved);
             },
         },
         OpticShape: {
@@ -24129,6 +24315,7 @@ async function makeSpectacle(opticContext) {
             shapeViewerProjection,
             // @ts-ignore
             contributionsProjection,
+            getEndpointProjection,
         };
     };
     const queryWrapper = function (input) {
