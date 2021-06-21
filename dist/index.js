@@ -76,13 +76,23 @@ function networkUpload({ apiKey, specContents, jobRunner, metadata = {} }) {
                 return profile;
             }))();
             jobRunner.debug('Creating new spec to upload');
-            const newSpecResp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/person/public-specs`, {
+            const newSpecResp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/person/public-specs/v2`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Token ${apiKey}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(metadata)
+                body: JSON.stringify({
+                    sharing_context: {
+                        git_bot_v1: {
+                            base_branch: metadata.baseBranch,
+                            head_sha: metadata.headSha,
+                            owner: metadata.owner,
+                            pr_number: metadata.prNumber,
+                            repo: metadata.repo
+                        }
+                    }
+                })
             });
             if (!newSpecResp.ok) {
                 throw new Error(`Error creating spec to upload: ${newSpecResp.statusText}: ${yield newSpecResp.text()}`);
