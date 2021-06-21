@@ -9,7 +9,7 @@ import {
   getMetadata
 } from './pr'
 import {InMemoryOpticContextBuilder} from '@useoptic/spectacle/build/in-memory'
-import * as OpticEngine from '@useoptic/diff-engine-wasm/engine/build'
+import * as OpticEngine from '@useoptic/optic-engine-wasm'
 import {makeSpectacle} from '@useoptic/spectacle'
 import {mainCommentTemplate} from './templates/main'
 import {API_BASE} from './constants'

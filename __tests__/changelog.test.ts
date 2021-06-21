@@ -11,7 +11,11 @@ const NEXT_SHA = 'next-sha'
 const pathMap = {
   [BASE_SHA]: 'specs/add-method/initial.json',
   [HEAD_SHA]: 'specs/add-method/current.json',
-  [NEXT_SHA]: 'specs/add-method/next.json'
+  [NEXT_SHA]: 'specs/add-method/next.json',
+  [`${BASE_SHA}_updated`]: 'specs/updated/initial.json',
+  [`${NEXT_SHA}_updated`]: 'specs/updated/next.json',
+  [`${BASE_SHA}_removed`]: 'specs/remove-endpoint/initial.json',
+  [`${NEXT_SHA}_removed`]: 'specs/remove-endpoint/next.json'
 }
 
 const baseGitProvider: IGitProvider = {
@@ -89,27 +93,31 @@ describe('Changelog', () => {
   })
 
   // TODO: resolve issue with next.json
-  it('includes purpose on comment', async () => {
-    const gitProvider = {
-      ...baseGitProvider,
-      getFileContent: jest.fn().mockImplementation((sha, path) => {
-        if (sha === baseOpticChangelog.baseSha) throw Error()
-        return baseGitProvider.getFileContent(sha, path)
+  it.each([['created'], ['updated'], ['removed']])(
+    'includes purpose on comment for %p',
+    async type => {
+      const gitProvider = {
+        ...baseGitProvider,
+        getFileContent: jest.fn().mockImplementation((sha, path) => {
+          if (sha === baseOpticChangelog.baseSha) throw Error()
+          const updatedSha = type === 'created' ? sha : `${sha}_${type}`
+          return baseGitProvider.getFileContent(updatedSha, path)
+        })
+      }
+
+      await runOpticChangelog({
+        ...baseOpticChangelog,
+        gitProvider,
+        baseSha: BASE_SHA,
+        headSha: NEXT_SHA
       })
+
+      expect(baseGitProvider.createPrComment).toBeCalledTimes(1)
+      expect(baseGitProvider.updatePrComment).toBeCalledTimes(0)
+      expect(mockJobRunner.setFailed).toBeCalledTimes(0)
+      expect(mockJobRunner.debug.mock.calls).toMatchSnapshot()
     }
-
-    await runOpticChangelog({
-      ...baseOpticChangelog,
-      gitProvider,
-      baseSha: BASE_SHA,
-      headSha: NEXT_SHA
-    })
-
-    expect(baseGitProvider.createPrComment).toBeCalledTimes(1)
-    expect(baseGitProvider.updatePrComment).toBeCalledTimes(0)
-    expect(mockJobRunner.setFailed).toBeCalledTimes(0)
-    expect(mockJobRunner.debug.mock.calls).toMatchSnapshot()
-  })
+  )
 
   it("fails silently when there isn't a spec in the head branch", async () => {
     const gitProvider = {
