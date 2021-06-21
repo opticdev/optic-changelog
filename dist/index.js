@@ -76,7 +76,7 @@ function networkUpload({ apiKey, specContents, jobRunner, metadata = {} }) {
                 return profile;
             }))();
             jobRunner.debug('Creating new spec to upload');
-            const newSpecResp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/person/public-specs/v2`, {
+            const newSpecResp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/person/public-specs-v2`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Token ${apiKey}`,

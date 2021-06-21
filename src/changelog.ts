@@ -73,7 +73,7 @@ async function networkUpload({
     })()
 
     jobRunner.debug('Creating new spec to upload')
-    const newSpecResp = await fetch(`${API_BASE}/api/person/public-specs/v2`, {
+    const newSpecResp = await fetch(`${API_BASE}/api/person/public-specs-v2`, {
       method: 'POST',
       headers: {
         Authorization: `Token ${apiKey}`,
