@@ -73,13 +73,23 @@ async function networkUpload({
     })()
 
     jobRunner.debug('Creating new spec to upload')
-    const newSpecResp = await fetch(`${API_BASE}/api/person/public-specs`, {
+    const newSpecResp = await fetch(`${API_BASE}/api/person/public-specs-v2`, {
       method: 'POST',
       headers: {
         Authorization: `Token ${apiKey}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(metadata)
+      body: JSON.stringify({
+        sharing_context: {
+          git_bot_v1: {
+            base_branch: metadata.baseBranch,
+            head_sha: metadata.headSha,
+            owner: metadata.owner,
+            pr_number: metadata.prNumber,
+            repo: metadata.repo
+          }
+        }
+      })
     })
 
     if (!newSpecResp.ok) {
