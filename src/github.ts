@@ -107,7 +107,7 @@ export class GitHubRepository implements IGitProvider {
     })
 
     const existingBotComments = issueComments.data.filter(
-      comment => comment.user?.login === 'github-actions[bot]'
+      comment => comment.user?.login === 'github-actions'
     )
 
     return existingBotComments.map(comment => ({

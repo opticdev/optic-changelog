@@ -415,7 +415,7 @@ class GitHubRepository {
                 repo: this.repo,
                 issue_number: prNumber
             });
-            const existingBotComments = issueComments.data.filter(comment => { var _a; return ((_a = comment.user) === null || _a === void 0 ? void 0 : _a.login) === 'github-actions[bot]'; });
+            const existingBotComments = issueComments.data.filter(comment => { var _a; return ((_a = comment.user) === null || _a === void 0 ? void 0 : _a.login) === 'github-actions'; });
             return existingBotComments.map(comment => ({
                 id: comment.id,
                 body: comment.body || ''
