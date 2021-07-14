@@ -53,6 +53,30 @@ const path_1 = __webpack_require__(5622);
 const utils_1 = __webpack_require__(918);
 const tracing_1 = __webpack_require__(4358);
 const Sentry = __importStar(__webpack_require__(2783));
+function getAnalyticsId(currentSpec) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return utils_1.sentryInstrument({ op: 'get_analytics_id' }, (tx, span) => __awaiter(this, void 0, void 0, function* () {
+            const currentOpticContext = yield in_memory_1.InMemoryOpticContextBuilder.fromEvents(OpticEngine, currentSpec);
+            const currentSpectacle = yield spectacle_1.makeSpectacle(currentOpticContext);
+            const response = yield currentSpectacle.queryWrapper({
+                query: `{
+      metadata {
+        id
+      }
+    }`,
+                variables: {}
+            });
+            if (!response.data) {
+                throw new Error(`Error getting spec id: ${response.errors}`);
+            }
+            else {
+                span.setData('specId', response.data.metadata.id);
+                tx.setTag('specId', response.data.metadata.id);
+                return response.data.metadata.id;
+            }
+        }));
+    });
+}
 function identify({ apiKey }) {
     return __awaiter(this, void 0, void 0, function* () {
         const resp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/person`, {
@@ -66,7 +90,7 @@ function identify({ apiKey }) {
         return { id, email, name };
     });
 }
-function networkUpload({ apiKey, specContents, jobRunner, metadata = {} }) {
+function networkUpload({ apiKey, specContents, jobRunner, metadata = {}, specAnalyticsId }) {
     return __awaiter(this, void 0, void 0, function* () {
         const identProm = identify({ apiKey });
         return utils_1.sentryInstrument({ op: 'upload_spec' }, (tx, span) => __awaiter(this, void 0, void 0, function* () {
@@ -76,22 +100,25 @@ function networkUpload({ apiKey, specContents, jobRunner, metadata = {} }) {
                 return profile;
             }))();
             jobRunner.debug('Creating new spec to upload');
-            const newSpecResp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/person/public-specs-v2`, {
+            const newSpecResp = yield node_fetch_1.default(`${constants_1.API_BASE}/api/person/public-specs-v3`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Token ${apiKey}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    sharing_context: {
-                        git_bot_v1: {
-                            base_branch: metadata.baseBranch,
-                            head_sha: metadata.headSha,
-                            owner: metadata.owner,
-                            pr_number: metadata.prNumber,
-                            repo: metadata.repo
+                    metadata: {
+                        sharing_context: {
+                            git_bot_v1: {
+                                base_branch: metadata.baseBranch,
+                                head_sha: metadata.headSha,
+                                owner: metadata.owner,
+                                pr_number: metadata.prNumber,
+                                repo: metadata.repo
+                            }
                         }
-                    }
+                    },
+                    analytics_id: specAnalyticsId
                 })
             });
             if (!newSpecResp.ok) {
@@ -193,12 +220,14 @@ function runOpticChangelog({ apiKey, subscribers, opticSpecPath, gitProvider, he
                 apiKey.length > 0 &&
                 changes.data.endpointChanges.endpoints.length > 0 &&
                 uploadSpec) {
+                const analyticsId = yield getAnalyticsId(headContent);
                 const upload_result = yield uploadSpec({
                     apiKey,
                     specContents: JSON.stringify(headContent),
                     jobRunner,
                     metadata: Object.assign({ prNumber,
-                        baseBranch }, gitProvider.getRepoInfo())
+                        baseBranch }, gitProvider.getRepoInfo()),
+                    specAnalyticsId: analyticsId
                 });
                 specId = upload_result.specId;
                 personId = upload_result.personId;

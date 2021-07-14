@@ -23,6 +23,36 @@ export type UploadParams = {
   specContents: string
   jobRunner: IJobRunner
   metadata?: Record<string, any>
+  specAnalyticsId: string
+}
+
+async function getAnalyticsId(currentSpec: any[]): Promise<string> {
+  return sentryInstrument({op: 'get_analytics_id'}, async (tx, span) => {
+    const currentOpticContext = await InMemoryOpticContextBuilder.fromEvents(
+      OpticEngine,
+      currentSpec
+    )
+    const currentSpectacle = await makeSpectacle(currentOpticContext)
+
+    const response = await currentSpectacle.queryWrapper<{
+      metadata: {id: string}
+    }>({
+      query: `{
+      metadata {
+        id
+      }
+    }`,
+      variables: {}
+    })
+
+    if (!response.data) {
+      throw new Error(`Error getting spec id: ${response.errors}`)
+    } else {
+      span.setData('specId', response.data.metadata.id)
+      tx.setTag('specId', response.data.metadata.id)
+      return response.data.metadata.id
+    }
+  })
 }
 
 async function identify({
@@ -59,7 +89,8 @@ async function networkUpload({
   apiKey,
   specContents,
   jobRunner,
-  metadata = {}
+  metadata = {},
+  specAnalyticsId
 }: UploadParams): Promise<{specId: string; personId: string}> {
   const identProm = identify({apiKey})
 
@@ -73,22 +104,25 @@ async function networkUpload({
     })()
 
     jobRunner.debug('Creating new spec to upload')
-    const newSpecResp = await fetch(`${API_BASE}/api/person/public-specs-v2`, {
+    const newSpecResp = await fetch(`${API_BASE}/api/person/public-specs-v3`, {
       method: 'POST',
       headers: {
         Authorization: `Token ${apiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        sharing_context: {
-          git_bot_v1: {
-            base_branch: metadata.baseBranch,
-            head_sha: metadata.headSha,
-            owner: metadata.owner,
-            pr_number: metadata.prNumber,
-            repo: metadata.repo
+        metadata: {
+          sharing_context: {
+            git_bot_v1: {
+              base_branch: metadata.baseBranch,
+              head_sha: metadata.headSha,
+              owner: metadata.owner,
+              pr_number: metadata.prNumber,
+              repo: metadata.repo
+            }
           }
-        }
+        },
+        analytics_id: specAnalyticsId
       })
     })
 
@@ -263,6 +297,8 @@ export async function runOpticChangelog({
         changes.data.endpointChanges.endpoints.length > 0 &&
         uploadSpec
       ) {
+        const analyticsId = await getAnalyticsId(headContent)
+
         const upload_result = await uploadSpec({
           apiKey,
           specContents: JSON.stringify(headContent),
@@ -271,7 +307,8 @@ export async function runOpticChangelog({
             prNumber,
             baseBranch,
             ...gitProvider.getRepoInfo()
-          }
+          },
+          specAnalyticsId: analyticsId
         })
         specId = upload_result.specId
         personId = upload_result.personId
