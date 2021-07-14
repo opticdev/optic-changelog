@@ -111,13 +111,15 @@ async function networkUpload({
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        sharing_context: {
-          git_bot_v1: {
-            base_branch: metadata.baseBranch,
-            head_sha: metadata.headSha,
-            owner: metadata.owner,
-            pr_number: metadata.prNumber,
-            repo: metadata.repo
+        metadata: {
+          sharing_context: {
+            git_bot_v1: {
+              base_branch: metadata.baseBranch,
+              head_sha: metadata.headSha,
+              owner: metadata.owner,
+              pr_number: metadata.prNumber,
+              repo: metadata.repo
+            }
           }
         },
         analytics_id: specAnalyticsId
