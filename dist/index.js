@@ -20993,7 +20993,7 @@ exports.defaultIgnoreRules = [
 ];
 exports.defaultIgnoreFile = `
 # Default Ignore Rules
-# Learn to configure your own at http://localhost:4000/docs/using/advanced-configuration#ignoring-api-paths
+# Learn to configure your own at https://www.useoptic.com/reference/optic-yaml/ignore
 ${exports.defaultIgnoreRules.join('\n')}
 `.trim();
 
@@ -21006,13 +21006,15 @@ ${exports.defaultIgnoreRules.join('\n')}
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.GraphQueries = exports.BatchCommitNodeWrapper = exports.PathNodeWrapper = exports.ResponseNodeWrapper = exports.RequestNodeWrapper = exports.BodyNodeWrapper = exports.GraphIndexer = exports.EdgeType = exports.NodeType = void 0;
+exports.GraphQueries = exports.BatchCommitNodeWrapper = exports.PathNodeWrapper = exports.QueryParametersNodeWrapper = exports.ResponseNodeWrapper = exports.RequestNodeWrapper = exports.EndpointNodeWrapper = exports.BodyNodeWrapper = exports.GraphIndexer = exports.EdgeType = exports.NodeType = void 0;
 const index_1 = __webpack_require__(3194);
 var NodeType;
 (function (NodeType) {
     NodeType["Path"] = "Path";
     NodeType["Request"] = "Request";
+    NodeType["QueryParameters"] = "QueryParameters";
     NodeType["Response"] = "Response";
+    NodeType["Endpoint"] = "Endpoint";
     NodeType["Body"] = "Body";
     NodeType["BatchCommit"] = "BatchCommit";
 })(NodeType = exports.NodeType || (exports.NodeType = {}));
@@ -21095,7 +21097,7 @@ class BodyNodeWrapper {
     }
 }
 exports.BodyNodeWrapper = BodyNodeWrapper;
-class RequestNodeWrapper {
+class EndpointNodeWrapper {
     constructor(result, queries) {
         this.result = result;
         this.queries = queries;
@@ -21106,15 +21108,44 @@ class RequestNodeWrapper {
     path() {
         const neighbors = this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.Path);
         if (neighbors.results.length === 0) {
-            throw new Error(`expected Request to have a parent Path`);
+            throw new Error(`expected endpoint to have a parent Path`);
         }
         return neighbors.results[0];
     }
-    responses() {
-        return this.path().responses().results.filter((response) => response.value.httpMethod === this.value.httpMethod);
+    query() {
+        const queryParameters = this.queries.listIncomingNeighborsByType(this.result.id, NodeType.QueryParameters);
+        return queryParameters.results.length >= 1
+            ? queryParameters.results[0]
+            : null;
     }
-    bodies() {
-        return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Body);
+    requests() {
+        return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Request);
+    }
+    responses() {
+        return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Response);
+    }
+}
+exports.EndpointNodeWrapper = EndpointNodeWrapper;
+class RequestNodeWrapper {
+    constructor(result, queries) {
+        this.result = result;
+        this.queries = queries;
+    }
+    get value() {
+        return this.result.data;
+    }
+    endpoint() {
+        const endpoints = this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.Endpoint);
+        if (endpoints.results.length === 0) {
+            throw new Error('Expected request node to have an endpoint');
+        }
+        return endpoints.results[0];
+    }
+    body() {
+        const bodies = this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Body);
+        return bodies.results.length >= 1
+            ? bodies.results[0]
+            : null;
     }
 }
 exports.RequestNodeWrapper = RequestNodeWrapper;
@@ -21126,18 +21157,28 @@ class ResponseNodeWrapper {
     get value() {
         return this.result.data;
     }
-    path() {
-        const neighbors = this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.Path);
-        if (neighbors.results.length === 0) {
-            throw new Error(`expected Response to have a parent Path`);
+    endpoint() {
+        const endpoints = this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.Endpoint);
+        if (endpoints.results.length === 0) {
+            throw new Error('Expected response node to have an endpoint');
         }
-        return neighbors.results[0];
+        return endpoints.results[0];
     }
     bodies() {
         return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Body);
     }
 }
 exports.ResponseNodeWrapper = ResponseNodeWrapper;
+class QueryParametersNodeWrapper {
+    constructor(result, queries) {
+        this.result = result;
+        this.queries = queries;
+    }
+    get value() {
+        return this.result.data;
+    }
+}
+exports.QueryParametersNodeWrapper = QueryParametersNodeWrapper;
 class PathNodeWrapper {
     constructor(result, queries) {
         this.result = result;
@@ -21154,11 +21195,8 @@ class PathNodeWrapper {
         const [parentPath] = parentPaths.results;
         return parentPath;
     }
-    requests() {
-        return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Request);
-    }
-    responses() {
-        return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Response);
+    endpoints() {
+        return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Endpoint);
     }
     components() {
         let pathNode = this;
@@ -21195,6 +21233,9 @@ class BatchCommitNodeWrapper {
     constructor(result, queries) {
         this.result = result;
         this.queries = queries;
+    }
+    get value() {
+        return this.result.data;
     }
     requests() {
         return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Request);
@@ -21304,8 +21345,14 @@ class GraphQueries {
         else if (node.type === NodeType.Body) {
             return new BodyNodeWrapper(node, this);
         }
+        else if (node.type === NodeType.QueryParameters) {
+            return new QueryParametersNodeWrapper(node, this);
+        }
         else if (node.type === NodeType.BatchCommit) {
             return new BatchCommitNodeWrapper(node, this);
+        }
+        else if (node.type === NodeType.Endpoint) {
+            return new EndpointNodeWrapper(node, this);
         }
         throw new Error(`unexpected node.type`);
     }
@@ -21370,7 +21417,7 @@ exports.mapAppend = mapAppend;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.GraphQueries = exports.BatchCommitNodeWrapper = exports.GraphIndexer = exports.EdgeType = exports.NodeType = void 0;
+exports.GraphQueries = exports.BatchCommitNodeWrapper = exports.FieldNodeWrapper = exports.ShapeParameterNodeWrapper = exports.ShapeNodeWrapper = exports.CoreShapeNodeWrapper = exports.GraphIndexer = exports.EdgeType = exports.NodeType = void 0;
 const index_1 = __webpack_require__(3194);
 var NodeType;
 (function (NodeType) {
@@ -21440,6 +21487,7 @@ class CoreShapeNodeWrapper {
         this.queries = queries;
     }
 }
+exports.CoreShapeNodeWrapper = CoreShapeNodeWrapper;
 class ShapeNodeWrapper {
     constructor(result, queries) {
         this.result = result;
@@ -21456,12 +21504,14 @@ class ShapeNodeWrapper {
         return this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.BatchCommit);
     }
 }
+exports.ShapeNodeWrapper = ShapeNodeWrapper;
 class ShapeParameterNodeWrapper {
     constructor(result, queries) {
         this.result = result;
         this.queries = queries;
     }
 }
+exports.ShapeParameterNodeWrapper = ShapeParameterNodeWrapper;
 class FieldNodeWrapper {
     constructor(result, queries) {
         this.result = result;
@@ -21471,6 +21521,7 @@ class FieldNodeWrapper {
         return this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.BatchCommit);
     }
 }
+exports.FieldNodeWrapper = FieldNodeWrapper;
 class BatchCommitNodeWrapper {
     constructor(result, queries) {
         this.result = result;
@@ -21625,13 +21676,18 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.tap = exports.fromJSONMap = exports.fromReadableJSONL = exports.fromReadable = exports.lastBy = exports.reduce = void 0;
+exports.tap = exports.fromJSONArray = exports.fromJSONMap = exports.fromReadableJSONL = exports.fromReadable = exports.intoJSONArray = exports.lastBy = exports.reduce = void 0;
 __exportStar(__webpack_require__(3698), exports);
 //@ts-ignore
 const Parser_1 = __webpack_require__(5771);
+const Stringer_1 = __webpack_require__(282);
+const Disassembler_1 = __webpack_require__(3308);
+const stream_chain_1 = __webpack_require__(9996);
 const StreamObject_1 = __importDefault(__webpack_require__(5790));
+const StreamArray_1 = __importDefault(__webpack_require__(9236));
 const reduce_1 = __webpack_require__(1394);
 Object.defineProperty(exports, "reduce", ({ enumerable: true, get: function () { return reduce_1.reduce; } }));
+const stream_1 = __webpack_require__(2413);
 function lastBy(predicate) {
     return function (source) {
         return __asyncGenerator(this, arguments, function* () {
@@ -21655,20 +21711,30 @@ function lastBy(predicate) {
     };
 }
 exports.lastBy = lastBy;
+function intoJSONArray(items) {
+    return stream_chain_1.chain([
+        stream_1.Readable.from(items),
+        Disassembler_1.disassembler(),
+        Stringer_1.stringer({
+            makeArray: true,
+        }),
+    ]);
+}
+exports.intoJSONArray = intoJSONArray;
 function fromReadable(stream) {
     return function () {
         return __asyncGenerator(this, arguments, function* () {
             var e_1, _a;
             try {
-                for (var stream_1 = __asyncValues(stream), stream_1_1; stream_1_1 = yield __await(stream_1.next()), !stream_1_1.done;) {
-                    const chunk = stream_1_1.value;
+                for (var stream_2 = __asyncValues(stream), stream_2_1; stream_2_1 = yield __await(stream_2.next()), !stream_2_1.done;) {
+                    const chunk = stream_2_1.value;
                     yield yield __await(chunk);
                 }
             }
             catch (e_1_1) { e_1 = { error: e_1_1 }; }
             finally {
                 try {
-                    if (stream_1_1 && !stream_1_1.done && (_a = stream_1.return)) yield __await(_a.call(stream_1));
+                    if (stream_2_1 && !stream_2_1.done && (_a = stream_2.return)) yield __await(_a.call(stream_2));
                 }
                 finally { if (e_1) throw e_1.error; }
             }
@@ -21720,10 +21786,32 @@ function fromJSONMap() {
     };
 }
 exports.fromJSONMap = fromJSONMap;
-function tap(predicate) {
+function fromJSONArray() {
     return function (source) {
         return __asyncGenerator(this, arguments, function* () {
             var e_4, _a;
+            const parseResults = source.pipe(StreamArray_1.default.withParser());
+            try {
+                for (var parseResults_3 = __asyncValues(parseResults), parseResults_3_1; parseResults_3_1 = yield __await(parseResults_3.next()), !parseResults_3_1.done;) {
+                    let parseResult = parseResults_3_1.value;
+                    yield yield __await(parseResult.value);
+                }
+            }
+            catch (e_4_1) { e_4 = { error: e_4_1 }; }
+            finally {
+                try {
+                    if (parseResults_3_1 && !parseResults_3_1.done && (_a = parseResults_3.return)) yield __await(_a.call(parseResults_3));
+                }
+                finally { if (e_4) throw e_4.error; }
+            }
+        });
+    };
+}
+exports.fromJSONArray = fromJSONArray;
+function tap(predicate) {
+    return function (source) {
+        return __asyncGenerator(this, arguments, function* () {
+            var e_5, _a;
             try {
                 for (var source_1 = __asyncValues(source), source_1_1; source_1_1 = yield __await(source_1.next()), !source_1_1.done;) {
                     let chunk = source_1_1.value;
@@ -21731,17 +21819,197 @@ function tap(predicate) {
                     yield yield __await(chunk);
                 }
             }
-            catch (e_4_1) { e_4 = { error: e_4_1 }; }
+            catch (e_5_1) { e_5 = { error: e_5_1 }; }
             finally {
                 try {
                     if (source_1_1 && !source_1_1.done && (_a = source_1.return)) yield __await(_a.call(source_1));
                 }
-                finally { if (e_4) throw e_4.error; }
+                finally { if (e_5) throw e_5.error; }
             }
         });
     };
 }
 exports.tap = tap;
+
+
+/***/ }),
+
+/***/ 2068:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/*
+TODO Replace with Rust constructors eventually
+*/
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PrunePathComponents = exports.AddResponseByPathAndMethod = exports.SetRequestBodyShape = exports.SetResponseBodyShape = exports.SetQueryParametersShape = exports.QueryParametersShapeDescriptor = exports.ShapedBodyDescriptor = exports.AddContribution = exports.AddPathComponent = exports.AddPathParameter = exports.RemoveField = exports.AddShapeParameter = exports.SetFieldShape = exports.SetParameterShape = exports.ProviderInShape = exports.ShapeProvider = exports.AddField = exports.FieldShapeFromShape = exports.AddRequest = exports.AddQueryParameters = exports.AddShape = void 0;
+function AddShape(shapeId, baseShapeId, name = '') {
+    return { AddShape: { shapeId, baseShapeId, name } };
+}
+exports.AddShape = AddShape;
+function AddQueryParameters(httpMethod, pathId, queryParametersId) {
+    return { AddQueryParameters: { httpMethod, pathId, queryParametersId } };
+}
+exports.AddQueryParameters = AddQueryParameters;
+function AddRequest(httpMethod, pathId, requestId) {
+    return { AddRequest: { httpMethod, pathId, requestId } };
+}
+exports.AddRequest = AddRequest;
+function FieldShapeFromShape(fieldId, shapeId) {
+    return { FieldShapeFromShape: { fieldId, shapeId } };
+}
+exports.FieldShapeFromShape = FieldShapeFromShape;
+function AddField(fieldId, shapeId, name, shapeDescriptor) {
+    return { AddField: { fieldId, shapeId, name, shapeDescriptor } };
+}
+exports.AddField = AddField;
+function ShapeProvider(shapeId) {
+    return { ShapeProvider: { shapeId } };
+}
+exports.ShapeProvider = ShapeProvider;
+function ProviderInShape(shapeId, providerDescriptor, consumingParameterId) {
+    return {
+        ProviderInShape: { shapeId, providerDescriptor, consumingParameterId },
+    };
+}
+exports.ProviderInShape = ProviderInShape;
+function SetParameterShape(shapeDescriptor) {
+    return { SetParameterShape: { shapeDescriptor } };
+}
+exports.SetParameterShape = SetParameterShape;
+function SetFieldShape(shapeDescriptor) {
+    return { SetFieldShape: { shapeDescriptor } };
+}
+exports.SetFieldShape = SetFieldShape;
+function AddShapeParameter(shapeParameterId, shapeId, name) {
+    return { AddShapeParameter: { shapeParameterId, shapeId, name } };
+}
+exports.AddShapeParameter = AddShapeParameter;
+function RemoveField(fieldId) {
+    return { RemoveField: { fieldId } };
+}
+exports.RemoveField = RemoveField;
+function AddPathParameter(pathId, parentPathId, name) {
+    return {
+        AddPathParameter: {
+            pathId,
+            parentPathId,
+            name,
+        },
+    };
+}
+exports.AddPathParameter = AddPathParameter;
+function AddPathComponent(pathId, parentPathId, name) {
+    return {
+        AddPathComponent: {
+            pathId,
+            parentPathId,
+            name,
+        },
+    };
+}
+exports.AddPathComponent = AddPathComponent;
+function AddContribution(id, key, value) {
+    return {
+        AddContribution: {
+            id,
+            key,
+            value,
+        },
+    };
+}
+exports.AddContribution = AddContribution;
+function ShapedBodyDescriptor(httpContentType, shapeId, isRemoved = false) {
+    return {
+        httpContentType,
+        shapeId,
+        isRemoved,
+    };
+}
+exports.ShapedBodyDescriptor = ShapedBodyDescriptor;
+function QueryParametersShapeDescriptor(shapeId, isRemoved = false) {
+    return {
+        shapeId,
+        isRemoved,
+    };
+}
+exports.QueryParametersShapeDescriptor = QueryParametersShapeDescriptor;
+function SetQueryParametersShape(queryParametersId, shapeDescriptor) {
+    return {
+        SetQueryParametersShape: {
+            queryParametersId,
+            shapeDescriptor,
+        },
+    };
+}
+exports.SetQueryParametersShape = SetQueryParametersShape;
+function SetResponseBodyShape(responseId, bodyDescriptor) {
+    return {
+        SetResponseBodyShape: {
+            responseId,
+            bodyDescriptor,
+        },
+    };
+}
+exports.SetResponseBodyShape = SetResponseBodyShape;
+function SetRequestBodyShape(requestId, bodyDescriptor) {
+    return {
+        SetRequestBodyShape: {
+            requestId,
+            bodyDescriptor,
+        },
+    };
+}
+exports.SetRequestBodyShape = SetRequestBodyShape;
+function AddResponseByPathAndMethod(responseId, pathId, httpMethod, httpStatusCode) {
+    return {
+        AddResponseByPathAndMethod: {
+            responseId,
+            pathId,
+            httpMethod,
+            httpStatusCode,
+        },
+    };
+}
+exports.AddResponseByPathAndMethod = AddResponseByPathAndMethod;
+function PrunePathComponents() {
+    return {
+        PrunePathComponents: {},
+    };
+}
+exports.PrunePathComponents = PrunePathComponents;
+
+
+/***/ }),
+
+/***/ 712:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ICoreShapeInnerParameterNames = exports.ICoreShapeKinds = void 0;
+var ICoreShapeKinds;
+(function (ICoreShapeKinds) {
+    ICoreShapeKinds["ObjectKind"] = "$object";
+    ICoreShapeKinds["ListKind"] = "$list";
+    ICoreShapeKinds["MapKind"] = "$map";
+    ICoreShapeKinds["OneOfKind"] = "$oneOf";
+    ICoreShapeKinds["AnyKind"] = "$any";
+    ICoreShapeKinds["StringKind"] = "$string";
+    ICoreShapeKinds["NumberKind"] = "$number";
+    ICoreShapeKinds["BooleanKind"] = "$boolean";
+    ICoreShapeKinds["NullableKind"] = "$nullable";
+    ICoreShapeKinds["OptionalKind"] = "$optional";
+    ICoreShapeKinds["UnknownKind"] = "$unknown";
+})(ICoreShapeKinds = exports.ICoreShapeKinds || (exports.ICoreShapeKinds = {}));
+var ICoreShapeInnerParameterNames;
+(function (ICoreShapeInnerParameterNames) {
+    ICoreShapeInnerParameterNames["ListInner"] = "$listItem";
+    ICoreShapeInnerParameterNames["NullableInner"] = "$nullableInner";
+    ICoreShapeInnerParameterNames["OptionalInner"] = "$optionalInner";
+})(ICoreShapeInnerParameterNames = exports.ICoreShapeInnerParameterNames || (exports.ICoreShapeInnerParameterNames = {}));
 
 
 /***/ }),
@@ -21776,9 +22044,23 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AsyncTools = __importStar(__webpack_require__(2993));
 exports.Streams = __importStar(__webpack_require__(7000));
-exports.Types = __importStar(__webpack_require__(2657));
+exports.Commands = __importStar(__webpack_require__(2068));
+exports.Events = __importStar(__webpack_require__(712));
+exports.Interactions = __importStar(__webpack_require__(3756));
+__exportStar(__webpack_require__(2068), exports);
+__exportStar(__webpack_require__(712), exports);
+__exportStar(__webpack_require__(3756), exports);
 __exportStar(__webpack_require__(7000), exports);
-__exportStar(__webpack_require__(2657), exports);
+
+
+/***/ }),
+
+/***/ 3756:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 
 /***/ }),
@@ -21973,6 +22255,7 @@ exports.Commands = __importStar(__webpack_require__(6081));
 exports.DiffResults = __importStar(__webpack_require__(631));
 exports.HttpInteractions = __importStar(__webpack_require__(1051));
 exports.LearningResults = __importStar(__webpack_require__(7595));
+exports.SpecEvents = __importStar(__webpack_require__(5050));
 exports.UndocumentedUrls = __importStar(__webpack_require__(4165));
 
 
@@ -22050,6 +22333,37 @@ exports.fromJSONL = fromJSONL;
 
 /***/ }),
 
+/***/ 5050:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.takeBatchesUntil = exports.fromJSONStream = void 0;
+const takeWhile_1 = __webpack_require__(1277);
+const async_tools_1 = __webpack_require__(2993);
+function fromJSONStream() {
+    return async_tools_1.fromJSONArray();
+}
+exports.fromJSONStream = fromJSONStream;
+function takeBatchesUntil(batchCommitId) {
+    let seenBatchCommitId = false;
+    return takeWhile_1.takeWhile((event) => {
+        var _a;
+        if (seenBatchCommitId) {
+            return false;
+        }
+        if (((_a = event.BatchCommitEnded) === null || _a === void 0 ? void 0 : _a.batchId) === batchCommitId) {
+            seenBatchCommitId = true;
+        }
+        return true;
+    });
+}
+exports.takeBatchesUntil = takeBatchesUntil;
+
+
+/***/ }),
+
 /***/ 4165:
 /***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
@@ -22111,16 +22425,6 @@ exports.lastUnique = async_tools_1.lastBy(({ fingerprint }) => fingerprint);
 
 /***/ }),
 
-/***/ 2657:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-
-
-/***/ }),
-
 /***/ 4014:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
@@ -22128,11 +22432,15 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 let imports = {};
 imports['__wbindgen_placeholder__'] = module.exports;
 let wasm;
-const { TextDecoder, TextEncoder } = require(String.raw`util`);
+const { TextEncoder, TextDecoder } = require(String.raw`util`);
 
-let cachedTextDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: true });
+const heap = new Array(32).fill(undefined);
 
-cachedTextDecoder.decode();
+heap.push(undefined, null, true, false);
+
+function getObject(idx) { return heap[idx]; }
+
+let WASM_VECTOR_LEN = 0;
 
 let cachegetUint8Memory0 = null;
 function getUint8Memory0() {
@@ -22141,46 +22449,6 @@ function getUint8Memory0() {
     }
     return cachegetUint8Memory0;
 }
-
-function getStringFromWasm0(ptr, len) {
-    return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
-}
-
-const heap = new Array(32).fill(undefined);
-
-heap.push(undefined, null, true, false);
-
-let heap_next = heap.length;
-
-function addHeapObject(obj) {
-    if (heap_next === heap.length) heap.push(heap.length + 1);
-    const idx = heap_next;
-    heap_next = heap[idx];
-
-    heap[idx] = obj;
-    return idx;
-}
-
-function getObject(idx) { return heap[idx]; }
-
-function dropObject(idx) {
-    if (idx < 36) return;
-    heap[idx] = heap_next;
-    heap_next = idx;
-}
-
-function takeObject(idx) {
-    const ret = getObject(idx);
-    dropObject(idx);
-    return ret;
-}
-/**
-*/
-module.exports.init = function() {
-    wasm.init();
-};
-
-let WASM_VECTOR_LEN = 0;
 
 let cachedTextEncoder = new TextEncoder('utf-8');
 
@@ -22234,6 +22502,51 @@ function passStringToWasm0(arg, malloc, realloc) {
     WASM_VECTOR_LEN = offset;
     return ptr;
 }
+
+let cachegetInt32Memory0 = null;
+function getInt32Memory0() {
+    if (cachegetInt32Memory0 === null || cachegetInt32Memory0.buffer !== wasm.memory.buffer) {
+        cachegetInt32Memory0 = new Int32Array(wasm.memory.buffer);
+    }
+    return cachegetInt32Memory0;
+}
+
+let cachedTextDecoder = new TextDecoder('utf-8', { ignoreBOM: true, fatal: true });
+
+cachedTextDecoder.decode();
+
+function getStringFromWasm0(ptr, len) {
+    return cachedTextDecoder.decode(getUint8Memory0().subarray(ptr, ptr + len));
+}
+
+let heap_next = heap.length;
+
+function addHeapObject(obj) {
+    if (heap_next === heap.length) heap.push(heap.length + 1);
+    const idx = heap_next;
+    heap_next = heap[idx];
+
+    heap[idx] = obj;
+    return idx;
+}
+
+function dropObject(idx) {
+    if (idx < 36) return;
+    heap[idx] = heap_next;
+    heap_next = idx;
+}
+
+function takeObject(idx) {
+    const ret = getObject(idx);
+    dropObject(idx);
+    return ret;
+}
+/**
+*/
+module.exports.init = function() {
+    wasm.init();
+};
+
 /**
 * @param {string} spec_json
 * @returns {WasmSpecProjection}
@@ -22250,14 +22563,6 @@ function _assertClass(instance, klass) {
         throw new Error(`expected instance of ${klass.name}`);
     }
     return instance.ptr;
-}
-
-let cachegetInt32Memory0 = null;
-function getInt32Memory0() {
-    if (cachegetInt32Memory0 === null || cachegetInt32Memory0.buffer !== wasm.memory.buffer) {
-        cachegetInt32Memory0 = new Int32Array(wasm.memory.buffer);
-    }
-    return cachegetInt32Memory0;
 }
 /**
 * @param {WasmSpecProjection} spec
@@ -22331,23 +22636,32 @@ module.exports.get_contributions_projection = function(spec) {
     }
 };
 
+let stack_pointer = 32;
+
+function addBorrowedObject(obj) {
+    if (stack_pointer == 1) throw new Error('out of js stack');
+    heap[--stack_pointer] = obj;
+    return stack_pointer;
+}
 /**
 * @param {string} interaction_json
 * @param {WasmSpecProjection} spec
+* @param {any} raw_options
 * @returns {string}
 */
-module.exports.diff_interaction = function(interaction_json, spec) {
+module.exports.diff_interaction = function(interaction_json, spec, raw_options) {
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         var ptr0 = passStringToWasm0(interaction_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         var len0 = WASM_VECTOR_LEN;
         _assertClass(spec, WasmSpecProjection);
-        wasm.diff_interaction(retptr, ptr0, len0, spec.ptr);
+        wasm.diff_interaction(retptr, ptr0, len0, spec.ptr, addBorrowedObject(raw_options));
         var r0 = getInt32Memory0()[retptr / 4 + 0];
         var r1 = getInt32Memory0()[retptr / 4 + 1];
         return getStringFromWasm0(r0, r1);
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
+        heap[stack_pointer++] = undefined;
         wasm.__wbindgen_free(r0, r1);
     }
 };
@@ -22415,9 +22729,10 @@ module.exports.affordances_to_commands = function(json_affordances_json, json_tr
 * @param {WasmSpecProjection} spec
 * @param {string} interactions_json
 * @param {string} id_generator_strategy
+* @param {boolean} include_query_params
 * @returns {string}
 */
-module.exports.learn_undocumented_bodies = function(spec, interactions_json, id_generator_strategy) {
+module.exports.learn_undocumented_bodies = function(spec, interactions_json, id_generator_strategy, include_query_params) {
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         _assertClass(spec, WasmSpecProjection);
@@ -22425,7 +22740,7 @@ module.exports.learn_undocumented_bodies = function(spec, interactions_json, id_
         var len0 = WASM_VECTOR_LEN;
         var ptr1 = passStringToWasm0(id_generator_strategy, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         var len1 = WASM_VECTOR_LEN;
-        wasm.learn_undocumented_bodies(retptr, spec.ptr, ptr0, len0, ptr1, len1);
+        wasm.learn_undocumented_bodies(retptr, spec.ptr, ptr0, len0, ptr1, len1, include_query_params);
         var r0 = getInt32Memory0()[retptr / 4 + 0];
         var r1 = getInt32Memory0()[retptr / 4 + 1];
         return getStringFromWasm0(r0, r1);
@@ -22696,6 +23011,20 @@ class WasmSpecProjection {
 }
 module.exports.WasmSpecProjection = WasmSpecProjection;
 
+module.exports.__wbindgen_is_undefined = function(arg0) {
+    var ret = getObject(arg0) === undefined;
+    return ret;
+};
+
+module.exports.__wbindgen_json_serialize = function(arg0, arg1) {
+    const obj = getObject(arg1);
+    var ret = JSON.stringify(obj === undefined ? null : obj);
+    var ptr0 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    var len0 = WASM_VECTOR_LEN;
+    getInt32Memory0()[arg0 / 4 + 1] = len0;
+    getInt32Memory0()[arg0 / 4 + 0] = ptr0;
+};
+
 module.exports.__wbindgen_string_new = function(arg0, arg1) {
     var ret = getStringFromWasm0(arg0, arg1);
     return addHeapObject(ret);
@@ -22783,11 +23112,6 @@ module.exports.__wbg_msCrypto_f6dddc6ae048b7e2 = function(arg0) {
     return addHeapObject(ret);
 };
 
-module.exports.__wbindgen_is_undefined = function(arg0) {
-    var ret = getObject(arg0) === undefined;
-    return ret;
-};
-
 module.exports.__wbg_getTime_cf686ab22ab03a3e = function(arg0) {
     var ret = getObject(arg0).getTime();
     return ret;
@@ -22859,135 +23183,6 @@ wasm.__wbindgen_start();
 
 /***/ }),
 
-/***/ 1349:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-/*
-TODO Replace with Rust constructors eventually
-*/
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.PrunePathComponents = exports.AddResponseByPathAndMethod = exports.SetRequestBodyShape = exports.SetResponseBodyShape = exports.ShapedBodyDescriptor = exports.AddContribution = exports.AddPathComponent = exports.AddPathParameter = exports.RemoveField = exports.AddShapeParameter = exports.SetFieldShape = exports.SetParameterShape = exports.ProviderInShape = exports.ShapeProvider = exports.AddField = exports.FieldShapeFromShape = exports.AddRequest = exports.AddShape = void 0;
-function AddShape(shapeId, baseShapeId, name = '') {
-    return { AddShape: { shapeId, baseShapeId, name } };
-}
-exports.AddShape = AddShape;
-function AddRequest(httpMethod, pathId, requestId) {
-    return { AddRequest: { httpMethod, pathId, requestId } };
-}
-exports.AddRequest = AddRequest;
-function FieldShapeFromShape(fieldId, shapeId) {
-    return { FieldShapeFromShape: { fieldId, shapeId } };
-}
-exports.FieldShapeFromShape = FieldShapeFromShape;
-function AddField(fieldId, shapeId, name, shapeDescriptor) {
-    return { AddField: { fieldId, shapeId, name, shapeDescriptor } };
-}
-exports.AddField = AddField;
-function ShapeProvider(shapeId) {
-    return { ShapeProvider: { shapeId } };
-}
-exports.ShapeProvider = ShapeProvider;
-function ProviderInShape(shapeId, providerDescriptor, consumingParameterId) {
-    return {
-        ProviderInShape: { shapeId, providerDescriptor, consumingParameterId },
-    };
-}
-exports.ProviderInShape = ProviderInShape;
-function SetParameterShape(shapeDescriptor) {
-    return { SetParameterShape: { shapeDescriptor } };
-}
-exports.SetParameterShape = SetParameterShape;
-function SetFieldShape(shapeDescriptor) {
-    return { SetFieldShape: { shapeDescriptor } };
-}
-exports.SetFieldShape = SetFieldShape;
-function AddShapeParameter(shapeParameterId, shapeId, name) {
-    return { AddShapeParameter: { shapeParameterId, shapeId, name } };
-}
-exports.AddShapeParameter = AddShapeParameter;
-function RemoveField(fieldId) {
-    return { RemoveField: { fieldId } };
-}
-exports.RemoveField = RemoveField;
-function AddPathParameter(pathId, parentPathId, name) {
-    return {
-        AddPathParameter: {
-            pathId,
-            parentPathId,
-            name,
-        },
-    };
-}
-exports.AddPathParameter = AddPathParameter;
-function AddPathComponent(pathId, parentPathId, name) {
-    return {
-        AddPathComponent: {
-            pathId,
-            parentPathId,
-            name,
-        },
-    };
-}
-exports.AddPathComponent = AddPathComponent;
-function AddContribution(id, key, value) {
-    return {
-        AddContribution: {
-            id,
-            key,
-            value,
-        },
-    };
-}
-exports.AddContribution = AddContribution;
-function ShapedBodyDescriptor(httpContentType, shapeId, isRemoved = false) {
-    return {
-        httpContentType,
-        shapeId,
-        isRemoved,
-    };
-}
-exports.ShapedBodyDescriptor = ShapedBodyDescriptor;
-function SetResponseBodyShape(responseId, bodyDescriptor) {
-    return {
-        SetResponseBodyShape: {
-            responseId,
-            bodyDescriptor,
-        },
-    };
-}
-exports.SetResponseBodyShape = SetResponseBodyShape;
-function SetRequestBodyShape(requestId, bodyDescriptor) {
-    return {
-        SetRequestBodyShape: {
-            requestId,
-            bodyDescriptor,
-        },
-    };
-}
-exports.SetRequestBodyShape = SetRequestBodyShape;
-function AddResponseByPathAndMethod(responseId, pathId, httpMethod, httpStatusCode) {
-    return {
-        AddResponseByPathAndMethod: {
-            responseId,
-            pathId,
-            httpMethod,
-            httpStatusCode,
-        },
-    };
-}
-exports.AddResponseByPathAndMethod = AddResponseByPathAndMethod;
-function PrunePathComponents() {
-    return {
-        PrunePathComponents: {},
-    };
-}
-exports.PrunePathComponents = PrunePathComponents;
-
-
-/***/ }),
-
 /***/ 8706:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -23002,9 +23197,10 @@ schema {
   mutation: Mutation
 }
 type Mutation {
-  applyCommands(commands: [JSON], batchCommitId: ID, commitMessage: String, clientId: ID, clientSessionId: ID): AppliedCommandsResult
-  startDiff(diffId: ID, captureId: ID): StartDiffResult
+  applyCommands(commands: [JSON!]!, batchCommitId: ID!, commitMessage: String!, clientId: ID!, clientSessionId: ID!): AppliedCommandsResult
+  startDiff(diffId: ID!, captureId: ID!): StartDiffResult
   invalidateCaches: InvalidateCachesResult
+  resetToCommit(batchCommitId: ID!): Boolean
 }
 type InvalidateCachesResult {
   batchCommitId: ID
@@ -23021,8 +23217,11 @@ type StartDiffResult {
 """
 Queries for Spectacle
 """
-type Query {  
+type Query {
+  endpoints: [Endpoint!]!
+
   # All HTTP requests defined in the spec
+  # TODO @nic deprecate
   requests: [HttpRequest]
 
   # URI paths for endpoints
@@ -23038,9 +23237,9 @@ type Query {
   batchCommits: [BatchCommit]
   
   # Diffs for existing endpoints and unrecognized URLs
-  diff(diffId: ID): DiffState
+  diff(diffId: ID!): DiffState
 
-  endpoint(pathId: ID, method: String): Endpoint
+  endpoint(pathId: ID!, method: String!): Endpoint
 
   # Metadata about the current spec
   metadata: SpecMetadata
@@ -23081,11 +23280,60 @@ type Path {
 }
 
 type Endpoint {
-  commands: EndpointCommands
+  # PathId + Method
+  id: ID!
+  
+  # Path ID
+  pathId: ID!
+  
+  # HTTP method for the HTTP request
+  method: String!
+
+  # Path components for the HTTP request
+  pathComponents: [PathComponent!]!
+  
+  # URI path pattern with parameter names included 
+  pathPattern: String!
+  
+  # Query parameters associated with this HTTP request
+  query: QueryParameters
+  
+  # Request bodies associated with this HTTP request
+  requests: [HttpRequestNew!]!
+  
+  # Responses associated with this HTTP request
+  responses: [HttpResponse!]!
+
+  # Contributions which define descriptions
+  # TODO figure out what this currently maps to in the contributions list
+  contributions: JSON!
+
+  # Is the endpoint removed
+  # TODO figure out how this gets mapped
+  isRemoved: Boolean!
+
+  commands: EndpointCommands!
 }
 
 type EndpointCommands {
-  remove: [JSON]
+  remove: [JSON!]!
+}
+
+"""
+HttpRequestNew - to supercede HttpRequest (and subsequently renamed to HttpRequest)
+TODO @nic rename this
+"""
+type HttpRequestNew {
+  # Request Id
+  id: ID!
+
+  # Request body associated with this HTTP request
+  body: HttpBody
+
+  contributions: JSON!
+
+  # Is the request removed
+  isRemoved: Boolean!
 }
 
 """
@@ -23103,7 +23351,25 @@ type HttpBody {
 }
 
 """
+Query Parameters, 1:1 mapping to a HttpRequest
+"""
+type QueryParameters {
+  # Id for the query parameter
+  id: String!
+
+  # Root shape ID for the QueryParameter. Look at the shapeChoices query getting more information about the root shape
+  rootShapeId: String!
+
+  # Is the body removed
+  isRemoved: Boolean!
+
+  # Contributions for the query parameter
+  contributions: JSON!
+}
+
+"""
 HTTP Request
+TODO @nic  Deprecate this
 """
 type HttpRequest {
   id: ID
@@ -23122,16 +23388,16 @@ type HttpRequest {
   
   # HTTP method for the HTTP request
   method: String
+
+  # Query parameters associated with this HTTP request
+  query: QueryParameters
   
   # Request bodies associated with this HTTP request
   bodies: [HttpBody]
   
   # Responses associated with this HTTP request
   responses: [HttpResponse]
-  
-  # Changes for the HTTP request based on the give batch commit ID
-  changes(sinceBatchCommitId: String): ChangesResult
-  
+
   # Path contributions which define descriptions
   pathContributions: JSON
   
@@ -23173,9 +23439,6 @@ type HttpResponse {
   
   # Response bodies associated with this HTTP response
   bodies: [HttpBody]
-  
-  # Changes for the HTTP response based on the give batch commit ID
-  changes(sinceBatchCommitId: String): ChangesResult
   
   # HTTP response contributions which define descriptions
   contributions: JSON
@@ -23249,16 +23512,18 @@ type ChangesResult {
   added: Boolean
   
   # Whether or not the change was one that was updated
+  # TODO @nic change this to updated
   changed: Boolean
+
+  # Whether or not the change was one that was removed
+  removed: Boolean
 }
 
 """
 Endpoint Changes
+TODO move this into Endpoint type (as changes)
 """
-type EndpointChanges {
-  # URL for Optic change documentation
-  opticUrl: String
-  
+type EndpointChanges {  
   # Changed endpoints for the batch commit ID provided to query
   endpoints: [EndpointChange]
 }
@@ -23315,7 +23580,7 @@ type BatchCommit {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getContributionsProjection = exports.getArrayChanges = exports.getFieldChanges = exports.getShapeChanges = exports.buildEndpointChanges = exports.buildShapesGraph = exports.buildEndpointsGraph = void 0;
+exports.CommandGenerator = exports.getContributionsProjection = exports.getArrayChanges = exports.getFieldChanges = exports.getShapeChanges = exports.buildEndpointChanges = exports.buildShapesGraph = exports.buildEndpointsGraph = void 0;
 const graph_lib_1 = __webpack_require__(3194);
 function buildEndpointsGraph(spec, opticEngine) {
     const serializedGraph = JSON.parse(opticEngine.get_endpoints_projection(spec));
@@ -23490,19 +23755,17 @@ class Changes {
     }
 }
 function endpointFromRequest(request) {
-    let pathNode = request.path();
-    const pathId = pathNode.value.pathId;
+    const endpoint = request.endpoint();
+    const pathNode = endpoint.path();
+    const { id: endpointId, pathId, httpMethod: method } = endpoint.value;
     const path = pathNode.absolutePathPatternWithParameterNames;
-    const method = request.value.httpMethod;
-    const endpointId = JSON.stringify({ path, method });
     return { endpointId, pathId, path, method };
 }
 function endpointFromResponse(response) {
-    let pathNode = response.path();
-    const pathId = pathNode.value.pathId;
+    const endpoint = response.endpoint();
+    const pathNode = endpoint.path();
+    const { id: endpointId, pathId, httpMethod: method } = endpoint.value;
     const path = pathNode.absolutePathPatternWithParameterNames;
-    const method = response.value.httpMethod;
-    const endpointId = JSON.stringify({ path, method });
     return { endpointId, pathId, path, method };
 }
 //@TODO remove if not needed after testing
@@ -23510,6 +23773,7 @@ function getShapeChanges(shapeQueries, shapeId, sinceBatchCommitId) {
     const results = {
         added: false,
         changed: false,
+        removed: false,
     };
     // TODO: figure out why shapeId is undefined
     if (!shapeId)
@@ -23529,6 +23793,7 @@ function getFieldChanges(shapeQueries, fieldId, shapeId, sinceBatchCommitId) {
     const results = {
         added: false,
         changed: false,
+        removed: false,
     };
     const deltaBatchCommits = getDeltaBatchCommits(shapeQueries, sinceBatchCommitId);
     for (const batchCommitId of deltaBatchCommits.keys()) {
@@ -23553,6 +23818,7 @@ function getArrayChanges(shapeQueries, shapeId, sinceBatchCommitId) {
     const results = {
         added: false,
         changed: false,
+        removed: false,
     };
     const deltaBatchCommits = getDeltaBatchCommits(shapeQueries, sinceBatchCommitId);
     return checkForArrayChanges(shapeQueries, deltaBatchCommits, results, shapeId);
@@ -23595,6 +23861,19 @@ function getContributionsProjection(spec, opticEngine) {
     return JSON.parse(opticEngine.get_contributions_projection(spec));
 }
 exports.getContributionsProjection = getContributionsProjection;
+class CommandGenerator {
+    constructor(spec, opticEngine) {
+        this.spec = spec;
+        this.opticEngine = opticEngine;
+        this.endpoint = {
+            remove: (pathId, method) => {
+                const specEndpointDeleteCommands = this.opticEngine.spec_endpoint_delete_commands(this.spec, pathId, method);
+                return JSON.parse(specEndpointDeleteCommands).commands;
+            },
+        };
+    }
+}
+exports.CommandGenerator = CommandGenerator;
 
 
 /***/ }),
@@ -23658,6 +23937,18 @@ class InMemorySpecRepository {
         this.events.push(...newEvents);
         this.notifications.emit('change');
     }
+    async resetToCommit(batchCommitId) {
+        var _a;
+        const newEvents = [];
+        for (const event of this.events) {
+            newEvents.push(event);
+            if (((_a = event.BatchCommitEnded) === null || _a === void 0 ? void 0 : _a.batchId) === batchCommitId) {
+                break;
+            }
+        }
+        this.events = newEvents;
+        this.notifications.emit('change');
+    }
 }
 exports.InMemorySpecRepository = InMemorySpecRepository;
 ////////////////////////////////////////////////////////////////////////////////
@@ -23667,10 +23958,7 @@ class InMemoryInteractionsRepository {
     }
     async listById(id) {
         const interactions = this.map.get(id);
-        if (!interactions) {
-            throw new Error(`no interactions found for capture id ${id}`);
-        }
-        return interactions;
+        return interactions || [];
     }
     async set(id, interactions) {
         this.map.set(id, interactions);
@@ -23683,7 +23971,11 @@ class InMemoryCapturesService {
     }
     async loadInteraction(captureId, pointer) {
         const interactions = await this.dependencies.interactionsRepository.listById(captureId);
-        return interactions.find((i) => i.uuid === pointer);
+        const interaction = interactions.find((i) => i.uuid === pointer);
+        if (!interaction) {
+            throw new Error(`Could not find interaction ${pointer} in capture ${captureId}`);
+        }
+        return interaction;
     }
     async listCaptures() {
         return this.captures;
@@ -23772,7 +24064,8 @@ class InMemoryDiffService {
                 return JSON.stringify(x);
             })
                 .join('\n');
-            const learnedBodies = JSON.parse(this.dependencies.opticEngine.learn_undocumented_bodies(spec, interactionsJsonl, 'random'));
+            const learnedBodies = JSON.parse(this.dependencies.opticEngine.learn_undocumented_bodies(spec, interactionsJsonl, 'random', process.env.REACT_APP_FF_LEARN_UNDOCUMENTED_QUERY_PARAMETERS ===
+                'true'));
             const learnedBodiesForPathIdAndMethod = learnedBodies.find((x) => {
                 return x.pathId === pathId && x.method === method;
             });
@@ -23780,6 +24073,7 @@ class InMemoryDiffService {
                 return {
                     pathId,
                     method,
+                    queryParameters: null,
                     requests: [],
                     responses: [],
                 };
@@ -23816,7 +24110,9 @@ class InMemoryDiff {
         const diffingStream = (function (opticEngine) {
             return __asyncGenerator(this, arguments, function* () {
                 for (let interaction of interactions) {
-                    let results = opticEngine.diff_interaction(JSON.stringify(interaction), spec);
+                    let results = opticEngine.diff_interaction(JSON.stringify(interaction), spec, {
+                        includeQueryParams: process.env.REACT_APP_FF_DIFF_QUERY_PARAMETERS === 'true',
+                    });
                     let parsedResults = JSON.parse(results);
                     let taggedResults = (parsedResults = parsedResults.map((item) => {
                         const [diffResult, fingerprint] = item;
@@ -23970,412 +24266,10 @@ var __createBinding = (this && this.__createBinding) || (Object.create ? (functi
 var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !exports.hasOwnProperty(p)) __createBinding(exports, m, p);
 };
-var __asyncValues = (this && this.__asyncValues) || function (o) {
-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
-    var m = o[Symbol.asyncIterator], i;
-    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
-    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
-    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.makeSpectacle = void 0;
-const graphql_1 = __webpack_require__(6155);
-const schema_1 = __webpack_require__(8706);
-const schema_2 = __webpack_require__(3185);
-const uuid_1 = __webpack_require__(4552);
-const graphql_type_json_1 = __importDefault(__webpack_require__(7636));
-const helpers_1 = __webpack_require__(4342);
-const graph_lib_1 = __webpack_require__(3194);
 __exportStar(__webpack_require__(216), exports);
-__exportStar(__webpack_require__(1349), exports);
-////////////////////////////////////////////////////////////////////////////////
-async function buildProjections(opticContext) {
-    const events = await opticContext.specRepository.listEvents();
-    const spec = opticContext.opticEngine.spec_from_events(JSON.stringify(events));
-    const endpointsQueries = helpers_1.buildEndpointsGraph(spec, opticContext.opticEngine);
-    const shapesQueries = helpers_1.buildShapesGraph(spec, opticContext.opticEngine);
-    const shapeViewerProjection = JSON.parse(opticContext.opticEngine.get_shape_viewer_projection(spec));
-    const contributionsProjection = helpers_1.getContributionsProjection(spec, opticContext.opticEngine);
-    return {
-        events,
-        spec,
-        endpointsQueries,
-        shapesQueries,
-        shapeViewerProjection,
-        contributionsProjection,
-        getEndpointProjection: (pathId, method) => {
-            const endpointProjection = opticContext.opticEngine.spec_endpoint_delete_commands(spec, pathId, method);
-            return {
-                commands: {
-                    remove: JSON.parse(endpointProjection).commands,
-                },
-            };
-        },
-    };
-}
-async function makeSpectacle(opticContext) {
-    let endpointsQueries, shapeQueries, shapeViewerProjection, contributionsProjection, getEndpointProjection;
-    // TODO: consider debouncing reloads (head and tail?)
-    async function reload(opticContext) {
-        const projections = await buildProjections(opticContext);
-        endpointsQueries = projections.endpointsQueries;
-        shapeQueries = projections.shapesQueries;
-        shapeViewerProjection = projections.shapeViewerProjection;
-        contributionsProjection = projections.contributionsProjection;
-        getEndpointProjection = projections.getEndpointProjection;
-        return projections;
-    }
-    async function reloadFromSpecChange(specChanges, opticContext) {
-        var e_1, _a;
-        try {
-            for (var specChanges_1 = __asyncValues(specChanges), specChanges_1_1; specChanges_1_1 = await specChanges_1.next(), !specChanges_1_1.done;) {
-                let generation = specChanges_1_1.value;
-                console.log('reloading because of specRepository change', generation);
-                await reload(opticContext);
-            }
-        }
-        catch (e_1_1) { e_1 = { error: e_1_1 }; }
-        finally {
-            try {
-                if (specChanges_1_1 && !specChanges_1_1.done && (_a = specChanges_1.return)) await _a.call(specChanges_1);
-            }
-            finally { if (e_1) throw e_1.error; }
-        }
-    }
-    await reload(opticContext);
-    // TODO: make sure this Promise is consumed somewhere so errors are handled. Return from makeSpectacle perhaps?
-    const reloadingSpecs = reloadFromSpecChange(opticContext.specRepository.changes, opticContext);
-    const resolvers = {
-        JSON: graphql_type_json_1.default,
-        Mutation: {
-            //@jaap: this mutation needs to be linearized/atomic so only one spec change executes at a time, against the latest spec.
-            applyCommands: async (parent, args, context) => {
-                const { batchCommitId, commands, commitMessage, clientId, clientSessionId, } = args;
-                try {
-                    await context
-                        .spectacleContext()
-                        .opticContext.specRepository.applyCommands(commands, batchCommitId, commitMessage, { clientId, clientSessionId });
-                }
-                catch (e) {
-                    console.error(e);
-                    debugger;
-                    throw e;
-                }
-                await reload(context.spectacleContext().opticContext);
-                return {
-                    batchCommitId,
-                };
-            },
-            startDiff: async (parent, args, context) => {
-                const { diffId, captureId } = args;
-                await context
-                    .spectacleContext()
-                    .opticContext.capturesService.startDiff(diffId, captureId, context.spectacleContext().opticContext.specRepository, context.spectacleContext().opticContext.configRepository);
-                return {
-                    notificationsUrl: '',
-                };
-            },
-            invalidateCaches: async (parent, args, context) => {
-                await reload(context.spectacleContext().opticContext);
-            },
-        },
-        Query: {
-            paths: (parent, args, context, info) => {
-                return Promise.resolve(context
-                    .spectacleContext()
-                    .endpointsQueries.listNodesByType(graph_lib_1.endpoints.NodeType.Path).results);
-            },
-            requests: (parent, args, context, info) => {
-                return Promise.resolve(context
-                    .spectacleContext()
-                    .endpointsQueries.listNodesByType(graph_lib_1.endpoints.NodeType.Request)
-                    .results);
-            },
-            shapeChoices: async (parent, args, context, info) => {
-                return context.spectacleContext().shapeViewerProjection[args.shapeId];
-            },
-            endpoint: async (parent, args, context, info) => {
-                const { pathId, method } = args;
-                return context.spectacleContext().getEndpointProjection(pathId, method);
-            },
-            endpointChanges: (parent, { sinceBatchCommitId }, context, info) => {
-                const endpointChanges = helpers_1.buildEndpointChanges(endpointsQueries, shapeQueries, sinceBatchCommitId);
-                return Promise.resolve(endpointChanges);
-            },
-            batchCommits: (parent, args, context, info) => {
-                return Promise.resolve(context
-                    .spectacleContext()
-                    .endpointsQueries.listNodesByType(graph_lib_1.endpoints.NodeType.BatchCommit)
-                    .results);
-            },
-            diff: async (parent, args, context, info) => {
-                const { diffId } = args;
-                return context
-                    .spectacleContext()
-                    .opticContext.diffRepository.findById(diffId);
-            },
-            metadata: async (parent, args, context, info) => {
-                const metadataKey = 'metadata';
-                const specIdKey = 'id';
-                const metadata = context.spectacleContext().contributionsProjection[metadataKey] || {};
-                let specId = metadata[specIdKey];
-                if (!specId) {
-                    specId = uuid_1.v4();
-                    await context
-                        .spectacleContext()
-                        .opticContext.specRepository.applyCommands([
-                        {
-                            AddContribution: {
-                                id: metadataKey,
-                                key: specIdKey,
-                                value: specId,
-                            },
-                        },
-                    ], uuid_1.v4(), 'Initialize specification attributes', { clientId: '', clientSessionId: '' });
-                    await reload(context.spectacleContext().opticContext);
-                }
-                return { id: specId };
-            },
-        },
-        DiffState: {
-            diffs: async (parent, args, context) => {
-                return parent.listDiffs();
-            },
-            unrecognizedUrls: async (parent, args, context) => {
-                return parent.listUnrecognizedUrls();
-            },
-        },
-        HttpRequest: {
-            id: (parent) => {
-                return Promise.resolve(parent.value.requestId);
-            },
-            pathId: (parent) => {
-                return Promise.resolve(parent.path().value.pathId);
-            },
-            absolutePathPattern: (parent) => {
-                return Promise.resolve(parent.path().value.absolutePathPattern);
-            },
-            absolutePathPatternWithParameterNames: (parent) => {
-                return Promise.resolve(parent.path().absolutePathPatternWithParameterNames);
-            },
-            pathComponents: (parent) => {
-                let path = parent.path();
-                let parentPath = path.parentPath();
-                const components = [path.value];
-                while (parentPath !== null) {
-                    components.push(parentPath.value);
-                    path = parentPath;
-                    parentPath = path.parentPath();
-                }
-                return Promise.resolve(components.reverse());
-            },
-            method: (parent) => {
-                return Promise.resolve(parent.value.httpMethod);
-            },
-            bodies: (parent) => {
-                return Promise.resolve(parent.bodies().results);
-            },
-            responses: (parent) => {
-                return Promise.resolve(parent.responses());
-            },
-            pathContributions: (parent, args, context) => {
-                const pathId = parent.path().value.pathId;
-                const method = parent.value.httpMethod;
-                return Promise.resolve(context.spectacleContext().contributionsProjection[`${pathId}.${method}`] || {});
-            },
-            requestContributions: (parent, args, context) => {
-                return Promise.resolve(context.spectacleContext().contributionsProjection[parent.value.requestId] || {});
-            },
-            isRemoved: (parent, args, context) => {
-                return Promise.resolve(parent.value.isRemoved);
-            },
-        },
-        Path: {
-            absolutePathPattern: (parent) => {
-                return Promise.resolve(parent.value.absolutePathPattern);
-            },
-            isParameterized: (parent) => {
-                return Promise.resolve(parent.value.isParameterized);
-            },
-            name: (parent) => {
-                return Promise.resolve(parent.value.name);
-            },
-            pathId: (parent) => {
-                return Promise.resolve(parent.value.pathId);
-            },
-            parentPathId: (parent) => {
-                const parentPath = parent.parentPath();
-                if (parentPath) {
-                    return Promise.resolve(parentPath.result.id);
-                }
-                return Promise.resolve(null);
-            },
-            absolutePathPatternWithParameterNames: (parent) => {
-                return Promise.resolve(parent.absolutePathPatternWithParameterNames);
-            },
-            isRemoved: (parent, args, context) => {
-                return Promise.resolve(parent.value.isRemoved);
-            },
-        },
-        HttpResponse: {
-            id: (parent) => {
-                return Promise.resolve(parent.value.responseId);
-            },
-            statusCode: (parent) => {
-                return Promise.resolve(parent.value.httpStatusCode);
-            },
-            bodies: (parent) => {
-                return Promise.resolve(parent.bodies().results);
-            },
-            contributions: (parent, args, context) => {
-                return Promise.resolve(context.spectacleContext().contributionsProjection[parent.value.responseId] || {});
-            },
-            isRemoved: (parent, args, context) => {
-                return Promise.resolve(parent.value.isRemoved);
-            },
-        },
-        PathComponent: {
-            id: (parent) => {
-                return Promise.resolve(parent.pathId);
-            },
-            contributions: (parent, args, context) => {
-                return Promise.resolve(context.spectacleContext().contributionsProjection[parent.pathId] ||
-                    {});
-            },
-            isRemoved: (parent, args, context) => {
-                return Promise.resolve(parent.isRemoved);
-            },
-        },
-        HttpBody: {
-            contentType: (parent) => {
-                return Promise.resolve(parent.value.httpContentType);
-            },
-            rootShapeId: (parent) => {
-                return Promise.resolve(parent.value.rootShapeId);
-            },
-            isRemoved: (parent, args, context) => {
-                return Promise.resolve(parent.value.isRemoved);
-            },
-        },
-        OpticShape: {
-            id: (parent) => {
-                return Promise.resolve(parent.shapeId);
-            },
-            jsonType: (parent) => {
-                return Promise.resolve(parent.jsonType);
-            },
-            asArray: (parent) => {
-                if (parent.jsonType === 'Array') {
-                    return Promise.resolve(parent);
-                }
-            },
-            asObject: (parent) => {
-                if (parent.jsonType === 'Object') {
-                    return Promise.resolve(parent);
-                }
-            },
-        },
-        ArrayMetadata: {
-            shapeId: (parent) => {
-                return Promise.resolve(parent.itemShapeId);
-            },
-            changes: (parent, args, context) => {
-                return Promise.resolve(helpers_1.getArrayChanges(context.spectacleContext().shapeQueries, parent.shapeId, args.sinceBatchCommitId));
-            },
-        },
-        ObjectFieldMetadata: {
-            changes: (parent, args, context) => {
-                return Promise.resolve(helpers_1.getFieldChanges(context.spectacleContext().shapeQueries, parent.fieldId, parent.shapeId, args.sinceBatchCommitId));
-            },
-            contributions: (parent, args, context) => {
-                return Promise.resolve(context.spectacleContext().contributionsProjection[parent.fieldId] ||
-                    {});
-            },
-        },
-        EndpointChanges: {
-            opticUrl: (parent) => {
-                return Promise.resolve(parent.data.opticUrl);
-            },
-            endpoints: (parent) => {
-                return Promise.resolve(parent.data.endpoints);
-            },
-        },
-        EndpointChange: {
-            // TODO: considering converting into ChangeResult
-            change: (parent) => {
-                return Promise.resolve(parent.change);
-            },
-            path: (parent) => {
-                return Promise.resolve(parent.path);
-            },
-            pathId: (parent) => {
-                return Promise.resolve(parent.pathId);
-            },
-            method: (parent) => {
-                return Promise.resolve(parent.method);
-            },
-            contributions: (parent, args, context) => {
-                const pathId = parent.pathId;
-                const method = parent.method;
-                return Promise.resolve(context.spectacleContext().contributionsProjection[`${pathId}.${method}`] || {});
-            },
-        },
-        EndpointChangeMetadata: {
-            category: (parent) => {
-                return Promise.resolve(parent.category);
-            },
-        },
-        BatchCommit: {
-            createdAt: (parent) => {
-                return Promise.resolve(parent.result.data.createdAt);
-            },
-            batchId: (parent) => {
-                return Promise.resolve(parent.result.data.batchId);
-            },
-            commitMessage: (parent) => {
-                return Promise.resolve(parent.result.data.commitMessage);
-            },
-        },
-    };
-    const executableSchema = schema_2.makeExecutableSchema({
-        typeDefs: schema_1.schema,
-        resolvers,
-    });
-    const graphqlContext = () => {
-        return {
-            opticContext,
-            // @ts-ignore
-            endpointsQueries,
-            // @ts-ignore
-            shapeQueries,
-            shapeViewerProjection,
-            // @ts-ignore
-            contributionsProjection,
-            getEndpointProjection,
-        };
-    };
-    const queryWrapper = function (input) {
-        return graphql_1.graphql({
-            schema: executableSchema,
-            source: input.query,
-            variableValues: input.variables,
-            operationName: input.operationName,
-            contextValue: {
-                spectacleContext: graphqlContext,
-            },
-        });
-    };
-    return {
-        executableSchema,
-        queryWrapper,
-        reload,
-        graphqlContext,
-    };
-}
-exports.makeSpectacle = makeSpectacle;
+__exportStar(__webpack_require__(501), exports);
+__exportStar(__webpack_require__(6159), exports);
 
 
 /***/ }),
@@ -24629,6 +24523,534 @@ async function queryForShape(spectacle, shapeId) {
     });
 }
 exports.queryForShape = queryForShape;
+
+
+/***/ }),
+
+/***/ 501:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __asyncValues = (this && this.__asyncValues) || function (o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator], i;
+    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.makeSpectacle = void 0;
+const graphql_1 = __webpack_require__(6155);
+const schema_1 = __webpack_require__(8706);
+const schema_2 = __webpack_require__(3185);
+const uuid_1 = __webpack_require__(4552);
+const graphql_type_json_1 = __importDefault(__webpack_require__(7636));
+const helpers_1 = __webpack_require__(4342);
+const graph_lib_1 = __webpack_require__(3194);
+////////////////////////////////////////////////////////////////////////////////
+async function buildProjections(opticContext) {
+    const events = await opticContext.specRepository.listEvents();
+    const spec = opticContext.opticEngine.spec_from_events(JSON.stringify(events));
+    const endpointsQueries = helpers_1.buildEndpointsGraph(spec, opticContext.opticEngine);
+    const shapesQueries = helpers_1.buildShapesGraph(spec, opticContext.opticEngine);
+    const shapeViewerProjection = JSON.parse(opticContext.opticEngine.get_shape_viewer_projection(spec));
+    const contributionsProjection = helpers_1.getContributionsProjection(spec, opticContext.opticEngine);
+    const commandGenerator = new helpers_1.CommandGenerator(spec, opticContext.opticEngine);
+    return {
+        events,
+        spec,
+        endpointsQueries,
+        shapesQueries,
+        shapeViewerProjection,
+        contributionsProjection,
+        commandGenerator,
+    };
+}
+async function makeSpectacle(opticContext) {
+    let endpointsQueries, shapeQueries, shapeViewerProjection, contributionsProjection, commandGenerator;
+    // TODO: consider debouncing reloads (head and tail?)
+    async function reload(opticContext) {
+        const projections = await buildProjections(opticContext);
+        endpointsQueries = projections.endpointsQueries;
+        shapeQueries = projections.shapesQueries;
+        shapeViewerProjection = projections.shapeViewerProjection;
+        contributionsProjection = projections.contributionsProjection;
+        commandGenerator = projections.commandGenerator;
+        return projections;
+    }
+    async function reloadFromSpecChange(specChanges, opticContext) {
+        var e_1, _a;
+        try {
+            for (var specChanges_1 = __asyncValues(specChanges), specChanges_1_1; specChanges_1_1 = await specChanges_1.next(), !specChanges_1_1.done;) {
+                let generation = specChanges_1_1.value;
+                console.log('reloading because of specRepository change', generation);
+                await reload(opticContext);
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
+            try {
+                if (specChanges_1_1 && !specChanges_1_1.done && (_a = specChanges_1.return)) await _a.call(specChanges_1);
+            }
+            finally { if (e_1) throw e_1.error; }
+        }
+    }
+    await reload(opticContext);
+    // TODO: make sure this Promise is consumed somewhere so errors are handled. Return from makeSpectacle perhaps?
+    const reloadingSpecs = reloadFromSpecChange(opticContext.specRepository.changes, opticContext);
+    const resolvers = {
+        JSON: graphql_type_json_1.default,
+        Mutation: {
+            //@jaap: this mutation needs to be linearized/atomic so only one spec change executes at a time, against the latest spec.
+            applyCommands: async (parent, args, context) => {
+                const { batchCommitId, commands, commitMessage, clientId, clientSessionId, } = args;
+                try {
+                    await context
+                        .spectacleContext()
+                        .opticContext.specRepository.applyCommands(commands, batchCommitId, commitMessage, { clientId, clientSessionId });
+                }
+                catch (e) {
+                    console.error(e);
+                    debugger;
+                    throw e;
+                }
+                await reload(context.spectacleContext().opticContext);
+                return {
+                    batchCommitId,
+                };
+            },
+            startDiff: async (parent, args, context) => {
+                const { diffId, captureId } = args;
+                const { onComplete, } = await context
+                    .spectacleContext()
+                    .opticContext.capturesService.startDiff(diffId, captureId);
+                await onComplete;
+                return {
+                    notificationsUrl: '',
+                };
+            },
+            invalidateCaches: async (parent, _, context) => {
+                await reload(context.spectacleContext().opticContext);
+            },
+            resetToCommit: async (parent, args, context) => {
+                await context
+                    .spectacleContext()
+                    .opticContext.specRepository.resetToCommit(args.batchCommitId);
+                await reload(context.spectacleContext().opticContext);
+            },
+        },
+        Query: {
+            paths: (parent, _, context) => {
+                return Promise.resolve(context
+                    .spectacleContext()
+                    .endpointsQueries.listNodesByType(graph_lib_1.endpoints.NodeType.Path).results);
+            },
+            // TODO @nic deprecate this
+            requests: (parent, _, context) => {
+                return Promise.resolve(context
+                    .spectacleContext()
+                    .endpointsQueries.listNodesByType(graph_lib_1.endpoints.NodeType.Endpoint)
+                    .results.flatMap((endpoint) => {
+                    return endpoint.requests().results.map((request) => ({
+                        endpointNode: endpoint,
+                        requestNode: request,
+                    }));
+                }));
+            },
+            shapeChoices: async (parent, 
+            // TODO shapeId should be non-nullable, but there are some shapes that call shapeId as null
+            args, context) => {
+                return context.spectacleContext().shapeViewerProjection[args.shapeId];
+            },
+            endpoints: (parent, _, context) => {
+                return context
+                    .spectacleContext()
+                    .endpointsQueries.listNodesByType(graph_lib_1.endpoints.NodeType.Endpoint)
+                    .results;
+            },
+            endpoint: async (parent, args, context) => {
+                return context
+                    .spectacleContext()
+                    .endpointsQueries.listNodesByType(graph_lib_1.endpoints.NodeType.Endpoint)
+                    .results.find((endpointNode) => {
+                    if (endpointNode.result.type === graph_lib_1.endpoints.NodeType.Endpoint) {
+                        const { pathId, httpMethod } = endpointNode.result.data;
+                        return args.pathId === pathId && args.method === httpMethod;
+                    }
+                    return false;
+                });
+            },
+            endpointChanges: (parent, { sinceBatchCommitId }, context) => {
+                const endpointChanges = helpers_1.buildEndpointChanges(endpointsQueries, shapeQueries, sinceBatchCommitId);
+                return Promise.resolve(endpointChanges);
+            },
+            batchCommits: (parent, _, context) => {
+                return Promise.resolve(context
+                    .spectacleContext()
+                    .endpointsQueries.listNodesByType(graph_lib_1.endpoints.NodeType.BatchCommit)
+                    .results);
+            },
+            diff: async (parent, args, context) => {
+                const { diffId } = args;
+                return context
+                    .spectacleContext()
+                    .opticContext.diffRepository.findById(diffId);
+            },
+            metadata: async (parent, _, context) => {
+                const metadataKey = 'metadata';
+                const specIdKey = 'id';
+                const metadata = context.spectacleContext().contributionsProjection[metadataKey] || {};
+                let specId = metadata[specIdKey];
+                if (!specId) {
+                    specId = uuid_1.v4();
+                    await context
+                        .spectacleContext()
+                        .opticContext.specRepository.applyCommands([
+                        {
+                            AddContribution: {
+                                id: metadataKey,
+                                key: specIdKey,
+                                value: specId,
+                            },
+                        },
+                    ], uuid_1.v4(), 'Initialize specification attributes', { clientId: '', clientSessionId: '' });
+                    await reload(context.spectacleContext().opticContext);
+                }
+                return { id: specId };
+            },
+        },
+        DiffState: {
+            diffs: async (parent) => {
+                return parent.listDiffs();
+            },
+            unrecognizedUrls: async (parent) => {
+                return parent.listUnrecognizedUrls();
+            },
+        },
+        // TODO @nic deprecate this
+        HttpRequest: {
+            id: (parent) => {
+                return Promise.resolve(parent.requestNode.value.requestId);
+            },
+            pathId: (parent) => {
+                return Promise.resolve(parent.endpointNode.path().value.pathId);
+            },
+            absolutePathPattern: (parent) => {
+                return Promise.resolve(parent.endpointNode.path().value.absolutePathPattern);
+            },
+            absolutePathPatternWithParameterNames: (parent) => {
+                return Promise.resolve(parent.endpointNode.path().absolutePathPatternWithParameterNames);
+            },
+            pathComponents: (parent) => {
+                let path = parent.endpointNode.path();
+                let parentPath = path.parentPath();
+                const components = [path.value];
+                while (parentPath !== null) {
+                    components.push(parentPath.value);
+                    path = parentPath;
+                    parentPath = path.parentPath();
+                }
+                return Promise.resolve(components.reverse());
+            },
+            method: (parent) => {
+                return Promise.resolve(parent.endpointNode.value.httpMethod);
+            },
+            query: async (parent) => {
+                return process.env.REACT_APP_FF_LEARN_UNDOCUMENTED_QUERY_PARAMETERS ===
+                    'true'
+                    ? parent.endpointNode.query()
+                    : null;
+            },
+            bodies: (parent) => {
+                return Promise.resolve(parent.requestNode.body() ? [parent.requestNode.body()] : []);
+            },
+            responses: (parent) => {
+                return Promise.resolve(parent.endpointNode.responses().results);
+            },
+            pathContributions: (parent, _, context) => {
+                const pathId = parent.endpointNode.path().value.pathId;
+                const method = parent.endpointNode.value.httpMethod;
+                return Promise.resolve(context.spectacleContext().contributionsProjection[`${pathId}.${method}`] || {});
+            },
+            requestContributions: (parent, _, context) => {
+                return Promise.resolve(context.spectacleContext().contributionsProjection[parent.requestNode.value.requestId] || {});
+            },
+            isRemoved: (parent) => {
+                return Promise.resolve(parent.requestNode.value.isRemoved);
+            },
+        },
+        Endpoint: {
+            id: async (parent) => {
+                return parent.value.id;
+            },
+            pathId: async (parent) => {
+                return parent.value.pathId;
+            },
+            method: async (parent) => {
+                return parent.value.httpMethod;
+            },
+            pathComponents: async (parent) => {
+                let path = parent.path();
+                let parentPath = path.parentPath();
+                const components = [path.value];
+                while (parentPath !== null) {
+                    components.push(parentPath.value);
+                    path = parentPath;
+                    parentPath = path.parentPath();
+                }
+                return components.reverse();
+            },
+            pathPattern: async (parent) => {
+                return parent.path().absolutePathPatternWithParameterNames;
+            },
+            query: async (parent) => {
+                return process.env.REACT_APP_FF_LEARN_UNDOCUMENTED_QUERY_PARAMETERS ===
+                    'true'
+                    ? parent.query()
+                    : null;
+            },
+            requests: async (parent) => {
+                return parent.requests().results;
+            },
+            responses: async (parent) => {
+                return parent.responses().results;
+            },
+            contributions: async (parent, _, context) => {
+                const { pathId, httpMethod } = parent.value;
+                return (context.spectacleContext().contributionsProjection[`${pathId}.${httpMethod}`] || {});
+            },
+            isRemoved: async (parent) => {
+                return parent.value.isRemoved;
+            },
+            commands: async (parent) => {
+                const { pathId, httpMethod } = parent.value;
+                return {
+                    remove: commandGenerator.endpoint.remove(pathId, httpMethod),
+                };
+            },
+        },
+        // TODO @nic rename this to HttpRequest when old http request removed
+        HttpRequestNew: {
+            id: async (parent) => {
+                return parent.value.requestId;
+            },
+            body: async (parent) => {
+                return parent.body();
+            },
+            contributions: async (parent, _, context) => {
+                const { requestId } = parent.value;
+                return (context.spectacleContext().contributionsProjection[requestId] || {});
+            },
+            isRemoved: async (parent) => {
+                return parent.value.isRemoved;
+            },
+        },
+        QueryParameters: {
+            id: (parent) => {
+                return parent.value.queryParametersId;
+            },
+            rootShapeId: (parent) => {
+                return parent.value.rootShapeId;
+            },
+            isRemoved: (parent) => {
+                return parent.value.isRemoved;
+            },
+            contributions: (parent, _, context) => {
+                const id = parent.value.queryParametersId;
+                return context.spectacleContext().contributionsProjection[id] || {};
+            },
+        },
+        Path: {
+            absolutePathPattern: (parent) => {
+                return Promise.resolve(parent.value.absolutePathPattern);
+            },
+            isParameterized: (parent) => {
+                return Promise.resolve(parent.value.isParameterized);
+            },
+            name: (parent) => {
+                return Promise.resolve(parent.value.name);
+            },
+            pathId: (parent) => {
+                return Promise.resolve(parent.value.pathId);
+            },
+            parentPathId: (parent) => {
+                const parentPath = parent.parentPath();
+                if (parentPath) {
+                    return Promise.resolve(parentPath.result.id);
+                }
+                return Promise.resolve(null);
+            },
+            absolutePathPatternWithParameterNames: (parent) => {
+                return Promise.resolve(parent.absolutePathPatternWithParameterNames);
+            },
+            isRemoved: (parent) => {
+                return Promise.resolve(parent.value.isRemoved);
+            },
+        },
+        HttpResponse: {
+            id: (parent) => {
+                return Promise.resolve(parent.value.responseId);
+            },
+            statusCode: (parent) => {
+                return Promise.resolve(parent.value.httpStatusCode);
+            },
+            bodies: (parent) => {
+                return Promise.resolve(parent.bodies().results);
+            },
+            contributions: (parent, _, context) => {
+                return Promise.resolve(context.spectacleContext().contributionsProjection[parent.value.responseId] || {});
+            },
+            isRemoved: (parent) => {
+                return Promise.resolve(parent.value.isRemoved);
+            },
+        },
+        PathComponent: {
+            id: (parent) => {
+                return Promise.resolve(parent.pathId);
+            },
+            contributions: (parent, _, context) => {
+                return Promise.resolve(context.spectacleContext().contributionsProjection[parent.pathId] ||
+                    {});
+            },
+            isRemoved: (parent) => {
+                return Promise.resolve(parent.isRemoved);
+            },
+        },
+        HttpBody: {
+            contentType: (parent) => {
+                return Promise.resolve(parent.value.httpContentType);
+            },
+            rootShapeId: (parent) => {
+                return Promise.resolve(parent.value.rootShapeId);
+            },
+            isRemoved: (parent) => {
+                return Promise.resolve(parent.value.isRemoved);
+            },
+        },
+        OpticShape: {
+            id: (parent) => {
+                return Promise.resolve(parent.shapeId);
+            },
+            jsonType: (parent) => {
+                return Promise.resolve(parent.jsonType);
+            },
+            asArray: (parent) => {
+                if (parent.jsonType === 'Array') {
+                    return Promise.resolve(parent);
+                }
+            },
+            asObject: (parent) => {
+                if (parent.jsonType === 'Object') {
+                    return Promise.resolve(parent);
+                }
+            },
+        },
+        ArrayMetadata: {
+            shapeId: (parent) => {
+                return Promise.resolve(parent.itemShapeId);
+            },
+            changes: (parent, args, context) => {
+                return Promise.resolve(helpers_1.getArrayChanges(context.spectacleContext().shapeQueries, parent.shapeId, args.sinceBatchCommitId));
+            },
+        },
+        ObjectFieldMetadata: {
+            changes: (parent, args, context) => {
+                return Promise.resolve(helpers_1.getFieldChanges(context.spectacleContext().shapeQueries, parent.fieldId, parent.shapeId, args.sinceBatchCommitId));
+            },
+            contributions: (parent, _, context) => {
+                return Promise.resolve(context.spectacleContext().contributionsProjection[parent.fieldId] ||
+                    {});
+            },
+        },
+        EndpointChanges: {
+            endpoints: (parent) => {
+                return Promise.resolve(parent.data.endpoints);
+            },
+        },
+        EndpointChange: {
+            // TODO @nic considering converting into ChangeResult
+            change: (parent) => {
+                return Promise.resolve(parent.change);
+            },
+            path: (parent) => {
+                return Promise.resolve(parent.path);
+            },
+            pathId: (parent) => {
+                return Promise.resolve(parent.pathId);
+            },
+            method: (parent) => {
+                return Promise.resolve(parent.method);
+            },
+            contributions: (parent, _, context) => {
+                const pathId = parent.pathId;
+                const method = parent.method;
+                return Promise.resolve(context.spectacleContext().contributionsProjection[`${pathId}.${method}`] || {});
+            },
+        },
+        EndpointChangeMetadata: {
+            category: (parent) => {
+                return Promise.resolve(parent.category);
+            },
+        },
+        BatchCommit: {
+            createdAt: (parent) => {
+                return Promise.resolve(parent.value.createdAt);
+            },
+            batchId: (parent) => {
+                return Promise.resolve(parent.value.batchId);
+            },
+            commitMessage: (parent) => {
+                return Promise.resolve(parent.value.commitMessage);
+            },
+        },
+    };
+    const executableSchema = schema_2.makeExecutableSchema({
+        typeDefs: schema_1.schema,
+        resolvers,
+    });
+    const graphqlContext = () => {
+        return {
+            opticContext,
+            endpointsQueries,
+            shapeQueries,
+            shapeViewerProjection,
+            contributionsProjection,
+            commandGenerator,
+        };
+    };
+    const queryWrapper = function (input) {
+        return graphql_1.graphql({
+            schema: executableSchema,
+            source: input.query,
+            variableValues: input.variables,
+            operationName: input.operationName,
+            contextValue: {
+                spectacleContext: graphqlContext,
+            },
+        });
+    };
+    return {
+        executableSchema,
+        queryWrapper,
+        reload,
+        graphqlContext,
+    };
+}
+exports.makeSpectacle = makeSpectacle;
+
+
+/***/ }),
+
+/***/ 6159:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 
 /***/ }),
@@ -54791,6 +55213,184 @@ module.exports = Assembler;
 
 /***/ }),
 
+/***/ 3308:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+const {Transform} = __webpack_require__(2413);
+
+class Emit {
+  constructor(tokenName) {
+    this.tokenName = tokenName;
+  }
+}
+
+class Disassembler extends Transform {
+  static make(options) {
+    return new Disassembler(options);
+  }
+
+  constructor(options) {
+    super(Object.assign({}, options, {writableObjectMode: true, readableObjectMode: true}));
+    this._packKeys = this._packStrings = this._packNumbers = this._streamKeys = this._streamStrings = this._streamNumbers = true;
+    if (options) {
+      'packValues' in options && (this._packKeys = this._packStrings = this._packNumbers = options.packValues);
+      'packKeys' in options && (this._packKeys = options.packKeys);
+      'packStrings' in options && (this._packStrings = options.packStrings);
+      'packNumbers' in options && (this._packNumbers = options.packNumbers);
+      'streamValues' in options && (this._streamKeys = this._streamStrings = this._streamNumbers = options.streamValues);
+      'streamKeys' in options && (this._streamKeys = options.streamKeys);
+      'streamStrings' in options && (this._streamStrings = options.streamStrings);
+      'streamNumbers' in options && (this._streamNumbers = options.streamNumbers);
+      if (typeof options.replacer == 'function') {
+        this._replacer = options.replacer;
+      } else if (Array.isArray(options.replacer)) {
+        this._replacerDict = options.replacer.reduce((acc, k) => (acc[k] = 1, acc), {});
+      }
+    }
+    !this._packKeys && (this._streamKeys = true);
+    !this._packStrings && (this._streamStrings = true);
+    !this._packNumbers && (this._streamNumbers = true);
+  }
+
+  _transform(chunk, _, callback) {
+    const stack = [],
+      isArray = [];
+    if (chunk && typeof chunk == 'object' && typeof chunk.toJSON == 'function') {
+      chunk = chunk.toJSON('');
+    }
+    if (this._replacer) {
+      chunk = this._replacer('', chunk);
+    }
+    stack.push(chunk);
+    while (stack.length) {
+      const top = stack.pop();
+      main: switch (typeof top) {
+        case 'object':
+          if (top instanceof Emit) {
+            switch (top.tokenName) {
+              case 'keyValue':
+                const key = stack.pop();
+                if (this._streamKeys) {
+                  this.push({name: 'startKey'});
+                  this.push({name: 'stringChunk', value: key});
+                  this.push({name: 'endKey'});
+                }
+                this._packKeys && this.push({name: 'keyValue', value: key});
+                break main;
+              case 'startArray':
+                isArray.push(true);
+                break;
+              case 'startObject':
+                isArray.push(false);
+                break;
+              case 'endArray':
+              case 'endObject':
+                isArray.pop();
+                break;
+            }
+            this.push({name: top.tokenName});
+            break;
+          }
+          if (Array.isArray(top)) {
+            stack.push(new Emit('endArray'));
+            for (let i = top.length - 1; i >= 0; --i) {
+              let value = top[i];
+              if (value && typeof value == 'object' && typeof value.toJSON == 'function') {
+                value = value.toJSON('' + i);
+              }
+              if (this._replacer) {
+                value = this._replacer('' + i, value);
+              }
+              switch (typeof value) {
+                case 'function':
+                case 'symbol':
+                case 'undefined':
+                  value = null;
+                  break;
+              }
+              stack.push(value);
+            }
+            stack.push(new Emit('startArray'));
+            break;
+          }
+          if (top === null) {
+            this.push({name: 'nullValue', value: null});
+            break;
+          }
+          // all other objects are just objects
+          const keys = Object.keys(top);
+          stack.push(new Emit('endObject'));
+          for (let i = keys.length - 1; i >= 0; --i) {
+            const key = keys[i];
+            if (this._replacerDict && this._replacerDict[key] !== 1) continue;
+            let value = top[key];
+            if (value && typeof value == 'object' && typeof value.toJSON == 'function') {
+              value = value.toJSON(key);
+            }
+            if (this._replacer) {
+              value = this._replacer(key, value);
+            }
+            switch (typeof value) {
+              case 'function':
+              case 'symbol':
+              case 'undefined':
+                continue;
+            }
+            stack.push(value, key, new Emit('keyValue'));
+          }
+          stack.push(new Emit('startObject'));
+          break;
+        case 'string':
+          if (this._streamStrings) {
+            this.push({name: 'startString'});
+            this.push({name: 'stringChunk', value: top});
+            this.push({name: 'endString'});
+          }
+          this._packStrings && this.push({name: 'stringValue', value: top});
+          break;
+        case 'number':
+          const number = top.toString();
+          if (isNaN(number) || !isFinite(number)) {
+            this.push({name: 'nullValue', value: null});
+            break;
+          }
+          if (this._streamNumbers) {
+            this.push({name: 'startNumber'});
+            this.push({name: 'numberChunk', value: number});
+            this.push({name: 'endNumber'});
+          }
+          this._packNumbers && this.push({name: 'numberValue', value: number});
+          break;
+        case 'function':
+        case 'symbol':
+        case 'undefined':
+          if (isArray.length && isArray[isArray.length - 1]) {
+            // replace with null inside arrays
+            this.push({name: 'nullValue', value: null});
+          }
+          break;
+        case 'boolean':
+          this.push(top ? {name: 'trueValue', value: true} : {name: 'falseValue', value: false});
+          break;
+        default:
+          // skip everything else
+          break;
+      }
+    }
+    callback(null);
+  }
+}
+Disassembler.disassembler = Disassembler.make;
+Disassembler.make.Constructor = Disassembler;
+
+module.exports = Disassembler;
+
+
+/***/ }),
+
 /***/ 9066:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
@@ -55341,6 +55941,164 @@ module.exports = Parser;
 
 /***/ }),
 
+/***/ 282:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+const {Transform} = __webpack_require__(2413);
+
+const noCommaAfter = {startObject: 1, startArray: 1, endKey: 1, keyValue: 1},
+  noSpaceAfter = {endObject: 1, endArray: 1, '': 1},
+  noSpaceBefore = {startObject: 1, startArray: 1},
+  depthIncrement = {startObject: 1, startArray: 1},
+  depthDecrement = {endObject: 1, endArray: 1},
+  values = {startKey: 'keyValue', startString: 'stringValue', startNumber: 'numberValue'},
+  stopNames = {startKey: 'endKey', startString: 'endString', startNumber: 'endNumber'},
+  symbols = {
+    startObject: '{',
+    endObject: '}',
+    startArray: '[',
+    endArray: ']',
+    startKey: '"',
+    endKey: '":',
+    startString: '"',
+    endString: '"',
+    startNumber: '',
+    endNumber: '',
+    nullValue: 'null',
+    trueValue: 'true',
+    falseValue: 'false'
+  };
+
+const skipValue = endName =>
+  function(chunk, encoding, callback) {
+    if (chunk.name === endName) {
+      this._transform = this._prev_transform;
+    }
+    callback(null);
+  };
+
+const replaceSymbols = {'\b': '\\b', '\f': '\\f', '\n': '\\n', '\r': '\\r', '\t': '\\t', '"': '\\"', '\\': '\\\\'};
+const sanitizeString = value => value.replace(/[\b\f\n\r\t\"\\]/g, match => replaceSymbols[match]);
+
+const doNothing = () => {};
+
+class Stringer extends Transform {
+  static make(options) {
+    return new Stringer(options);
+  }
+
+  constructor(options) {
+    super(Object.assign({}, options, {writableObjectMode: true, readableObjectMode: false}));
+
+    this._values = {};
+    if (options) {
+      'useValues' in options && (this._values.keyValue = this._values.stringValue = this._values.numberValue = options.useValues);
+      'useKeyValues' in options && (this._values.keyValue = options.useKeyValues);
+      'useStringValues' in options && (this._values.stringValue = options.useStringValues);
+      'useNumberValues' in options && (this._values.numberValue = options.useNumberValues);
+      this._makeArray = options.makeArray;
+    }
+
+    this._prev = '';
+    this._depth = 0;
+
+    if (this._makeArray) {
+      this._transform = this._arrayTransform;
+      this._flush = this._arrayFlush;
+    }
+  }
+
+  _arrayTransform(chunk, encoding, callback) {
+    // it runs once
+    delete this._transform;
+    this._transform({name: 'startArray'}, encoding, doNothing);
+    this._transform(chunk, encoding, callback);
+  }
+
+  _arrayFlush(callback) {
+    if (this._transform === this._arrayTransform) {
+      delete this._transform;
+      this._transform({name: 'startArray'}, null, doNothing);
+    }
+    this._transform({name: 'endArray'}, null, callback);
+  }
+
+  _transform(chunk, _, callback) {
+    if (this._values[chunk.name]) {
+      if (this._depth && noCommaAfter[this._prev] !== 1) this.push(',');
+      switch (chunk.name) {
+        case 'keyValue':
+          this.push('"' + sanitizeString(chunk.value) + '":');
+          break;
+        case 'stringValue':
+          this.push('"' + sanitizeString(chunk.value)+ '"');
+          break;
+        case 'numberValue':
+          this.push(chunk.value);
+          break;
+      }
+    } else {
+      // filter out values
+      switch (chunk.name) {
+        case 'endObject':
+        case 'endArray':
+        case 'endKey':
+        case 'endString':
+        case 'endNumber':
+          this.push(symbols[chunk.name]);
+          break;
+        case 'stringChunk':
+          this.push(sanitizeString(chunk.value));
+          break;
+        case 'numberChunk':
+          this.push(chunk.value);
+          break;
+        case 'keyValue':
+        case 'stringValue':
+        case 'numberValue':
+          // skip completely
+          break;
+        case 'startKey':
+        case 'startString':
+        case 'startNumber':
+          if (this._values[values[chunk.name]]) {
+            this._prev_transform = this._transform;
+            this._transform = skipValue(stopNames[chunk.name]);
+            return callback(null);
+          }
+        // intentional fall down
+        default:
+          // case 'startObject': case 'startArray': case 'startKey': case 'startString':
+          // case 'startNumber': case 'nullValue': case 'trueValue': case 'falseValue':
+          if (this._depth) {
+            if (noCommaAfter[this._prev] !== 1) this.push(',');
+          } else {
+            if (noSpaceAfter[this._prev] !== 1 && noSpaceBefore[chunk.name] !== 1) this.push(' ');
+          }
+          this.push(symbols[chunk.name]);
+          break;
+      }
+      if (depthIncrement[chunk.name]) {
+        ++this._depth;
+      } else if (depthDecrement[chunk.name]) {
+        --this._depth;
+      }
+    }
+    this._prev = chunk.name;
+    callback(null);
+  }
+}
+Stringer.stringer = Stringer.make;
+Stringer.make.Constructor = Stringer;
+
+module.exports = Stringer;
+
+
+/***/ }),
+
 /***/ 5771:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
@@ -55390,6 +56148,58 @@ JsonlParser.parser = JsonlParser.make;
 JsonlParser.make.Constructor = JsonlParser;
 
 module.exports = JsonlParser;
+
+
+/***/ }),
+
+/***/ 9236:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+"use strict";
+
+
+const StreamBase = __webpack_require__(4002);
+const withParser = __webpack_require__(8425);
+
+class StreamArray extends StreamBase {
+  static make(options) {
+    return new StreamArray(options);
+  }
+
+  static withParser(options) {
+    return withParser(StreamArray.make, options);
+  }
+
+  constructor(options) {
+    super(options);
+    this._level = 1;
+    this._counter = 0;
+  }
+
+  _wait(chunk, _, callback) {
+    // first chunk should open an array
+    if (chunk.name !== 'startArray') {
+      return callback(new Error('Top-level object should be an array.'));
+    }
+    this._transform = this._filter;
+    return this._transform(chunk, _, callback);
+  }
+
+  _push(discard) {
+    if (this._assembler.current.length) {
+      if (discard) {
+        ++this._counter;
+        this._assembler.current.pop();
+      } else {
+        this.push({key: this._counter++, value: this._assembler.current.pop()});
+      }
+    }
+  }
+}
+StreamArray.streamArray = StreamArray.make;
+StreamArray.make.Constructor = StreamArray;
+
+module.exports = StreamArray;
 
 
 /***/ }),
