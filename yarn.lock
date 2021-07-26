@@ -1216,37 +1216,37 @@
     "@typescript-eslint/types" "4.22.0"
     eslint-visitor-keys "^2.0.0"
 
-"@useoptic/analytics@10.2.0":
-  version "10.2.0"
-  resolved "https://registry.yarnpkg.com/@useoptic/analytics/-/analytics-10.2.0.tgz#14ca34b86137cea42f3e6c400da1f09af44904af"
-  integrity sha512-OCjBRkMnSHLDDcLyTzmeNMgKPJUhXARoKahI/CUA7xnS1Wtabq5uXDhb01jQBjxL2HJLH2Dq67AxXmAGWEFKmQ==
+"@useoptic/analytics@10.2.1":
+  version "10.2.1"
+  resolved "https://registry.yarnpkg.com/@useoptic/analytics/-/analytics-10.2.1.tgz#f4bf24bb60667c1e18db54ca196b00814674b9c3"
+  integrity sha512-LfVdhIuSAjV0/xcDhResij3haxFvbmOCKNhHnSCciDTW7Fi0Rl3MQGRSevOwyHBsBqCJu0KfIHz8jJotM3YSYg==
   dependencies:
     uuid "^8.3.0"
 
-"@useoptic/changelog@10.2.0":
-  version "10.2.0"
-  resolved "https://registry.yarnpkg.com/@useoptic/changelog/-/changelog-10.2.0.tgz#197e6ce10ac9a90457f0b51eddc343d5971b6e89"
-  integrity sha512-TFQcO/8w5SBnLLbmugk1cbDjLwdDB08XokATjSQ4gq94/FaRVb49Wx2I1WqG9N1lL9dbk/MIXnmciTTLqJwk8A==
+"@useoptic/changelog@10.2.1":
+  version "10.2.1"
+  resolved "https://registry.yarnpkg.com/@useoptic/changelog/-/changelog-10.2.1.tgz#8fad9a06173608a0d6c5039815e5829aedfd94e1"
+  integrity sha512-EiNAZQQi8fuQUyT5jBDbosG7dwUIcJdOB/+5PJyeM9KnUyXO9sgwSlewbRvjVPDjl6XRaNywD3PVB55c0+G8gg==
   dependencies:
-    "@useoptic/graph-lib" "10.2.0"
-    "@useoptic/optic-engine-wasm" "10.2.0"
-    "@useoptic/spectacle" "10.2.0"
+    "@useoptic/graph-lib" "10.2.1"
+    "@useoptic/optic-engine-wasm" "10.2.1"
+    "@useoptic/spectacle" "10.2.1"
 
-"@useoptic/cli-client@10.2.0":
-  version "10.2.0"
-  resolved "https://registry.yarnpkg.com/@useoptic/cli-client/-/cli-client-10.2.0.tgz#b1b2a198a28bc50a71a6f57e4b66c985bf15e95e"
-  integrity sha512-lcJrG6YzYOJEcksFl+7039uUq9GdgVqhJPsJfcr2lvr41u1oUU8FwNmjbent3egPSxqGb+108TgY2kCFUWBGrQ==
+"@useoptic/cli-client@10.2.1":
+  version "10.2.1"
+  resolved "https://registry.yarnpkg.com/@useoptic/cli-client/-/cli-client-10.2.1.tgz#c8ce9eae75472789149719e5fadf6889922ae379"
+  integrity sha512-QmS1rnl6EDRiBM8p6C4CB7mws/r45d52u8fgJuew98h5E243kf5dX5BFS9xl+BCnDamp5WbuDmQW8Vvo8a/yLA==
   dependencies:
-    "@useoptic/analytics" "10.2.0"
-    "@useoptic/cli-config" "10.2.0"
-    "@useoptic/client-utilities" "10.2.0"
+    "@useoptic/analytics" "10.2.1"
+    "@useoptic/cli-config" "10.2.1"
+    "@useoptic/client-utilities" "10.2.1"
     bottleneck "^2.19.5"
     cross-fetch "^3.0.4"
 
-"@useoptic/cli-config@10.2.0":
-  version "10.2.0"
-  resolved "https://registry.yarnpkg.com/@useoptic/cli-config/-/cli-config-10.2.0.tgz#e5b5b86bcee27d6be8dab0c67e6b710d8a10439c"
-  integrity sha512-C8/UaEvQIAXM2qz9TEdoigB2NwxsPFIAJo+LaeSndki2kn4Z4mPPSTwHaZWWdPbAKYp6m/TdD7/jDSZrsuBZnw==
+"@useoptic/cli-config@10.2.1":
+  version "10.2.1"
+  resolved "https://registry.yarnpkg.com/@useoptic/cli-config/-/cli-config-10.2.1.tgz#c62b3c33f9a1b7e0d64a2e96ecda46ba92e268fc"
+  integrity sha512-zx2eIQ5M0019VKHZL5hNPVasuLxE/jlWphtmxdKJgvw228gPsLo3Ox+9zQ/o5JyT7dyieIfml9sCE8Whr8NMvg==
   dependencies:
     colors "^1.4.0"
     debug "^4.1.1"
@@ -1259,20 +1259,20 @@
     nice-try "^2.1.0"
     path-to-regexp "^3.0.0"
 
-"@useoptic/cli-shared@10.2.0":
-  version "10.2.0"
-  resolved "https://registry.yarnpkg.com/@useoptic/cli-shared/-/cli-shared-10.2.0.tgz#c86c35add91cb085e4ff46b653fe82e195058cf0"
-  integrity sha512-tRL9Ty45kpskXAg2XGEv9FgnhBr8iZiuBu9MpqdDhCCNaQK6eIpyAGAwYpKShbeu5h7ADCpFrEx2wR2vVsX6Iw==
+"@useoptic/cli-shared@10.2.1":
+  version "10.2.1"
+  resolved "https://registry.yarnpkg.com/@useoptic/cli-shared/-/cli-shared-10.2.1.tgz#3286c542fe972e09c51317a38a7592dfa9618c15"
+  integrity sha512-V/qHcMoQW7RmO8fopqz8IUzzSHBdhZoJ+Fhe0EC93jXxYBZ1JEai6UD8mGTI7RA+vfrRQ+Bm8aLCw0TJms9hyQ==
   dependencies:
     "@oclif/command" "^1.6.1"
-    "@useoptic/cli-client" "10.2.0"
-    "@useoptic/cli-config" "10.2.0"
-    "@useoptic/client-utilities" "10.2.0"
-    "@useoptic/optic-domain" "10.2.0"
-    "@useoptic/optic-engine-native" "10.2.0"
-    "@useoptic/optic-engine-wasm" "10.2.0"
-    "@useoptic/saas-types" "10.2.0"
-    "@useoptic/shape-hash" "10.2.0"
+    "@useoptic/cli-client" "10.2.1"
+    "@useoptic/cli-config" "10.2.1"
+    "@useoptic/client-utilities" "10.2.1"
+    "@useoptic/optic-domain" "10.2.1"
+    "@useoptic/optic-engine-native" "10.2.1"
+    "@useoptic/optic-engine-wasm" "10.2.1"
+    "@useoptic/saas-types" "10.2.1"
+    "@useoptic/shape-hash" "10.2.1"
     avsc "^5.4.21"
     aws-sdk "^2.889.0"
     axax "^0.2.2"
@@ -1295,33 +1295,33 @@
     wait-on "^4.0.0"
     whatwg-mimetype "^2.3.0"
 
-"@useoptic/client-utilities@10.2.0":
-  version "10.2.0"
-  resolved "https://registry.yarnpkg.com/@useoptic/client-utilities/-/client-utilities-10.2.0.tgz#4f660acb2fd4a86f89276fb20c92016ebdae1c5e"
-  integrity sha512-i0d1/Dafkektwl/LFJvq3+HORhMyoTkWDLukogAKy/YYPNnryAU7qvvTfThO8JKuXKRZpCE58mojASZk3/+WJg==
+"@useoptic/client-utilities@10.2.1":
+  version "10.2.1"
+  resolved "https://registry.yarnpkg.com/@useoptic/client-utilities/-/client-utilities-10.2.1.tgz#ef2a66055a9c03c1ac241f4465fc8e0cdf2e8d5e"
+  integrity sha512-ccSuTYD7mEzACxd0By6O/r74e7CQTqsh6cJ8I848DuBBUkEL+alaS1QxeTNK2JYypAVaFeMVuueXqklGCYRTwQ==
   dependencies:
     cross-fetch "^3.0.4"
 
-"@useoptic/graph-lib@10.2.0":
-  version "10.2.0"
-  resolved "https://registry.yarnpkg.com/@useoptic/graph-lib/-/graph-lib-10.2.0.tgz#dc63cc6de402a8fd3d805ee91563bc6ecaf88af4"
-  integrity sha512-sMok8Nez49AHYkUu4uns8xYI5Lt2qYRc59ZPdiE8SH95pjXh3qZW4bpoGnp4YMzrrZPnYQqncvrjXtURQv7Z/w==
+"@useoptic/graph-lib@10.2.1":
+  version "10.2.1"
+  resolved "https://registry.yarnpkg.com/@useoptic/graph-lib/-/graph-lib-10.2.1.tgz#e6c968383242388f5dd92bfae03b05cf7021be7f"
+  integrity sha512-lSDtREFB8pBO5OL7JiZkVXfRU3kRT8jS1z3sEwDpaWLt3MO6s9crk/AIMeZc1jsBg6t2Kh+u9FqWXu+bOGg2Aw==
 
-"@useoptic/optic-domain@10.2.0":
-  version "10.2.0"
-  resolved "https://registry.yarnpkg.com/@useoptic/optic-domain/-/optic-domain-10.2.0.tgz#017d68c781b109363c36c33ed9246ddac85af0f5"
-  integrity sha512-CUzUOKGx93YLJmsu904ZCCbnzy8bplvGTYx40H3uGWPmzu1aJDCFppCT41iPQ0YsQkD6X5gdze0dJZbWGWdbpA==
+"@useoptic/optic-domain@10.2.1":
+  version "10.2.1"
+  resolved "https://registry.yarnpkg.com/@useoptic/optic-domain/-/optic-domain-10.2.1.tgz#e4490e5fcc9043ab2204637e89d7dc7ed4183a8a"
+  integrity sha512-XO19fCRNERnsM6ZqHu75Uy8KEvKIWF9tIQOcrCnd5RlKeAHh4bbOW+7wUTXKIfZIOy2e2GIbN2swS9KyGttIuw==
   dependencies:
     axax "^0.2.2"
     stream-json "^1.7.1"
 
-"@useoptic/optic-engine-native@10.2.0":
-  version "10.2.0"
-  resolved "https://registry.yarnpkg.com/@useoptic/optic-engine-native/-/optic-engine-native-10.2.0.tgz#9c937d0c83b03b256db5518aef24828d04f5eabb"
-  integrity sha512-to8rU+dT5llthZcDxxlLcoqG3aKa2Iv010hef8BkJSUBEebWLMXuScfGNQSDysNsot+mKiX0IDyDESYG3bWUHA==
+"@useoptic/optic-engine-native@10.2.1":
+  version "10.2.1"
+  resolved "https://registry.yarnpkg.com/@useoptic/optic-engine-native/-/optic-engine-native-10.2.1.tgz#506675f5fb5e5615f4d1058ee3a7aef047fe234b"
+  integrity sha512-WBF3LKM3tQxRhpXHA9Xru2OAMp62i/lrRnr+8NInqGs3e6GsTeuL24TCPJocbjx4idMJTqPd68066J74cAZtig==
   dependencies:
     "@iarna/toml" "^2.2.5"
-    "@useoptic/optic-domain" "10.2.0"
+    "@useoptic/optic-domain" "10.2.1"
     bent "^7.3.12"
     dotenv "^8.2.0"
     execa "^4.0.3"
@@ -1329,33 +1329,33 @@
     rimraf "^3.0.2"
     tar "^6.0.5"
 
-"@useoptic/optic-engine-wasm@10.2.0":
-  version "10.2.0"
-  resolved "https://registry.yarnpkg.com/@useoptic/optic-engine-wasm/-/optic-engine-wasm-10.2.0.tgz#f2ce96390d3c7c87362db493ef9e6f6cd8abb6b7"
-  integrity sha512-U8zxZrag9QkxRhdA9SLYWNkKbjYgSLAgN7Kzx8gbsOrdLd7Fn1OfE8yANIG9kdjR+zUVRg/VdCbDpx107yc1Ig==
+"@useoptic/optic-engine-wasm@10.2.1":
+  version "10.2.1"
+  resolved "https://registry.yarnpkg.com/@useoptic/optic-engine-wasm/-/optic-engine-wasm-10.2.1.tgz#7eb9bb155a9dff247286b423121475c33654c752"
+  integrity sha512-CFgr3KDxVwo4mwE2vJK2dIWjZbWCpJPba7LPzi3Y22GBFfnvNkl8y8g+aG9dy4Y/7bP8QmpKyIHvYf+NdHHGUw==
 
-"@useoptic/saas-types@10.2.0":
-  version "10.2.0"
-  resolved "https://registry.yarnpkg.com/@useoptic/saas-types/-/saas-types-10.2.0.tgz#b2d3a73b966b943d3ba81101f1efb50547fcd28f"
-  integrity sha512-TeC1vjeRnMWVdse9gpGI+Fhe/w3DSoT1lsDiRNXOKEF5fQiSfNHYwiXDYSJ/Nb4+fl03k5Gqy9a41g6BayeW2A==
+"@useoptic/saas-types@10.2.1":
+  version "10.2.1"
+  resolved "https://registry.yarnpkg.com/@useoptic/saas-types/-/saas-types-10.2.1.tgz#f0b211e3baf7b43a98e25511d2d0bb0dca533db6"
+  integrity sha512-BWYVGLBolYhqq1vujw+v96/cLJpPXYUSO3Hwdwv1OCsFuNkR+P8C0dINzLEM9/45/uqMzaPScIMjRPp4qEToQQ==
 
-"@useoptic/shape-hash@10.2.0":
-  version "10.2.0"
-  resolved "https://registry.yarnpkg.com/@useoptic/shape-hash/-/shape-hash-10.2.0.tgz#ed219c682091c7cbb7e493ecf3fbf18fcf580f70"
-  integrity sha512-5uuoRP4MKa4O5YRSrRgDFxLJN8rdzY772TEyS+Yec3neSeeb0SA/qtV6MZz/dcjQC++2NLdeT66jgSWQlQ6cuQ==
+"@useoptic/shape-hash@10.2.1":
+  version "10.2.1"
+  resolved "https://registry.yarnpkg.com/@useoptic/shape-hash/-/shape-hash-10.2.1.tgz#e3abdc82fae53d136d2857550f7d5933d7a1f306"
+  integrity sha512-wmvPX0I8KqF6m6tLwP2/DhkJpRAgyQqj+/+Elst+sKfEIWZWzQV5NqzIjJl9427VSzKvDGBWeSmdXpav/KYgkQ==
   dependencies:
     protobufjs "6.8.8"
 
-"@useoptic/spectacle@10.2.0":
-  version "10.2.0"
-  resolved "https://registry.yarnpkg.com/@useoptic/spectacle/-/spectacle-10.2.0.tgz#a8bad4ba3fe133aa1da92d9d0c18a6baf4533f7c"
-  integrity sha512-1Acaxy8URL5/VYCmSWjzs0RGFD6gd2AS6AyiPIkayulmeBeSdqUqVxGZ/e49zyYOen4+wl/9OFRTNS00zJ3dpg==
+"@useoptic/spectacle@10.2.1":
+  version "10.2.1"
+  resolved "https://registry.yarnpkg.com/@useoptic/spectacle/-/spectacle-10.2.1.tgz#ccd624098e709b7b55584dd99182571a54887749"
+  integrity sha512-Jh7tMNGYeupXqaJqU+H5jTxVmFouQtHA5YUAamgZ8XMvYzKN6RHNocpIZL3JsTPOa9LJDa/mCY+P0kdTIOqreQ==
   dependencies:
     "@graphql-tools/schema" "^7.1.3"
-    "@useoptic/cli-shared" "10.2.0"
-    "@useoptic/graph-lib" "10.2.0"
-    "@useoptic/optic-domain" "10.2.0"
-    "@useoptic/optic-engine-wasm" "10.2.0"
+    "@useoptic/cli-shared" "10.2.1"
+    "@useoptic/graph-lib" "10.2.1"
+    "@useoptic/optic-domain" "10.2.1"
+    "@useoptic/optic-engine-wasm" "10.2.1"
     graphql "14"
     graphql-type-json "^0.3.2"
     uuid "^8.3.2"

@@ -22729,10 +22729,9 @@ module.exports.affordances_to_commands = function(json_affordances_json, json_tr
 * @param {WasmSpecProjection} spec
 * @param {string} interactions_json
 * @param {string} id_generator_strategy
-* @param {boolean} include_query_params
 * @returns {string}
 */
-module.exports.learn_undocumented_bodies = function(spec, interactions_json, id_generator_strategy, include_query_params) {
+module.exports.learn_undocumented_bodies = function(spec, interactions_json, id_generator_strategy) {
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         _assertClass(spec, WasmSpecProjection);
@@ -22740,7 +22739,7 @@ module.exports.learn_undocumented_bodies = function(spec, interactions_json, id_
         var len0 = WASM_VECTOR_LEN;
         var ptr1 = passStringToWasm0(id_generator_strategy, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         var len1 = WASM_VECTOR_LEN;
-        wasm.learn_undocumented_bodies(retptr, spec.ptr, ptr0, len0, ptr1, len1, include_query_params);
+        wasm.learn_undocumented_bodies(retptr, spec.ptr, ptr0, len0, ptr1, len1);
         var r0 = getInt32Memory0()[retptr / 4 + 0];
         var r1 = getInt32Memory0()[retptr / 4 + 1];
         return getStringFromWasm0(r0, r1);
@@ -23305,11 +23304,9 @@ type Endpoint {
   responses: [HttpResponse!]!
 
   # Contributions which define descriptions
-  # TODO figure out what this currently maps to in the contributions list
   contributions: JSON!
 
   # Is the endpoint removed
-  # TODO figure out how this gets mapped
   isRemoved: Boolean!
 
   commands: EndpointCommands!
@@ -24064,8 +24061,7 @@ class InMemoryDiffService {
                 return JSON.stringify(x);
             })
                 .join('\n');
-            const learnedBodies = JSON.parse(this.dependencies.opticEngine.learn_undocumented_bodies(spec, interactionsJsonl, 'random', process.env.REACT_APP_FF_LEARN_UNDOCUMENTED_QUERY_PARAMETERS ===
-                'true'));
+            const learnedBodies = JSON.parse(this.dependencies.opticEngine.learn_undocumented_bodies(spec, interactionsJsonl, 'random'));
             const learnedBodiesForPathIdAndMethod = learnedBodies.find((x) => {
                 return x.pathId === pathId && x.method === method;
             });
@@ -24110,9 +24106,7 @@ class InMemoryDiff {
         const diffingStream = (function (opticEngine) {
             return __asyncGenerator(this, arguments, function* () {
                 for (let interaction of interactions) {
-                    let results = opticEngine.diff_interaction(JSON.stringify(interaction), spec, {
-                        includeQueryParams: process.env.REACT_APP_FF_DIFF_QUERY_PARAMETERS === 'true',
-                    });
+                    let results = opticEngine.diff_interaction(JSON.stringify(interaction), spec, {});
                     let parsedResults = JSON.parse(results);
                     let taggedResults = (parsedResults = parsedResults.map((item) => {
                         const [diffResult, fingerprint] = item;
@@ -24760,10 +24754,7 @@ async function makeSpectacle(opticContext) {
                 return Promise.resolve(parent.endpointNode.value.httpMethod);
             },
             query: async (parent) => {
-                return process.env.REACT_APP_FF_LEARN_UNDOCUMENTED_QUERY_PARAMETERS ===
-                    'true'
-                    ? parent.endpointNode.query()
-                    : null;
+                return parent.endpointNode.query();
             },
             bodies: (parent) => {
                 return Promise.resolve(parent.requestNode.body() ? [parent.requestNode.body()] : []);
@@ -24808,10 +24799,7 @@ async function makeSpectacle(opticContext) {
                 return parent.path().absolutePathPatternWithParameterNames;
             },
             query: async (parent) => {
-                return process.env.REACT_APP_FF_LEARN_UNDOCUMENTED_QUERY_PARAMETERS ===
-                    'true'
-                    ? parent.query()
-                    : null;
+                return parent.query();
             },
             requests: async (parent) => {
                 return parent.requests().results;
