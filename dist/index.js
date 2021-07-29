@@ -21007,7 +21007,7 @@ ${exports.defaultIgnoreRules.join('\n')}
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GraphQueries = exports.BatchCommitNodeWrapper = exports.PathNodeWrapper = exports.QueryParametersNodeWrapper = exports.ResponseNodeWrapper = exports.RequestNodeWrapper = exports.EndpointNodeWrapper = exports.BodyNodeWrapper = exports.GraphIndexer = exports.EdgeType = exports.NodeType = void 0;
-const index_1 = __webpack_require__(3194);
+const shared_1 = __webpack_require__(709);
 var NodeType;
 (function (NodeType) {
     NodeType["Path"] = "Path";
@@ -21054,21 +21054,21 @@ class GraphIndexer {
             throw new Error(`expected ${targetNodeId} to exist`);
         }
         const outboundNeighbors = this.outboundNeighbors.get(sourceNodeId) || new Map();
-        index_1.mapAppend(outboundNeighbors, targetNode.type, targetNode);
+        shared_1.mapAppend(outboundNeighbors, targetNode.type, targetNode);
         this.outboundNeighbors.set(sourceNodeId, outboundNeighbors);
         const outboundNeighborsByEdgeType = this.outboundNeighborsByEdgeType.get(sourceNodeId) || new Map();
-        index_1.mapAppend(outboundNeighborsByEdgeType, edge.type, targetNode);
+        shared_1.mapAppend(outboundNeighborsByEdgeType, edge.type, targetNode);
         this.outboundNeighborsByEdgeType.set(sourceNodeId, outboundNeighborsByEdgeType);
         const inboundNeighbors = this.inboundNeighbors.get(targetNodeId) || new Map();
-        index_1.mapAppend(inboundNeighbors, sourceNode.type, sourceNode);
+        shared_1.mapAppend(inboundNeighbors, sourceNode.type, sourceNode);
         this.inboundNeighbors.set(targetNodeId, inboundNeighbors);
         const inboundNeighborsByEdgeType = this.inboundNeighborsByEdgeType.get(targetNodeId) || new Map();
-        index_1.mapAppend(inboundNeighborsByEdgeType, edge.type, sourceNode);
+        shared_1.mapAppend(inboundNeighborsByEdgeType, edge.type, sourceNode);
         this.inboundNeighborsByEdgeType.set(targetNodeId, inboundNeighborsByEdgeType);
     }
     unsafeAddNode(node) {
         this.nodesById.set(node.id, node);
-        index_1.mapAppend(this.nodesByType, node.type, node);
+        shared_1.mapAppend(this.nodesByType, node.type, node);
     }
 }
 exports.GraphIndexer = GraphIndexer;
@@ -21114,7 +21114,7 @@ class EndpointNodeWrapper {
     }
     query() {
         const queryParameters = this.queries.listIncomingNeighborsByType(this.result.id, NodeType.QueryParameters);
-        return queryParameters.results.length >= 1
+        return queryParameters.results.length > 0
             ? queryParameters.results[0]
             : null;
     }
@@ -21134,18 +21134,14 @@ class RequestNodeWrapper {
     get value() {
         return this.result.data;
     }
+    // A request node can be orphaned
     endpoint() {
         const endpoints = this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.Endpoint);
-        if (endpoints.results.length === 0) {
-            throw new Error('Expected request node to have an endpoint');
-        }
-        return endpoints.results[0];
+        return endpoints.results.length > 0 ? endpoints.results[0] : null;
     }
     body() {
         const bodies = this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Body);
-        return bodies.results.length >= 1
-            ? bodies.results[0]
-            : null;
+        return bodies.results.length >= 1 ? bodies.results[0] : null;
     }
 }
 exports.RequestNodeWrapper = RequestNodeWrapper;
@@ -21157,12 +21153,10 @@ class ResponseNodeWrapper {
     get value() {
         return this.result.data;
     }
+    // A response node can be orphaned
     endpoint() {
         const endpoints = this.queries.listOutgoingNeighborsByType(this.result.id, NodeType.Endpoint);
-        if (endpoints.results.length === 0) {
-            throw new Error('Expected response node to have an endpoint');
-        }
-        return endpoints.results[0];
+        return endpoints.results.length > 0 ? endpoints.results[0] : null;
     }
     bodies() {
         return this.queries.listIncomingNeighborsByType(this.result.id, NodeType.Body);
@@ -21332,6 +21326,7 @@ class GraphQueries {
         }
     }
     //@TODO wrap() and wrapList() should be injected?
+    // TODO figure out how to make this generic
     wrap(node) {
         if (node.type === NodeType.Request) {
             return new RequestNodeWrapper(node, this);
@@ -21357,6 +21352,7 @@ class GraphQueries {
         throw new Error(`unexpected node.type`);
     }
     //@TODO move away from null here
+    // TODO figure out how to make this generic
     wrapList(type, nodes) {
         //@TODO add list helpers (map, etc.)
         return {
@@ -21394,19 +21390,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.mapAppend = exports.shapes = exports.endpoints = void 0;
+exports.shapes = exports.endpoints = void 0;
 const endpoints = __importStar(__webpack_require__(891));
 exports.endpoints = endpoints;
 const shapes = __importStar(__webpack_require__(912));
 exports.shapes = shapes;
-////////////////////////////////////////////////////////////////////////////////
-function mapAppend(map, key, value) {
-    const values = map.get(key) || [];
-    values.push(value);
-    map.set(key, values);
-}
-exports.mapAppend = mapAppend;
-////////////////////////////////////////////////////////////////////////////////
 
 
 /***/ }),
@@ -21418,7 +21406,7 @@ exports.mapAppend = mapAppend;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.GraphQueries = exports.BatchCommitNodeWrapper = exports.FieldNodeWrapper = exports.ShapeParameterNodeWrapper = exports.ShapeNodeWrapper = exports.CoreShapeNodeWrapper = exports.GraphIndexer = exports.EdgeType = exports.NodeType = void 0;
-const index_1 = __webpack_require__(3194);
+const shared_1 = __webpack_require__(709);
 var NodeType;
 (function (NodeType) {
     NodeType["CoreShape"] = "CoreShape";
@@ -21462,21 +21450,21 @@ class GraphIndexer {
             throw new Error(`expected ${targetNodeId} to exist`);
         }
         const outboundNeighbors = this.outboundNeighbors.get(sourceNodeId) || new Map();
-        index_1.mapAppend(outboundNeighbors, targetNode.type, targetNode);
+        shared_1.mapAppend(outboundNeighbors, targetNode.type, targetNode);
         this.outboundNeighbors.set(sourceNodeId, outboundNeighbors);
         const outboundNeighborsByEdgeType = this.outboundNeighborsByEdgeType.get(sourceNodeId) || new Map();
-        index_1.mapAppend(outboundNeighborsByEdgeType, edge.type, targetNode);
+        shared_1.mapAppend(outboundNeighborsByEdgeType, edge.type, targetNode);
         this.outboundNeighborsByEdgeType.set(sourceNodeId, outboundNeighborsByEdgeType);
         const inboundNeighbors = this.inboundNeighbors.get(targetNodeId) || new Map();
-        index_1.mapAppend(inboundNeighbors, sourceNode.type, sourceNode);
+        shared_1.mapAppend(inboundNeighbors, sourceNode.type, sourceNode);
         this.inboundNeighbors.set(targetNodeId, inboundNeighbors);
         const inboundNeighborsByEdgeType = this.inboundNeighborsByEdgeType.get(targetNodeId) || new Map();
-        index_1.mapAppend(inboundNeighborsByEdgeType, edge.type, sourceNode);
+        shared_1.mapAppend(inboundNeighborsByEdgeType, edge.type, sourceNode);
         this.inboundNeighborsByEdgeType.set(targetNodeId, inboundNeighborsByEdgeType);
     }
     unsafeAddNode(node) {
         this.nodesById.set(node.id, node);
-        index_1.mapAppend(this.nodesByType, node.type, node);
+        shared_1.mapAppend(this.nodesByType, node.type, node);
     }
 }
 exports.GraphIndexer = GraphIndexer;
@@ -21607,6 +21595,7 @@ class GraphQueries {
         return this.wrapList(null, neighborsOfType || []);
     }
     //@TODO wrap() and wrapList() should be injected?
+    // TODO figure out how to make this generic
     wrap(node) {
         if (node.type === NodeType.CoreShape) {
             return new CoreShapeNodeWrapper(node, this);
@@ -21626,6 +21615,7 @@ class GraphQueries {
         throw new Error(`unexpected node.type`);
     }
     //@TODO move away from null here
+    // TODO figure out how to make this generic
     wrapList(type, nodes) {
         //@TODO add list helpers (map, etc.)
         return {
@@ -21634,6 +21624,25 @@ class GraphQueries {
     }
 }
 exports.GraphQueries = GraphQueries;
+
+
+/***/ }),
+
+/***/ 709:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+////////////////////////////////////////////////////////////////////////////////
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.mapAppend = void 0;
+////////////////////////////////////////////////////////////////////////////////
+function mapAppend(map, key, value) {
+    const values = map.get(key) || [];
+    values.push(value);
+    map.set(key, values);
+}
+exports.mapAppend = mapAppend;
 
 
 /***/ }),
@@ -23091,16 +23100,6 @@ module.exports.__wbg_self_f865985e662246aa = function() { return handleError(fun
     return addHeapObject(ret);
 }, arguments) };
 
-module.exports.__wbg_static_accessor_MODULE_39947eb3fe77895f = function() {
-    var ret = module;
-    return addHeapObject(ret);
-};
-
-module.exports.__wbg_require_c59851dfa0dc7e78 = function() { return handleError(function (arg0, arg1, arg2) {
-    var ret = getObject(arg0).require(getStringFromWasm0(arg1, arg2));
-    return addHeapObject(ret);
-}, arguments) };
-
 module.exports.__wbg_crypto_bfb05100db79193b = function(arg0) {
     var ret = getObject(arg0).crypto;
     return addHeapObject(ret);
@@ -23110,6 +23109,16 @@ module.exports.__wbg_msCrypto_f6dddc6ae048b7e2 = function(arg0) {
     var ret = getObject(arg0).msCrypto;
     return addHeapObject(ret);
 };
+
+module.exports.__wbg_static_accessor_MODULE_39947eb3fe77895f = function() {
+    var ret = module;
+    return addHeapObject(ret);
+};
+
+module.exports.__wbg_require_c59851dfa0dc7e78 = function() { return handleError(function (arg0, arg1, arg2) {
+    var ret = getObject(arg0).require(getStringFromWasm0(arg1, arg2));
+    return addHeapObject(ret);
+}, arguments) };
 
 module.exports.__wbg_getTime_cf686ab22ab03a3e = function(arg0) {
     var ret = getObject(arg0).getTime();
@@ -23329,6 +23338,9 @@ type HttpRequestNew {
 
   contributions: JSON!
 
+  # Changes for the response based on the give batch commit ID
+  changes(sinceBatchCommitId: String): ChangesResult!
+
   # Is the request removed
   isRemoved: Boolean!
 }
@@ -23355,10 +23367,13 @@ type QueryParameters {
   id: String!
 
   # Root shape ID for the QueryParameter. Look at the shapeChoices query getting more information about the root shape
-  rootShapeId: String!
+  rootShapeId: String
 
   # Is the body removed
   isRemoved: Boolean!
+
+  # Changes for the query parameters based on the give batch commit ID
+  changes(sinceBatchCommitId: String): ChangesResult!
 
   # Contributions for the query parameter
   contributions: JSON!
@@ -23440,6 +23455,9 @@ type HttpResponse {
   # HTTP response contributions which define descriptions
   contributions: JSON
 
+  # Changes for the response based on the give batch commit ID
+  changes(sinceBatchCommitId: String): ChangesResult!
+
   # Is the response removed
   isRemoved: Boolean
 }
@@ -23509,7 +23527,6 @@ type ChangesResult {
   added: Boolean
   
   # Whether or not the change was one that was updated
-  # TODO @nic change this to updated
   changed: Boolean
 
   # Whether or not the change was one that was removed
@@ -23577,7 +23594,7 @@ type BatchCommit {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.CommandGenerator = exports.getContributionsProjection = exports.getArrayChanges = exports.getFieldChanges = exports.getShapeChanges = exports.buildEndpointChanges = exports.buildShapesGraph = exports.buildEndpointsGraph = void 0;
+exports.CommandGenerator = exports.getContributionsProjection = exports.getArrayChanges = exports.getFieldChanges = exports.getEndpointGraphNodeChange = exports.buildEndpointChanges = exports.buildShapesGraph = exports.buildEndpointsGraph = void 0;
 const graph_lib_1 = __webpack_require__(3194);
 function buildEndpointsGraph(spec, opticEngine) {
     const serializedGraph = JSON.parse(opticEngine.get_endpoints_projection(spec));
@@ -23629,60 +23646,66 @@ function buildShapesGraph(spec, opticEngine) {
 }
 exports.buildShapesGraph = buildShapesGraph;
 function buildEndpointChanges(endpointQueries, shapeQueries, sinceBatchCommitId) {
-    // Sorted in reverse order - the latest change takes precedence
-    const sortedBatchCommits = endpointQueries
-        .listNodesByType(graph_lib_1.endpoints.NodeType.BatchCommit)
-        .results.sort((a, b) => {
-        return a.result.data.createdAt < b.result.data.createdAt ? 1 : -1;
-    });
-    let deltaBatchCommits;
-    if (sinceBatchCommitId) {
-        const sinceBatchCommit = endpointQueries.findNodeById(sinceBatchCommitId);
-        deltaBatchCommits = sortedBatchCommits.filter((batchCommit) => batchCommit.result.data.createdAt >
-            sinceBatchCommit.result.data.createdAt);
-    }
-    else {
-        deltaBatchCommits = sortedBatchCommits;
-    }
+    const deltaBatchCommits = getDeltaBatchCommitsForEndpoints(endpointQueries, 
+    // In this case specifically, we want _all_ endpoint changes
+    sinceBatchCommitId || ALL_BATCH_COMMITS);
     const changes = new Changes();
-    deltaBatchCommits.forEach((batchCommit) => {
+    [...deltaBatchCommits.values()].forEach((batchCommit) => {
         // Only createdIn and removedIn edges pointing to a request is treated as
         // an added or removed change, everything else is updated.
         // Bodies, and shape changes are handled below
         batchCommit
             .createdInEdgeNodes()
             .results.forEach((node) => {
-            if (node.result.type === graph_lib_1.endpoints.NodeType.Request) {
-                changes.captureChange('added', endpointFromRequest(node));
+            if (node instanceof graph_lib_1.endpoints.RequestNodeWrapper) {
+                const endpoint = endpointFromRequest(node);
+                if (endpoint) {
+                    changes.captureChange('added', endpoint);
+                }
             }
-            else if (node.result.type === graph_lib_1.endpoints.NodeType.Response) {
-                changes.captureChange('updated', endpointFromResponse(node));
+            else if (node instanceof graph_lib_1.endpoints.ResponseNodeWrapper) {
+                const endpoint = endpointFromResponse(node);
+                if (endpoint) {
+                    changes.captureChange('updated', endpoint);
+                }
             }
         });
         batchCommit
             .removedInEdgeNodes()
             .results.forEach((node) => {
-            if (node.result.type === graph_lib_1.endpoints.NodeType.Request) {
-                changes.captureChange('removed', endpointFromRequest(node));
+            if (node instanceof graph_lib_1.endpoints.RequestNodeWrapper) {
+                const endpoint = endpointFromRequest(node);
+                if (endpoint) {
+                    changes.captureChange('removed', endpoint);
+                }
             }
-            else if (node.result.type === graph_lib_1.endpoints.NodeType.Response) {
-                changes.captureChange('updated', endpointFromResponse(node));
+            else if (node instanceof graph_lib_1.endpoints.ResponseNodeWrapper) {
+                const endpoint = endpointFromResponse(node);
+                if (endpoint) {
+                    changes.captureChange('updated', endpoint);
+                }
             }
         });
         batchCommit
             .updatedInEdgeNodes()
             .results.forEach((node) => {
-            if (node.result.type === graph_lib_1.endpoints.NodeType.Request) {
-                changes.captureChange('updated', endpointFromRequest(node));
+            if (node instanceof graph_lib_1.endpoints.RequestNodeWrapper) {
+                const endpoint = endpointFromRequest(node);
+                if (endpoint) {
+                    changes.captureChange('updated', endpoint);
+                }
             }
-            else if (node.result.type === graph_lib_1.endpoints.NodeType.Response) {
-                changes.captureChange('updated', endpointFromResponse(node));
+            else if (node instanceof graph_lib_1.endpoints.ResponseNodeWrapper) {
+                const endpoint = endpointFromResponse(node);
+                if (endpoint) {
+                    changes.captureChange('updated', endpoint);
+                }
             }
         });
     });
     // Gather batch commit neighbors
     const batchCommitNeighborIds = new Map();
-    deltaBatchCommits.forEach((batchCommit) => {
+    [...deltaBatchCommits.values()].forEach((batchCommit) => {
         const batchCommitId = batchCommit.result.id;
         // TODO: create query for neighbors of all types
         shapeQueries
@@ -23716,13 +23739,19 @@ function buildEndpointChanges(endpointQueries, shapeQueries, sinceBatchCommitId)
         const body = endpointQueries.findNodeById(changedRootShapeId);
         const response = body.response();
         if (response) {
-            if (changes.captureChange('updated', endpointFromResponse(response))) {
-                return;
+            const endpoint = endpointFromResponse(response);
+            if (endpoint) {
+                if (changes.captureChange('updated', endpoint)) {
+                    return;
+                }
             }
         }
         const request = body.request();
         if (request) {
-            changes.captureChange('updated', endpointFromRequest(request));
+            const endpoint = endpointFromRequest(request);
+            if (endpoint) {
+                changes.captureChange('updated', endpoint);
+            }
         }
     });
     return changes.toEndpointChanges();
@@ -23753,6 +23782,9 @@ class Changes {
 }
 function endpointFromRequest(request) {
     const endpoint = request.endpoint();
+    if (!endpoint) {
+        return null;
+    }
     const pathNode = endpoint.path();
     const { id: endpointId, pathId, httpMethod: method } = endpoint.value;
     const path = pathNode.absolutePathPatternWithParameterNames;
@@ -23760,39 +23792,45 @@ function endpointFromRequest(request) {
 }
 function endpointFromResponse(response) {
     const endpoint = response.endpoint();
+    if (!endpoint) {
+        return null;
+    }
     const pathNode = endpoint.path();
     const { id: endpointId, pathId, httpMethod: method } = endpoint.value;
     const path = pathNode.absolutePathPatternWithParameterNames;
     return { endpointId, pathId, path, method };
 }
-//@TODO remove if not needed after testing
-function getShapeChanges(shapeQueries, shapeId, sinceBatchCommitId) {
+function getEndpointGraphNodeChange(endpointQueries, nodeId, sinceBatchCommitId) {
     const results = {
         added: false,
         changed: false,
         removed: false,
     };
-    // TODO: figure out why shapeId is undefined
-    if (!shapeId)
-        return results;
-    const sinceBatchCommit = shapeQueries.findNodeById(sinceBatchCommitId);
-    const shape = shapeQueries.findNodeById(shapeId);
-    const deltaBatchCommits = getDeltaBatchCommits(shapeQueries, sinceBatchCommit.result.Id);
-    for (const batchCommit of shape.batchCommits().results) {
-        if (deltaBatchCommits.has(batchCommit.result.id)) {
-            return Object.assign(Object.assign({}, results), { added: true });
+    const deltaBatchCommits = getDeltaBatchCommitsForEndpoints(endpointQueries, sinceBatchCommitId);
+    for (const batchCommitId of deltaBatchCommits.keys()) {
+        for (const node of endpointQueries.listOutgoingNeighborsByEdgeType(nodeId, graph_lib_1.endpoints.EdgeType.CreatedIn).results) {
+            if (node.result.id === batchCommitId)
+                return Object.assign(Object.assign({}, results), { added: true });
+        }
+        for (const node of endpointQueries.listOutgoingNeighborsByEdgeType(nodeId, graph_lib_1.endpoints.EdgeType.UpdatedIn).results) {
+            if (node.result.id === batchCommitId)
+                return Object.assign(Object.assign({}, results), { changed: true });
+        }
+        for (const node of endpointQueries.listOutgoingNeighborsByEdgeType(nodeId, graph_lib_1.endpoints.EdgeType.RemovedIn).results) {
+            if (node.result.id === batchCommitId)
+                return Object.assign(Object.assign({}, results), { removed: true });
         }
     }
     return results;
 }
-exports.getShapeChanges = getShapeChanges;
+exports.getEndpointGraphNodeChange = getEndpointGraphNodeChange;
 function getFieldChanges(shapeQueries, fieldId, shapeId, sinceBatchCommitId) {
     const results = {
         added: false,
         changed: false,
         removed: false,
     };
-    const deltaBatchCommits = getDeltaBatchCommits(shapeQueries, sinceBatchCommitId);
+    const deltaBatchCommits = getDeltaBatchCommitsForShapes(shapeQueries, sinceBatchCommitId);
     for (const batchCommitId of deltaBatchCommits.keys()) {
         for (const node of shapeQueries.listOutgoingNeighborsByEdgeType(fieldId, graph_lib_1.shapes.EdgeType.CreatedIn).results) {
             if (node.result.id === batchCommitId)
@@ -23817,7 +23855,7 @@ function getArrayChanges(shapeQueries, shapeId, sinceBatchCommitId) {
         changed: false,
         removed: false,
     };
-    const deltaBatchCommits = getDeltaBatchCommits(shapeQueries, sinceBatchCommitId);
+    const deltaBatchCommits = getDeltaBatchCommitsForShapes(shapeQueries, sinceBatchCommitId);
     return checkForArrayChanges(shapeQueries, deltaBatchCommits, results, shapeId);
 }
 exports.getArrayChanges = getArrayChanges;
@@ -23837,19 +23875,43 @@ function checkForArrayChanges(shapeQueries, deltaBatchCommits, results, shapeId)
     }
     return results;
 }
-// TODO: use the endpointQueries one below
-function getDeltaBatchCommits(shapeQueries, sinceBatchCommitId) {
+const ALL_BATCH_COMMITS = 'ALL_BATCH_COMMITS';
+function getDeltaBatchCommitsForEndpoints(endpointQueries, sinceBatchCommitId) {
+    const deltaBatchCommits = new Map();
+    if (!sinceBatchCommitId) {
+        return deltaBatchCommits;
+    }
+    let sortedBatchCommits = endpointQueries
+        .listNodesByType(graph_lib_1.endpoints.NodeType.BatchCommit)
+        .results.sort((a, b) => {
+        return a.result.data.createdAt < b.result.data.createdAt ? 1 : -1;
+    });
+    const sinceBatchCommit = endpointQueries.findNodeById(sinceBatchCommitId);
+    sortedBatchCommits
+        .filter((batchCommit) => sinceBatchCommitId === ALL_BATCH_COMMITS ||
+        batchCommit.result.data.createdAt >
+            sinceBatchCommit.result.data.createdAt)
+        .forEach((batchCommit) => {
+        deltaBatchCommits.set(batchCommit.result.id, batchCommit);
+    });
+    return deltaBatchCommits;
+}
+function getDeltaBatchCommitsForShapes(shapeQueries, sinceBatchCommitId) {
+    const deltaBatchCommits = new Map();
+    if (!sinceBatchCommitId) {
+        return deltaBatchCommits;
+    }
     let sortedBatchCommits = shapeQueries
         .listNodesByType(graph_lib_1.shapes.NodeType.BatchCommit)
         .results.sort((a, b) => {
         return a.result.data.createdAt < b.result.data.createdAt ? 1 : -1;
     });
     const sinceBatchCommit = shapeQueries.findNodeById(sinceBatchCommitId);
-    const deltaBatchCommits = new Map();
-    (sinceBatchCommitId
-        ? sortedBatchCommits.filter((batchCommit) => batchCommit.result.data.createdAt >
+    sortedBatchCommits
+        .filter((batchCommit) => sinceBatchCommitId === ALL_BATCH_COMMITS ||
+        batchCommit.result.data.createdAt >
             sinceBatchCommit.result.data.createdAt)
-        : sortedBatchCommits).forEach((batchCommit) => {
+        .forEach((batchCommit) => {
         deltaBatchCommits.set(batchCommit.result.id, batchCommit);
     });
     return deltaBatchCommits;
@@ -24740,15 +24802,7 @@ async function makeSpectacle(opticContext) {
                 return Promise.resolve(parent.endpointNode.path().absolutePathPatternWithParameterNames);
             },
             pathComponents: (parent) => {
-                let path = parent.endpointNode.path();
-                let parentPath = path.parentPath();
-                const components = [path.value];
-                while (parentPath !== null) {
-                    components.push(parentPath.value);
-                    path = parentPath;
-                    parentPath = path.parentPath();
-                }
-                return Promise.resolve(components.reverse());
+                return Promise.resolve(parent.endpointNode.path().components());
             },
             method: (parent) => {
                 return Promise.resolve(parent.endpointNode.value.httpMethod);
@@ -24785,15 +24839,7 @@ async function makeSpectacle(opticContext) {
                 return parent.value.httpMethod;
             },
             pathComponents: async (parent) => {
-                let path = parent.path();
-                let parentPath = path.parentPath();
-                const components = [path.value];
-                while (parentPath !== null) {
-                    components.push(parentPath.value);
-                    path = parentPath;
-                    parentPath = path.parentPath();
-                }
-                return components.reverse();
+                return parent.path().components();
             },
             pathPattern: async (parent) => {
                 return parent.path().absolutePathPatternWithParameterNames;
@@ -24833,6 +24879,10 @@ async function makeSpectacle(opticContext) {
                 const { requestId } = parent.value;
                 return (context.spectacleContext().contributionsProjection[requestId] || {});
             },
+            changes: async (parent, args, context) => {
+                const { requestId } = parent.value;
+                return helpers_1.getEndpointGraphNodeChange(context.spectacleContext().endpointsQueries, requestId, args.sinceBatchCommitId);
+            },
             isRemoved: async (parent) => {
                 return parent.value.isRemoved;
             },
@@ -24846,6 +24896,10 @@ async function makeSpectacle(opticContext) {
             },
             isRemoved: (parent) => {
                 return parent.value.isRemoved;
+            },
+            changes: async (parent, args, context) => {
+                const { queryParametersId } = parent.value;
+                return helpers_1.getEndpointGraphNodeChange(context.spectacleContext().endpointsQueries, queryParametersId, args.sinceBatchCommitId);
             },
             contributions: (parent, _, context) => {
                 const id = parent.value.queryParametersId;
@@ -24892,20 +24946,29 @@ async function makeSpectacle(opticContext) {
             contributions: (parent, _, context) => {
                 return Promise.resolve(context.spectacleContext().contributionsProjection[parent.value.responseId] || {});
             },
+            changes: async (parent, args, context) => {
+                const { responseId } = parent.value;
+                return helpers_1.getEndpointGraphNodeChange(context.spectacleContext().endpointsQueries, responseId, args.sinceBatchCommitId);
+            },
             isRemoved: (parent) => {
                 return Promise.resolve(parent.value.isRemoved);
             },
         },
         PathComponent: {
             id: (parent) => {
-                return Promise.resolve(parent.pathId);
+                return Promise.resolve(parent.value.pathId);
+            },
+            name: async (parent) => {
+                return parent.value.name;
+            },
+            isParameterized: async (parent) => {
+                return parent.value.isParameterized;
             },
             contributions: (parent, _, context) => {
-                return Promise.resolve(context.spectacleContext().contributionsProjection[parent.pathId] ||
-                    {});
+                return Promise.resolve(context.spectacleContext().contributionsProjection[parent.value.pathId] || {});
             },
             isRemoved: (parent) => {
-                return Promise.resolve(parent.isRemoved);
+                return Promise.resolve(parent.value.isRemoved);
             },
         },
         HttpBody: {
