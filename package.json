@@ -29,7 +29,7 @@
     "@actions/core": "^1.2.6",
     "@actions/github": "^4.0.0",
     "@actions/http-client": "^1.0.9",
-    "@sentry/node": "^6.3.4",
+    "@sentry/node": "^6.16.1",
     "@sentry/tracing": "^6.3.4",
     "@types/debug": "^4.1.5",
     "@useoptic/changelog": "10.2.2",
